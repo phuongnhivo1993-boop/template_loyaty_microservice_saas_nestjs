@@ -56,6 +56,7 @@ const dashboard_module_1 = __webpack_require__(64);
 const upload_module_1 = __webpack_require__(67);
 const analytics_module_1 = __webpack_require__(72);
 const notification_module_1 = __webpack_require__(75);
+const audit_log_module_1 = __webpack_require__(78);
 let ApiGatewayModule = class ApiGatewayModule {
 };
 exports.ApiGatewayModule = ApiGatewayModule;
@@ -83,6 +84,7 @@ exports.ApiGatewayModule = ApiGatewayModule = __decorate([
             upload_module_1.UploadModule,
             analytics_module_1.AnalyticsModule,
             notification_module_1.NotificationModule,
+            audit_log_module_1.AuditLogModule,
         ],
         controllers: [api_gateway_controller_1.ApiGatewayController],
         providers: [api_gateway_service_1.ApiGatewayService],
@@ -768,6 +770,7 @@ __decorate([
 class PaginationDto {
     page;
     limit;
+    search;
 }
 exports.PaginationDto = PaginationDto;
 __decorate([
@@ -780,6 +783,12 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], PaginationDto.prototype, "limit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PaginationDto.prototype, "search", void 0);
 class EarnPointsDto {
     memberId;
     amount;
@@ -968,11 +977,18 @@ let TenantService = class TenantService {
             data: { ...data, hostId: data.hostId },
         });
     }
-    async findAll(page = 1, limit = 20) {
+    async findAll(page = 1, limit = 20, search) {
         const skip = (page - 1) * limit;
+        const where = search ? {
+            OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { domain: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+            ]
+        } : {};
         const [data, total] = await Promise.all([
-            this.prisma.tenant.findMany({ orderBy: { createdAt: 'desc' }, skip, take: limit }),
-            this.prisma.tenant.count(),
+            this.prisma.tenant.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+            this.prisma.tenant.count({ where }),
         ]);
         return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
@@ -1030,8 +1046,8 @@ let TenantController = class TenantController {
     create(body) {
         return this.tenantService.create(body);
     }
-    findAll(page, limit) {
-        return this.tenantService.findAll(page, limit);
+    findAll(page, limit, search) {
+        return this.tenantService.findAll(page, limit, search);
     }
     findOne(id) {
         return this.tenantService.findOne(id);
@@ -1057,8 +1073,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'List all tenants (with pagination)' }),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], TenantController.prototype, "findAll", null);
 __decorate([
@@ -1237,8 +1254,16 @@ let UserService = class UserService {
             },
         });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { email: { contains: search, mode: 'insensitive' } },
+                { fullName: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -1300,8 +1325,8 @@ let UserController = class UserController {
     create(body) {
         return this.userService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.userService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.userService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.userService.findOne(id);
@@ -1328,8 +1353,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findAll", null);
 __decorate([
@@ -1427,8 +1453,17 @@ let MemberService = class MemberService {
             throw new common_1.ConflictException('Email already exists');
         return this.prisma.member.create({ data });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.member.findMany({
@@ -1510,8 +1545,8 @@ let MemberController = class MemberController {
     create(body) {
         return this.memberService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.memberService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.memberService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.memberService.findOne(id);
@@ -1553,8 +1588,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], MemberController.prototype, "findAll", null);
 __decorate([
@@ -1660,8 +1696,15 @@ let TierService = class TierService {
     create(data) {
         return this.prisma.tier.create({ data });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.tier.findMany({ where, orderBy: { minPoints: 'asc' }, skip, take: limit }),
@@ -1723,8 +1766,8 @@ let TierController = class TierController {
     create(body) {
         return this.tierService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.tierService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.tierService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.tierService.findOne(id);
@@ -1751,8 +1794,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], TierController.prototype, "findAll", null);
 __decorate([
@@ -2558,12 +2602,18 @@ let CampaignService = class CampaignService {
     create(data) {
         return this.prisma.campaign.create({ data: { ...data, startDate: new Date(data.startDate), endDate: new Date(data.endDate) } });
     }
-    async findAll(tenantId, page = 1, limit = 20, status) {
+    async findAll(tenantId, page = 1, limit = 20, status, search) {
         const where = {};
         if (tenantId)
             where.tenantId = tenantId;
         if (status)
             where.status = status;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -2642,8 +2692,8 @@ let CampaignController = class CampaignController {
     create(body) {
         return this.campaignService.create(body);
     }
-    findAll(tenantId, page, limit, status) {
-        return this.campaignService.findAll(tenantId, page, limit, status);
+    findAll(tenantId, page, limit, status, search) {
+        return this.campaignService.findAll(tenantId, page, limit, status, search);
     }
     findOne(id) {
         return this.campaignService.findOne(id);
@@ -2671,8 +2721,9 @@ __decorate([
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
     __param(3, (0, common_1.Query)('status')),
+    __param(4, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number, String]),
+    __metadata("design:paramtypes", [String, Number, Number, String, String]),
     __metadata("design:returntype", void 0)
 ], CampaignController.prototype, "findAll", null);
 __decorate([
@@ -2763,8 +2814,16 @@ let RewardService = class RewardService {
     create(data) {
         return this.prisma.reward.create({ data });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.reward.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -2871,8 +2930,8 @@ let RewardController = class RewardController {
     create(body) {
         return this.rewardService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.rewardService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.rewardService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.rewardService.findOne(id);
@@ -2902,8 +2961,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], RewardController.prototype, "findAll", null);
 __decorate([
@@ -3008,8 +3068,16 @@ let VoucherService = class VoucherService {
             data: { ...data, expiresAt: data.expiresAt ? new Date(data.expiresAt) : null },
         });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { code: { contains: search, mode: 'insensitive' } },
+                { type: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.voucher.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -3092,8 +3160,8 @@ let VoucherController = class VoucherController {
     create(body) {
         return this.voucherService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.voucherService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.voucherService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.voucherService.findOne(id);
@@ -3126,8 +3194,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], VoucherController.prototype, "findAll", null);
 __decorate([
@@ -3234,8 +3303,16 @@ let PromotionService = class PromotionService {
     create(data) {
         return this.prisma.promotion.create({ data });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.promotion.findMany({ where, orderBy: { priority: 'asc' }, skip, take: limit }),
@@ -3297,8 +3374,8 @@ let PromotionController = class PromotionController {
     create(body) {
         return this.promotionService.create(body);
     }
-    findAll(tenantId, page, limit) {
-        return this.promotionService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.promotionService.findAll(tenantId, page, limit, search);
     }
     findOne(id) {
         return this.promotionService.findOne(id);
@@ -3325,8 +3402,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], PromotionController.prototype, "findAll", null);
 __decorate([
@@ -3420,8 +3498,15 @@ let ReferralService = class ReferralService {
             data: { code, referrerId, tenantId },
         });
     }
-    async findAll(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAll(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { code: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.referral.findMany({
@@ -3514,8 +3599,8 @@ let ReferralController = class ReferralController {
     createLink(_, referrerId, tenantId) {
         return this.referralService.createLink(referrerId, tenantId);
     }
-    findAll(tenantId, page, limit) {
-        return this.referralService.findAll(tenantId, page, limit);
+    findAll(tenantId, page, limit, search) {
+        return this.referralService.findAll(tenantId, page, limit, search);
     }
     getStats(tenantId) {
         return this.referralService.getStats(tenantId);
@@ -3541,8 +3626,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], ReferralController.prototype, "findAll", null);
 __decorate([
@@ -3625,8 +3711,15 @@ let GamificationService = class GamificationService {
     createBadge(data) {
         return this.prisma.badge.create({ data });
     }
-    async findAllBadges(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAllBadges(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.badge.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -3657,8 +3750,15 @@ let GamificationService = class GamificationService {
             },
         });
     }
-    async findAllMissions(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async findAllMissions(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.mission.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -3718,8 +3818,8 @@ let GamificationController = class GamificationController {
     createBadge(body) {
         return this.gamificationService.createBadge(body);
     }
-    findAllBadges(tenantId, page, limit) {
-        return this.gamificationService.findAllBadges(tenantId, page, limit);
+    findAllBadges(tenantId, page, limit, search) {
+        return this.gamificationService.findAllBadges(tenantId, page, limit, search);
     }
     updateBadge(id, body) {
         return this.gamificationService.updateBadge(id, body);
@@ -3730,8 +3830,8 @@ let GamificationController = class GamificationController {
     createMission(body) {
         return this.gamificationService.createMission(body);
     }
-    findAllMissions(tenantId, page, limit) {
-        return this.gamificationService.findAllMissions(tenantId, page, limit);
+    findAllMissions(tenantId, page, limit, search) {
+        return this.gamificationService.findAllMissions(tenantId, page, limit, search);
     }
     updateMission(id, body) {
         return this.gamificationService.updateMission(id, body);
@@ -3755,8 +3855,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], GamificationController.prototype, "findAllBadges", null);
 __decorate([
@@ -3790,8 +3891,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], GamificationController.prototype, "findAllMissions", null);
 __decorate([
@@ -4421,8 +4523,8 @@ let NotificationController = class NotificationController {
     createTemplate(body) {
         return this.notificationService.createTemplate(body);
     }
-    listTemplates(tenantId, page, limit) {
-        return this.notificationService.listTemplates(tenantId, page, limit);
+    listTemplates(tenantId, page, limit, search) {
+        return this.notificationService.listTemplates(tenantId, page, limit, search);
     }
     updateTemplate(id, body) {
         return this.notificationService.updateTemplate(id, body);
@@ -4433,8 +4535,8 @@ let NotificationController = class NotificationController {
     send(body) {
         return this.notificationService.send(body);
     }
-    listLogs(tenantId, page, limit) {
-        return this.notificationService.listLogs(tenantId, page, limit);
+    listLogs(tenantId, page, limit, search) {
+        return this.notificationService.listLogs(tenantId, page, limit, search);
     }
 };
 exports.NotificationController = NotificationController;
@@ -4452,8 +4554,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], NotificationController.prototype, "listTemplates", null);
 __decorate([
@@ -4487,8 +4590,9 @@ __decorate([
     __param(0, (0, common_1.Query)('tenantId')),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [String, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], NotificationController.prototype, "listLogs", null);
 exports.NotificationController = NotificationController = __decorate([
@@ -4527,7 +4631,7 @@ let NotificationService = class NotificationService {
     async createTemplate(data) {
         return data;
     }
-    async listTemplates(tenantId, page = 1, limit = 20) {
+    async listTemplates(tenantId, page = 1, limit = 20, search) {
         return { data: [], total: 0, page, limit, totalPages: 0 };
     }
     async updateTemplate(id, data) {
@@ -4550,8 +4654,16 @@ let NotificationService = class NotificationService {
         });
         return { logId: log.id, channel: data.channel, recipient: data.recipient, status: 'SENT' };
     }
-    async listLogs(tenantId, page = 1, limit = 20) {
-        const where = tenantId ? { tenantId } : {};
+    async listLogs(tenantId, page = 1, limit = 20, search) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (search) {
+            where.OR = [
+                { recipient: { contains: search, mode: 'insensitive' } },
+                { subject: { contains: search, mode: 'insensitive' } },
+            ];
+        }
         const skip = (page - 1) * limit;
         const [data, total] = await Promise.all([
             this.prisma.notificationLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -4569,6 +4681,138 @@ exports.NotificationService = NotificationService = __decorate([
 
 /***/ }),
 /* 78 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuditLogModule = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_module_1 = __webpack_require__(9);
+const audit_log_service_1 = __webpack_require__(79);
+const audit_log_controller_1 = __webpack_require__(80);
+let AuditLogModule = class AuditLogModule {
+};
+exports.AuditLogModule = AuditLogModule;
+exports.AuditLogModule = AuditLogModule = __decorate([
+    (0, common_1.Module)({
+        imports: [prisma_module_1.PrismaModule],
+        controllers: [audit_log_controller_1.AuditLogController],
+        providers: [audit_log_service_1.AuditLogService],
+        exports: [audit_log_service_1.AuditLogService],
+    })
+], AuditLogModule);
+
+
+/***/ }),
+/* 79 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuditLogService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(10);
+let AuditLogService = class AuditLogService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async log(params) {
+        return this.prisma.auditLog.create({ data: params });
+    }
+    async findAll(page = 1, limit = 20, search) {
+        const skip = (page - 1) * limit;
+        const where = search ? {
+            OR: [
+                { entityType: { contains: search, mode: 'insensitive' } },
+                { userEmail: { contains: search, mode: 'insensitive' } },
+            ]
+        } : {};
+        const [data, total] = await Promise.all([
+            this.prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+            this.prisma.auditLog.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+};
+exports.AuditLogService = AuditLogService;
+exports.AuditLogService = AuditLogService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], AuditLogService);
+
+
+/***/ }),
+/* 80 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuditLogController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const audit_log_service_1 = __webpack_require__(79);
+const jwt_auth_guard_1 = __webpack_require__(27);
+let AuditLogController = class AuditLogController {
+    auditLogService;
+    constructor(auditLogService) {
+        this.auditLogService = auditLogService;
+    }
+    findAll(page, limit, search) {
+        return this.auditLogService.findAll(page, limit, search);
+    }
+};
+exports.AuditLogController = AuditLogController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'List audit logs (paginated)' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('search')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:returntype", void 0)
+], AuditLogController.prototype, "findAll", null);
+exports.AuditLogController = AuditLogController = __decorate([
+    (0, swagger_1.ApiTags)('Audit Logs'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('audit-logs'),
+    __metadata("design:paramtypes", [typeof (_a = typeof audit_log_service_1.AuditLogService !== "undefined" && audit_log_service_1.AuditLogService) === "function" ? _a : Object])
+], AuditLogController);
+
+
+/***/ }),
+/* 81 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4612,7 +4856,7 @@ exports.GlobalExceptionFilter = GlobalExceptionFilter = __decorate([
 
 
 /***/ }),
-/* 79 */
+/* 82 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4625,7 +4869,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LoggingInterceptor = void 0;
 const common_1 = __webpack_require__(2);
-const rxjs_1 = __webpack_require__(80);
+const rxjs_1 = __webpack_require__(83);
 let LoggingInterceptor = class LoggingInterceptor {
     logger = new common_1.Logger('HTTP');
     intercept(context, next) {
@@ -4642,7 +4886,7 @@ exports.LoggingInterceptor = LoggingInterceptor = __decorate([
 
 
 /***/ }),
-/* 80 */
+/* 83 */
 /***/ ((module) => {
 
 module.exports = require("rxjs");
@@ -4685,8 +4929,8 @@ const core_1 = __webpack_require__(1);
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
 const api_gateway_module_1 = __webpack_require__(4);
-const global_exception_filter_1 = __webpack_require__(78);
-const logging_interceptor_1 = __webpack_require__(79);
+const global_exception_filter_1 = __webpack_require__(81);
+const logging_interceptor_1 = __webpack_require__(82);
 async function bootstrap() {
     const logger = new common_1.Logger('ApiGateway');
     const app = await core_1.NestFactory.create(api_gateway_module_1.ApiGatewayModule);

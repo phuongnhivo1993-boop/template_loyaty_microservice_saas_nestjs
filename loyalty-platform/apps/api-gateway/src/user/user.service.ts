@@ -25,8 +25,15 @@ export class UserService {
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { fullName: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),

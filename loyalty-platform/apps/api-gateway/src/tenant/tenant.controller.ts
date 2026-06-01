@@ -23,8 +23,9 @@ export class TenantController {
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.tenantService.findAll(page, limit);
+    return this.tenantService.findAll(page, limit, search);
   }
 
   @Get(':id')

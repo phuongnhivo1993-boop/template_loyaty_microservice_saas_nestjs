@@ -9,7 +9,7 @@ export class NotificationService {
     return data;
   }
 
-  async listTemplates(tenantId?: string, page = 1, limit = 20) {
+  async listTemplates(tenantId?: string, page = 1, limit = 20, search?: string) {
     return { data: [], total: 0, page, limit, totalPages: 0 };
   }
 
@@ -36,8 +36,15 @@ export class NotificationService {
     return { logId: log.id, channel: data.channel, recipient: data.recipient, status: 'SENT' };
   }
 
-  async listLogs(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async listLogs(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { recipient: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.notificationLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),

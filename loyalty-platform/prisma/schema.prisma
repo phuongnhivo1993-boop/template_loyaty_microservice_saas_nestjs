@@ -277,3 +277,18 @@ model Mission {
 
   @@map("missions")
 }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String   // CREATE, UPDATE, DELETE
+  userId     String?
+  userEmail  String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}

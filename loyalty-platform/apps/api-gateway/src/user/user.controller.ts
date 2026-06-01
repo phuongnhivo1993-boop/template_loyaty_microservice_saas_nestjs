@@ -22,8 +22,9 @@ export class UserController {
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.userService.findAll(tenantId, page, limit);
+    return this.userService.findAll(tenantId, page, limit, search);
   }
 
   @Get(':id')

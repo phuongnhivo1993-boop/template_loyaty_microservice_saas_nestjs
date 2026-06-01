@@ -11,8 +11,16 @@ export class MemberService {
     return this.prisma.member.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.member.findMany({

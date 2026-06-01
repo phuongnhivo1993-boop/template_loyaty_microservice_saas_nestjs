@@ -10,10 +10,16 @@ export class CampaignService {
     return this.prisma.campaign.create({ data: { ...data, startDate: new Date(data.startDate), endDate: new Date(data.endDate) } });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, status?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, status?: string, search?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (status) where.status = status;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),

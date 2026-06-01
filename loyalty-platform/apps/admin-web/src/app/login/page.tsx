@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('host@loyalty.vn');
+  const [password, setPassword] = useState('Host@123456');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {

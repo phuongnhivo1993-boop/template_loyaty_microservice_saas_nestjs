@@ -22,6 +22,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { UploadModule } from './upload/upload.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationModule } from './notification/notification.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { NotificationModule } from './notification/notification.module';
     UploadModule,
     AnalyticsModule,
     NotificationModule,
+    AuditLogModule,
   ],
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],

@@ -9,8 +9,14 @@ export class TierService {
     return this.prisma.tier.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.tier.findMany({ where, orderBy: { minPoints: 'asc' }, skip, take: limit }),

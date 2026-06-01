@@ -84,6 +84,7 @@ export class ValidateVoucherDto {
 export class PaginationDto {
   @ApiProperty({ required: false, default: 1 }) @IsOptional() page?: number;
   @ApiProperty({ required: false, default: 20 }) @IsOptional() limit?: number;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() search?: string;
 }
 
 export class EarnPointsDto {

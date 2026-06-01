@@ -10,8 +10,14 @@ export class GamificationService {
     return this.prisma.badge.create({ data });
   }
 
-  async findAllBadges(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async findAllBadges(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.badge.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
@@ -47,8 +53,14 @@ export class GamificationService {
     });
   }
 
-  async findAllMissions(tenantId?: string, page = 1, limit = 20) {
-    const where = tenantId ? { tenantId } : {};
+  async findAllMissions(tenantId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.mission.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),

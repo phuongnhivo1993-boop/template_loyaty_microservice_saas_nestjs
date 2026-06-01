@@ -15,11 +15,18 @@ export class TenantService {
     });
   }
 
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, limit = 20, search?: string) {
     const skip = (page - 1) * limit;
+    const where: any = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { domain: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ]
+    } : {};
     const [data, total] = await Promise.all([
-      this.prisma.tenant.findMany({ orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      this.prisma.tenant.count(),
+      this.prisma.tenant.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.tenant.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }

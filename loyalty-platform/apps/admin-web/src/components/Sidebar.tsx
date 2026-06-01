@@ -10,6 +10,8 @@ const menuItems = [
   { label: 'Rewards', href: '/rewards', icon: '🎁' },
   { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
   { label: 'Promotions', href: '/promotions', icon: '⚡' },
+  { label: 'Notifications', href: '/notifications', icon: '🔔' },
+  { label: 'Audit Log', href: '/audit-log', icon: '📋' },
   { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 

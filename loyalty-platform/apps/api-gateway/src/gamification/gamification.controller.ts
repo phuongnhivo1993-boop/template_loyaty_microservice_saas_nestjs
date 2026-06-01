@@ -22,8 +22,9 @@ export class GamificationController {
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.gamificationService.findAllBadges(tenantId, page, limit);
+    return this.gamificationService.findAllBadges(tenantId, page, limit, search);
   }
 
   @Put('badges/:id')
@@ -50,8 +51,9 @@ export class GamificationController {
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.gamificationService.findAllMissions(tenantId, page, limit);
+    return this.gamificationService.findAllMissions(tenantId, page, limit, search);
   }
 
   @Put('missions/:id')

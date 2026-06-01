@@ -23,8 +23,9 @@ export class CampaignController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
-    return this.campaignService.findAll(tenantId, page, limit, status);
+    return this.campaignService.findAll(tenantId, page, limit, status, search);
   }
 
   @Get(':id')

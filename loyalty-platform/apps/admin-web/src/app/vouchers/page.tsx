@@ -4,20 +4,129 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
+interface VoucherForm {
+  code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
+}
+
+const emptyForm: VoucherForm = { code: '', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '', description: '' };
+const TYPES = ['DISCOUNT', 'GIFT', 'FREE_SHIPPING', 'PERCENTAGE'];
+
 export default function VouchersPage() {
   const router = useRouter();
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState<VoucherForm>(emptyForm);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search) params.set('search', search);
+      const res = await fetch(`/api/vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await res.json();
+      setVouchers(Array.isArray(result) ? result : result.data || []);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
+    } catch {}
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     if (!token) { router.push('/login'); return; }
-    fetch('/api/vouchers', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(res => setVouchers(Array.isArray(res) ? res : res.data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [router]);
+    load();
+  }, [search, page]);
+
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
+  const openEdit = (v: any) => {
+    setEditing(v);
+    setForm({
+      code: v.code, type: v.type, value: v.value?.toString() || '', maxUsage: v.maxUsage?.toString() || '',
+      expiresAt: v.expiresAt?.slice(0, 10) || '', description: v.description || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this voucher?')) return;
+    await fetch(`/api/vouchers/${id}`, { method: 'DELETE', headers });
+    load();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = { ...form, value: Number(form.value), maxUsage: form.maxUsage ? Number(form.maxUsage) : undefined };
+    const url = editing ? `/api/vouchers/${editing.id}` : '/api/vouchers';
+    const method = editing ? 'PATCH' : 'POST';
+    await fetch(url, { method, headers, body: JSON.stringify(body) });
+    setShowModal(false);
+    load();
+  };
+
+  const modal = showModal && (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={() => setShowModal(false)}>
+      <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '520px', maxHeight: '80vh', overflow: 'auto' }}
+        onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>{editing ? 'Edit Voucher' : 'New Voucher'}</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Code</label>
+            <input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} required
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace' }} />
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Type</label>
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
+              {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1, marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Value</label>
+              <input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            </div>
+            <div style={{ flex: 1, marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Max Usage</label>
+              <input type="number" value={form.maxUsage} onChange={e => setForm({ ...form, maxUsage: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            </div>
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Expires At</label>
+            <input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
+            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+            <button type="button" onClick={() => setShowModal(false)}
+              style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit"
+              style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+              {editing ? 'Save' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
 
@@ -25,9 +134,31 @@ export default function VouchersPage() {
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
       <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Vouchers</h1>
-          <p style={{ color: '#64748b', marginTop: '4px' }}>Manage discount and gift vouchers</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Vouchers</h1>
+            <p style={{ color: '#64748b' }}>Manage discount and gift vouchers</p>
+          </div>
+          <button onClick={openCreate} style={{
+            padding: '10px 20px', background: '#2563eb', color: 'white',
+            border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer',
+          }}>+ New Voucher</button>
+        </div>
+
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{
+              padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px',
+              fontSize: '14px', flex: 1, maxWidth: '360px',
+            }}
+          />
+          <span style={{ color: '#64748b', fontSize: '14px' }}>
+            {total > 0 ? `${total} results` : ''}
+          </span>
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
@@ -39,11 +170,12 @@ export default function VouchersPage() {
                 <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Value</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Used</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Expires</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {vouchers.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No vouchers found</td></tr>
+                <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No vouchers found</td></tr>
               ) : vouchers.map((v: any) => (
                 <tr key={v.id} style={{ borderTop: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace' }}>{v.code}</td>
@@ -64,11 +196,52 @@ export default function VouchersPage() {
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>
                     {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'No expiry'}
                   </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <button onClick={() => openEdit(v)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
+                    <button onClick={() => handleDelete(v.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              style={{
+                padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px',
+                background: page <= 1 ? '#f1f5f9' : 'white', cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                color: page <= 1 ? '#94a3b8' : '#475569', fontWeight: 500,
+              }}
+            >Previous</button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const p = start + i;
+              if (p > totalPages) return null;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  style={{
+                    padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '6px',
+                    background: p === page ? '#2563eb' : 'white', color: p === page ? 'white' : '#475569',
+                    cursor: 'pointer', fontWeight: 600,
+                  }}
+                >{p}</button>
+              );
+            })}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              style={{
+                padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px',
+                background: page >= totalPages ? '#f1f5f9' : 'white', cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                color: page >= totalPages ? '#94a3b8' : '#475569', fontWeight: 500,
+              }}
+            >Next</button>
+          </div>
+        )}
+        {modal}
       </main>
     </div>
   );
