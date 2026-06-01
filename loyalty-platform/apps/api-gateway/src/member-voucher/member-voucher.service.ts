@@ -1,0 +1,44 @@
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class MemberVoucherService {
+  constructor(private prisma: PrismaService) {}
+
+  async assign(memberId: string, voucherId: string) {
+    const existing = await this.prisma.memberVoucher.findFirst({
+      where: { memberId, voucherId, redeemed: false },
+    });
+    if (existing) throw new ConflictException('Voucher already assigned to this member');
+    return this.prisma.memberVoucher.create({
+      data: { memberId, voucherId },
+      include: { voucher: true, member: { select: { id: true, fullName: true, email: true } } },
+    });
+  }
+
+  async findAll(memberId?: string, page = 1, limit = 20) {
+    const where = memberId ? { memberId } : {};
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.memberVoucher.findMany({
+        where,
+        include: { voucher: true, member: { select: { id: true, fullName: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.memberVoucher.count({ where }),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async redeem(id: string) {
+    const mv = await this.prisma.memberVoucher.findUnique({ where: { id }, include: { voucher: true } });
+    if (!mv) throw new NotFoundException('Assignment not found');
+    if (mv.redeemed) throw new ConflictException('Voucher already redeemed');
+    return this.prisma.memberVoucher.update({
+      where: { id },
+      data: { redeemed: true, redeemedAt: new Date() },
+    });
+  }
+}

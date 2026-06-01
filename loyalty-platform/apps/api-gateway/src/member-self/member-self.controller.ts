@@ -24,6 +24,14 @@ export class MemberSelfController {
     return this.memberSelfService.getWallet(req.user.id);
   }
 
+  @Post('set-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set initial password' })
+  setPassword(@Req() req: any, @Body() body: { password: string }) {
+    return this.memberSelfService.setPassword(req.user.id, body.password);
+  }
+
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -46,5 +54,13 @@ export class MemberSelfController {
   @ApiOperation({ summary: 'Get own referral links and stats' })
   getReferrals(@Req() req: any) {
     return this.memberSelfService.getReferrals(req.user.id);
+  }
+
+  @Get('vouchers')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own vouchers' })
+  getVouchers(@Req() req: any) {
+    return this.memberSelfService.getVouchers(req.user.id);
   }
 }

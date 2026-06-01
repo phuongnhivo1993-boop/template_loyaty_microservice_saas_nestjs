@@ -34,4 +34,41 @@ export class ReferralService {
     const converted = await this.prisma.referral.count({ where: { ...where, status: 'CONVERTED' } });
     return { total, converted, rate: total > 0 ? (converted / total * 100).toFixed(1) : '0' };
   }
+
+  async convertReferral(referralId: string, refereeId: string) {
+    const referral = await this.prisma.referral.findUnique({ where: { id: referralId } });
+    if (!referral) throw new NotFoundException('Referral not found');
+
+    const updated = await this.prisma.referral.update({
+      where: { id: referralId },
+      data: { status: 'CONVERTED', refereeId, rewardGiven: false },
+    });
+
+    // Auto-reward referrer with 500 points
+    const rewardPoints = 500;
+    await this.prisma.$transaction([
+      this.prisma.pointTransaction.create({
+        data: {
+          memberId: referral.referrerId,
+          type: 'EARN',
+          amount: rewardPoints,
+          balance: 0,
+          reason: `Referral reward: ${refereeId.slice(0, 8)} joined`,
+        },
+      }),
+      this.prisma.member.update({
+        where: { id: referral.referrerId },
+        data: {
+          totalPoints: { increment: rewardPoints },
+          availablePoints: { increment: rewardPoints },
+        },
+      }),
+      this.prisma.referral.update({
+        where: { id: referralId },
+        data: { rewardGiven: true },
+      }),
+    ]);
+
+    return updated;
+  }
 }

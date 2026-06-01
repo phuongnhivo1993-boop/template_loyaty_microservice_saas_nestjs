@@ -19,6 +19,8 @@ export class PointService {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Member not found');
 
+    const newTotal = member.totalPoints + amount;
+
     const [transaction] = await this.prisma.$transaction([
       this.prisma.pointTransaction.create({
         data: {
@@ -37,7 +39,23 @@ export class PointService {
         },
       }),
     ]);
+
+    await this.maybeUpgradeTier(memberId, member.tenantId, newTotal);
     return transaction;
+  }
+
+  private async maybeUpgradeTier(memberId: string, tenantId: string, totalPoints: number) {
+    const tiers = await this.prisma.tier.findMany({
+      where: { tenantId, minPoints: { lte: totalPoints }, maxPoints: { gte: totalPoints } },
+      orderBy: { minPoints: 'desc' },
+      take: 1,
+    });
+    if (tiers.length > 0) {
+      await this.prisma.member.update({
+        where: { id: memberId },
+        data: { tierId: tiers[0].id },
+      });
+    }
   }
 
   async burn(memberId: string, amount: number, reason?: string) {

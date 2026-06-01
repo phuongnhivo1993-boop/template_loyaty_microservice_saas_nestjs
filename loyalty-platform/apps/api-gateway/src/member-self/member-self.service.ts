@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -6,13 +6,17 @@ import { PrismaService } from '../prisma/prisma.service';
 export class MemberSelfService {
   constructor(private prisma: PrismaService) {}
 
+  private hashPassword(password: string): string {
+    return crypto.createHash('sha256').update(password).digest('hex');
+  }
+
   async getProfile(memberId: string) {
     const member = await this.prisma.member.findUnique({
       where: { id: memberId },
       include: { tier: true },
     });
     if (!member) throw new NotFoundException('Member not found');
-    const { ...data } = member;
+    const { password, ...data } = member;
     return data;
   }
 
@@ -38,10 +42,29 @@ export class MemberSelfService {
     };
   }
 
+  async setPassword(memberId: string, password: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+    if (member.password) throw new BadRequestException('Password already set. Use change-password instead.');
+    await this.prisma.member.update({
+      where: { id: memberId },
+      data: { password: this.hashPassword(password) },
+    });
+    return { message: 'Password set successfully' };
+  }
+
   async changePassword(memberId: string, oldPassword: string, newPassword: string) {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Member not found');
-    throw new BadRequestException('Password change requires password to be stored first');
+    if (!member.password) throw new BadRequestException('No password set. Use set-password first.');
+    if (member.password !== this.hashPassword(oldPassword)) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    await this.prisma.member.update({
+      where: { id: memberId },
+      data: { password: this.hashPassword(newPassword) },
+    });
+    return { message: 'Password changed successfully' };
   }
 
   async getBadges(memberId: string) {
@@ -66,5 +89,14 @@ export class MemberSelfService {
       rate: total > 0 ? ((converted / total) * 100).toFixed(1) : '0',
       referrals,
     };
+  }
+
+  async getVouchers(memberId: string) {
+    const vouchers = await this.prisma.memberVoucher.findMany({
+      where: { memberId },
+      include: { voucher: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return vouchers;
   }
 }

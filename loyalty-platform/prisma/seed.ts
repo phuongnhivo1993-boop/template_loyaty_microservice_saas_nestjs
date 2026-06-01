@@ -79,9 +79,10 @@ async function main() {
 
   const member = await prisma.member.upsert({
     where: { email: 'nguyen.van.a@sunshine.vn' },
-    update: {},
+    update: { password: hashPassword('Member@123456') },
     create: {
       email: 'nguyen.van.a@sunshine.vn',
+      password: hashPassword('Member@123456'),
       fullName: 'Nguyen Van A',
       phone: '0909000111',
       tenantId: tenant.id,
@@ -147,8 +148,10 @@ async function main() {
   });
   console.log('  ✓ Sample rewards created');
 
-  await prisma.voucher.create({
-    data: {
+  await prisma.voucher.upsert({
+    where: { code: 'SUMMER2026' },
+    update: {},
+    create: {
       code: 'SUMMER2026',
       type: 'discount',
       value: 15,
@@ -197,6 +200,31 @@ async function main() {
   });
   console.log('  ✓ Sample badges created');
 
+  const voucherRec = await prisma.voucher.findFirst({ where: { tenantId: tenant.id } });
+  if (voucherRec) {
+    const existing = await prisma.memberVoucher.findFirst({
+      where: { memberId: member.id, voucherId: voucherRec.id },
+    });
+    if (!existing) {
+      await prisma.memberVoucher.create({ data: { memberId: member.id, voucherId: voucherRec.id } });
+    }
+    console.log('  ✓ Member voucher assigned');
+  }
+
+  await prisma.notificationLog.create({
+    data: {
+      templateId: 'welcome-email',
+      recipient: 'nguyen.van.a@sunshine.vn',
+      channel: 'email',
+      subject: 'Welcome to Sunshine Loyalty!',
+      content: 'Thank you for joining our loyalty program. You received 15000 bonus points!',
+      status: 'SENT',
+      sentAt: new Date(),
+      tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Sample notification log created');
+
   await prisma.mission.create({
     data: {
       name: 'Refer 5 customers',
@@ -213,6 +241,7 @@ async function main() {
   console.log('\n✅ Seeding complete!');
   console.log('   Host: host@loyalty.vn / Host@123456');
   console.log('   Admin: admin@sunshine.vn / Admin@123456');
+  console.log('   Member: nguyen.van.a@sunshine.vn / Member@123456');
 }
 
 main()

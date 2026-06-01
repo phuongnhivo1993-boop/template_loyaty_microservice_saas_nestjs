@@ -101,6 +101,7 @@ model Tier {
 model Member {
   id           String       @id @default(uuid())
   email        String       @unique
+  password     String?      // null for OAuth/phone-registered members
   fullName     String
   phone        String?
   avatar       String?
@@ -118,6 +119,7 @@ model Member {
   pointTransactions PointTransaction[]
   referralsGiven    Referral[]        @relation("ReferralGiven")
   referralsReceived Referral[]        @relation("ReferralReceived")
+  memberVouchers    MemberVoucher[]
 
   @@map("members")
 }
@@ -181,7 +183,37 @@ model Voucher {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  memberVouchers MemberVoucher[]
+
   @@map("vouchers")
+}
+
+model MemberVoucher {
+  id        String   @id @default(uuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id])
+  voucherId String
+  voucher   Voucher  @relation(fields: [voucherId], references: [id])
+  redeemed  Boolean  @default(false)
+  redeemedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("member_vouchers")
+}
+
+model NotificationLog {
+  id         String   @id @default(uuid())
+  templateId String
+  recipient  String
+  channel    String   // email, sms, push
+  subject    String?
+  content    String?
+  status     String   @default("PENDING") // PENDING, SENT, FAILED
+  sentAt     DateTime?
+  tenantId   String?
+  createdAt  DateTime @default(now())
+
+  @@map("notification_logs")
 }
 
 model Promotion {

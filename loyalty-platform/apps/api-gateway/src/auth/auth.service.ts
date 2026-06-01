@@ -47,6 +47,9 @@ export class AuthService {
     const member = await this.prisma.member.findUnique({ where: { email } });
     if (!member) throw new UnauthorizedException('Invalid credentials');
     if (member.status !== 'ACTIVE') throw new UnauthorizedException('Account is not active');
+    if (member.password && member.password !== this.hashPassword(password)) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     return this.generateToken(member.id, member.email, 'MEMBER', member.tenantId);
   }
 

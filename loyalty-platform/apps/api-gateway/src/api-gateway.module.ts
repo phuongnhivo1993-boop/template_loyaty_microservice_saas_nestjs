@@ -9,6 +9,7 @@ import { TenantModule } from './tenant/tenant.module';
 import { UserModule } from './user/user.module';
 import { MemberModule } from './member/member.module';
 import { MemberSelfModule } from './member-self/member-self.module';
+import { MemberVoucherModule } from './member-voucher/member-voucher.module';
 import { TierModule } from './tier/tier.module';
 import { PointModule } from './point/point.module';
 import { CampaignModule } from './campaign/campaign.module';
@@ -32,6 +33,7 @@ import { NotificationModule } from './notification/notification.module';
     UserModule,
     MemberModule,
     MemberSelfModule,
+    MemberVoucherModule,
     TierModule,
     PointModule,
     CampaignModule,
