@@ -1,0 +1,511 @@
+Nếu tích hợp Loyalty Platform vào hệ sinh thái Bất động sản ở trên, thì không nên chỉ hiểu Loyalty là "tích điểm đổi quà". Với hệ sinh thái BĐS, Loyalty sẽ là nền tảng quản lý:
+
+Khách hàng cá nhân
+Môi giới
+Sales nội bộ
+Chủ đầu tư
+Đối tác
+Đơn vị phân phối
+
+nhằm tăng tỷ lệ mua lại, giới thiệu khách hàng và giữ chân đối tác.
+
+1. Góc nhìn BA - Chức năng Loyalty cần có
+1. Membership
+
+Quản lý hội viên.
+
+Chức năng
+Đăng ký hội viên
+
+Xác thực KYC
+
+Quản lý hồ sơ
+
+Quản lý trạng thái
+
+Khóa/Mở khóa
+
+Lịch sử giao dịch
+Membership Tier
+Member
+Silver
+Gold
+Platinum
+Diamond
+VIP
+Rule
+Doanh số
+Số giao dịch
+Tổng điểm
+Số năm tham gia
+2. Loyalty Point
+Point Wallet
+
+Mỗi khách hàng có ví điểm.
+
+Point Balance
+
+Available Point
+
+Pending Point
+
+Expired Point
+
+Used Point
+Earn Point
+
+Tích điểm.
+
+Ví dụ:
+
+Mua bất động sản
+
+Ký hợp đồng
+
+Thanh toán thành công
+
+Giới thiệu khách hàng
+
+Tham gia sự kiện
+
+Hoàn thành khóa học
+
+Review dự án
+
+Checkin showroom
+Burn Point
+
+Tiêu điểm.
+
+Đổi voucher
+
+Đổi quà
+
+Giảm giá
+
+Thanh toán phí dịch vụ
+
+Nâng hạng
+3. Referral Program
+
+Đây là module rất quan trọng.
+
+Chức năng
+Mã giới thiệu
+
+Referral Link
+
+QR Referral
+
+Theo dõi chuyển đổi
+
+Thưởng giới thiệu
+Flow
+A giới thiệu B
+
+B đăng ký
+
+B mua sản phẩm
+
+A nhận thưởng
+4. Reward Catalog
+
+Danh mục phần thưởng.
+
+Reward Type
+Voucher
+
+Coupon
+
+Gift
+
+Cashback
+
+Service
+
+Event Ticket
+
+Training Course
+Chức năng
+CRUD Reward
+
+Inventory
+
+Redeem
+
+Approve
+
+Reject
+
+Delivery Tracking
+5. Campaign Management
+
+Quản lý chương trình loyalty.
+
+Ví dụ
+Sinh nhật
+
+Mùa hè
+
+Black Friday
+
+Mở bán dự án mới
+
+Giới thiệu khách hàng
+Chức năng
+Target Audience
+
+Rule Engine
+
+Budget
+
+KPI
+
+Tracking
+6. Promotion Engine
+
+Tách khỏi Loyalty Point.
+
+Rule
+IF
+
+Customer = Gold
+
+AND
+
+Project = A
+
+THEN
+
++500 Points
+Chức năng
+Rule Builder
+
+Condition
+
+Action
+
+Priority
+
+Version
+7. Voucher Management
+Chức năng
+Tạo voucher
+
+Voucher Pool
+
+Voucher Series
+
+Voucher Claim
+
+Voucher Redeem
+
+Voucher Expire
+8. Coupon Management
+Coupon Generation
+
+Coupon Validation
+
+Coupon Redemption
+9. Cashback
+Cashback Wallet
+
+Cashback Rule
+
+Settlement
+
+Withdrawal
+10. Event & Engagement
+
+Tăng tương tác.
+
+Chức năng
+Event
+
+Workshop
+
+Seminar
+
+Livestream
+
+Check-in
+
+Attendance
+11. Gamification
+
+Rất hiệu quả cho sales.
+
+Badge
+Top Seller
+
+Top Referrer
+
+VIP Customer
+
+Project Expert
+Mission
+Hoàn thành hồ sơ
+
+Giới thiệu 5 khách hàng
+
+Đăng ký sự kiện
+
+Hoàn thành khóa học
+12. Notification
+Email
+
+Push
+
+SMS
+
+Zalo
+13. Loyalty Analytics
+
+Dashboard.
+
+Metrics
+MAU
+
+Active Member
+
+Retention
+
+Churn
+
+Redeem Rate
+
+Referral Rate
+
+LTV
+
+CAC
+14. Customer 360
+
+Hồ sơ khách hàng hợp nhất.
+
+Thông tin
+
+Lịch sử giao dịch
+
+Điểm
+
+Voucher
+
+Referral
+
+Campaign
+Kiến trúc Microservice
+
+Tôi sẽ thiết kế theo Domain Driven Design.
+
+                     API Gateway
+                           |
+    ------------------------------------------------
+    |         |         |         |         |
+    |         |         |         |         |
+ Membership  Loyalty  Campaign  Reward  Referral
+ Service     Service  Service   Service  Service
+    |         |         |         |         |
+    ------------------------------------------------
+                           |
+                  Event Bus (Kafka)
+                           |
+    ------------------------------------------------
+    |          |           |           |          |
+Voucher    Promotion   Gamify    Notification Analytics
+Service    Service     Service     Service     Service
+                           |
+                   Customer 360
+                       Service
+1. Membership Service
+
+Quản lý hội viên.
+
+Aggregate
+Member
+Tier
+TierRule
+MemberStatus
+Tables
+members
+tiers
+tier_rules
+member_tiers
+2. Loyalty Service
+
+Core Engine.
+
+Aggregate
+Point Wallet
+Point Transaction
+Point Expiration
+Tables
+point_wallets
+
+point_transactions
+
+point_expirations
+3. Campaign Service
+Aggregate
+Campaign
+
+Campaign Rule
+
+Campaign Audience
+
+Campaign Budget
+Tables
+campaigns
+
+campaign_rules
+
+campaign_targets
+4. Reward Service
+Aggregate
+Reward
+
+Reward Inventory
+
+Reward Order
+Tables
+rewards
+
+reward_inventories
+
+reward_orders
+5. Referral Service
+Aggregate
+Referral
+
+Referral Link
+
+Referral Reward
+Tables
+referrals
+
+referral_links
+
+referral_rewards
+6. Voucher Service
+Aggregate
+Voucher
+
+Voucher Series
+
+Voucher Redemption
+Tables
+vouchers
+
+voucher_series
+
+voucher_redemptions
+7. Promotion Service
+
+Quan trọng nhất.
+
+Rule Engine
+Condition
+
+Action
+
+Priority
+
+Version
+Tables
+promotion_rules
+
+promotion_conditions
+
+promotion_actions
+8. Gamification Service
+Aggregate
+Badge
+
+Mission
+
+Achievement
+Tables
+badges
+
+missions
+
+achievements
+9. Notification Service
+Email
+
+SMS
+
+Push
+
+Zalo OA
+10. Analytics Service
+
+Dùng ClickHouse.
+
+Dữ liệu
+Point Earn
+
+Point Burn
+
+Campaign
+
+Referral
+
+Voucher
+
+Member Activity
+11. Customer 360 Service
+
+Không lưu dữ liệu nghiệp vụ.
+
+Chỉ aggregate.
+
+Customer
+
+Membership
+
+Point
+
+Voucher
+
+Reward
+
+Campaign
+
+Referral
+Kiến trúc triển khai thực tế
+
+Cho NestJS + NextJS + Expo + Keycloak:
+
+Frontend
+├── NextJS Admin
+├── NextJS Loyalty Portal
+└── Expo Mobile
+
+Backend
+├── API Gateway
+├── Membership Service
+├── Loyalty Service
+├── Campaign Service
+├── Reward Service
+├── Referral Service
+├── Voucher Service
+├── Promotion Service
+├── Gamification Service
+├── Notification Service
+├── Customer360 Service
+└── Analytics Service
+
+Infrastructure
+├── Keycloak
+├── PostgreSQL
+├── Redis
+├── Kafka
+├── Elasticsearch
+├── MinIO
+├── ClickHouse
+├── Prometheus
+├── Grafana
+└── Kubernetes
+
+Đối với hệ sinh thái BĐS của bạn, tôi còn khuyến nghị bổ sung Partner Loyalty (đại lý, môi giới, đơn vị phân phối) và Doctor/Healthcare Loyalty nếu mở rộng sang hệ sinh thái y tế, vì hai nhóm này thường tạo ra 70–80% doanh thu giới thiệu và cần cơ chế điểm thưởng, hoa hồng và xếp hạng riêng biệt ngoài loyalty dành cho khách hàng cuối.
