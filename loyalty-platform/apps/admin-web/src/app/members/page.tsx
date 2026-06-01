@@ -18,6 +18,8 @@ export default function MembersPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<MemberForm>(emptyForm);
   const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState('');
+  const [tierOptions, setTierOptions] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -31,6 +33,7 @@ export default function MembersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (tierFilter) params.set('tierId', tierFilter);
       const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setMembers(Array.isArray(result) ? result : result.data || []);
@@ -43,7 +46,8 @@ export default function MembersPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+    fetch('/api/tiers', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(res => setTierOptions(Array.isArray(res) ? res : res.data || [])).catch(() => {});
+  }, [search, page, tierFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', status: m.status }); setShowModal(true); };
@@ -121,6 +125,11 @@ export default function MembersPage() {
         </div>
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }}
+            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="">ALL TIERS</option>
+            {tierOptions.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
           <input
             type="text"
             placeholder="Search..."
@@ -134,6 +143,21 @@ export default function MembersPage() {
           <span style={{ color: '#64748b', fontSize: '14px' }}>
             {total > 0 ? `${total} results` : ''}
           </span>
+          <button onClick={async () => {
+            const params = new URLSearchParams({ page: '1', limit: '10000' });
+            if (search) params.set('search', search);
+            if (tierFilter) params.set('tierId', tierFilter);
+            const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+            const result = await res.json();
+            const data = Array.isArray(result) ? result : result.data || [];
+            const cols = ['fullName', 'email', 'availablePoints', 'status'];
+            const header = cols.join(',');
+            const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+            const csv = [header, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'members.csv'; a.click(); URL.revokeObjectURL(url);
+          }} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>

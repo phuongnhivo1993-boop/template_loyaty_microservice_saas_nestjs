@@ -11,6 +11,12 @@ const menuItems = [
   { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
   { label: 'Promotions', href: '/promotions', icon: '⚡' },
   { label: 'Notifications', href: '/notifications', icon: '🔔' },
+  { label: 'Tiers', href: '/tiers', icon: '🥇' },
+  { label: 'Users', href: '/users', icon: '👤' },
+  { label: 'Referrals', href: '/referrals', icon: '🔗' },
+  { label: 'Badges', href: '/badges', icon: '🏅' },
+  { label: 'Missions', href: '/missions', icon: '🎯' },
+  { label: 'Point Transactions', href: '/point-transactions', icon: '💳' },
   { label: 'Audit Log', href: '/audit-log', icon: '📋' },
   { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];

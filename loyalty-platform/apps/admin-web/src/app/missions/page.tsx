@@ -4,22 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
-interface VoucherForm {
-  code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
+interface MissionForm {
+  name: string; description: string; pointsReward: string; criteria: string; startDate: string; endDate: string;
 }
 
-const emptyForm: VoucherForm = { code: '', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '', description: '' };
-const TYPES = ['DISCOUNT', 'GIFT', 'FREE_SHIPPING', 'PERCENTAGE'];
+const emptyForm: MissionForm = { name: '', description: '', pointsReward: '', criteria: '{}', startDate: '', endDate: '' };
 
-export default function VouchersPage() {
+export default function MissionsPage() {
   const router = useRouter();
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [missions, setMissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<VoucherForm>(emptyForm);
+  const [form, setForm] = useState<MissionForm>(emptyForm);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -33,10 +31,9 @@ export default function VouchersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
-      if (statusFilter !== 'ALL') params.set('status', statusFilter);
-      const res = await fetch(`/api/vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setVouchers(Array.isArray(result) ? result : result.data || []);
+      setMissions(Array.isArray(result) ? result : result.data || []);
       setTotalPages(result.totalPages || 1);
       setTotal(result.total || 0);
     } catch {}
@@ -46,29 +43,34 @@ export default function VouchersPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page, statusFilter]);
+  }, [search, page]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
-  const openEdit = (v: any) => {
-    setEditing(v);
+  const openEdit = (c: any) => {
+    setEditing(c);
     setForm({
-      code: v.code, type: v.type, value: v.value?.toString() || '', maxUsage: v.maxUsage?.toString() || '',
-      expiresAt: v.expiresAt?.slice(0, 10) || '', description: v.description || '',
+      name: c.name, description: c.description || '',
+      pointsReward: c.pointsReward?.toString() || '',
+      criteria: typeof c.criteria === 'object' ? JSON.stringify(c.criteria, null, 2) : c.criteria || '{}',
+      startDate: c.startDate?.slice(0, 10) || '',
+      endDate: c.endDate?.slice(0, 10) || '',
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this voucher?')) return;
-    await fetch(`/api/vouchers/${id}`, { method: 'DELETE', headers });
+    if (!confirm('Delete this mission?')) return;
+    await fetch(`/api/missions/${id}`, { method: 'DELETE', headers });
     load();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = { ...form, value: Number(form.value), maxUsage: form.maxUsage ? Number(form.maxUsage) : undefined };
-    const url = editing ? `/api/vouchers/${editing.id}` : '/api/vouchers';
-    const method = editing ? 'PATCH' : 'POST';
+    let criteria = form.criteria;
+    try { criteria = JSON.parse(form.criteria); } catch { criteria = form.criteria; }
+    const body = { ...form, pointsReward: form.pointsReward ? Number(form.pointsReward) : 0, criteria };
+    const url = editing ? `/api/missions/${editing.id}` : '/api/missions';
+    const method = editing ? 'PUT' : 'POST';
     await fetch(url, { method, headers, body: JSON.stringify(body) });
     setShowModal(false);
     load();
@@ -81,41 +83,39 @@ export default function VouchersPage() {
     }} onClick={() => setShowModal(false)}>
       <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '520px', maxHeight: '80vh', overflow: 'auto' }}
         onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>{editing ? 'Edit Voucher' : 'New Voucher'}</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>{editing ? 'Edit Mission' : 'New Mission'}</h2>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Code</label>
-            <input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} required
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace' }} />
-          </div>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Type</label>
-            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-              {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div style={{ flex: 1, marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Value</label>
-              <input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ flex: 1, marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Max Usage</label>
-              <input type="number" value={form.maxUsage} onChange={e => setForm({ ...form, maxUsage: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-          </div>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Expires At</label>
-            <input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })}
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
               style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
               style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Points Reward</label>
+            <input type="number" value={form.pointsReward} onChange={e => setForm({ ...form, pointsReward: e.target.value })} required
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Criteria (JSON)</label>
+            <textarea value={form.criteria} onChange={e => setForm({ ...form, criteria: e.target.value })} rows={5}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', resize: 'vertical', fontFamily: 'monospace' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1, marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Start Date</label>
+              <input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            </div>
+            <div style={{ flex: 1, marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>End Date</label>
+              <input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} required
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
             <button type="button" onClick={() => setShowModal(false)}
@@ -138,23 +138,16 @@ export default function VouchersPage() {
       <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Vouchers</h1>
-            <p style={{ color: '#64748b' }}>Manage discount and gift vouchers</p>
+            <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Missions</h1>
+            <p style={{ color: '#64748b' }}>Manage missions and tasks</p>
           </div>
           <button onClick={openCreate} style={{
             padding: '10px 20px', background: '#2563eb', color: 'white',
             border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer',
-          }}>+ New Voucher</button>
+          }}>+ New Mission</button>
         </div>
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-            <option value="ALL">ALL</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="EXPIRED">EXPIRED</option>
-            <option value="REDEEMED">REDEEMED</option>
-          </select>
           <input
             type="text"
             placeholder="Search..."
@@ -171,17 +164,16 @@ export default function VouchersPage() {
           <button onClick={async () => {
             const params = new URLSearchParams({ page: '1', limit: '10000' });
             if (search) params.set('search', search);
-            if (statusFilter !== 'ALL') params.set('status', statusFilter);
-            const res = await fetch(`/api/vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
             const result = await res.json();
             const data = Array.isArray(result) ? result : result.data || [];
-            const cols = ['code', 'type', 'value', 'usedCount', 'maxUsage', 'expiresAt', 'description'];
+            const cols = ['name', 'pointsReward', 'startDate', 'endDate', 'criteria'];
             const header = cols.join(',');
-            const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+            const rows = data.map((item: any) => cols.map((col: string) => { const v = typeof item[col] === 'object' ? JSON.stringify(item[col]) : (item[col]?.toString() || ''); return v.includes(',') ? `"${v}"` : v; }).join(','));
             const csv = [header, ...rows].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'vouchers.csv'; a.click(); URL.revokeObjectURL(url);
+            const a = document.createElement('a'); a.href = url; a.download = 'missions.csv'; a.click(); URL.revokeObjectURL(url);
           }} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
@@ -189,40 +181,29 @@ export default function VouchersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Code</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Type</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Value</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Used</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Expires</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Name</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Points</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Start</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>End</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Criteria</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {vouchers.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No vouchers found</td></tr>
-              ) : vouchers.map((v: any) => (
-                <tr key={v.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace' }}>{v.code}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-                      background: '#f1f5f9', color: '#475569',
-                    }}>{v.type}</span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{v.value.toLocaleString()}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {v.usedCount > 0 ? (
-                      <span style={{ color: '#dc2626', fontWeight: 600 }}>{v.usedCount}/{v.maxUsage || '∞'}</span>
-                    ) : (
-                      <span style={{ color: '#94a3b8' }}>0/{v.maxUsage || '∞'}</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>
-                    {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'No expiry'}
+              {missions.length === 0 ? (
+                <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No missions found</td></tr>
+              ) : missions.map((c: any) => (
+                <tr key={c.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>{c.name}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#16a34a' }}>+{c.pointsReward?.toLocaleString() || 0}</td>
+                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.startDate ? new Date(c.startDate).toLocaleDateString() : '-'}</td>
+                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.endDate ? new Date(c.endDate).toLocaleDateString() : '-'}</td>
+                  <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '12px', fontFamily: 'monospace', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {typeof c.criteria === 'object' ? JSON.stringify(c.criteria) : c.criteria || '{}'}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <button onClick={() => openEdit(v)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-                    <button onClick={() => handleDelete(v.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+                    <button onClick={() => openEdit(c)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
+                    <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
                   </td>
                 </tr>
               ))}

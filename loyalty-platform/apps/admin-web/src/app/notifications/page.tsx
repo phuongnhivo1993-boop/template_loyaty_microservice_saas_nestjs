@@ -220,6 +220,33 @@ export default function NotificationsPage() {
             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           {total > 0 && <span style={{ color: '#64748b', fontSize: '14px' }}>{total} results</span>}
+          <button onClick={async () => {
+            const params = new URLSearchParams({ page: '1', limit: '10000' });
+            if (search) params.set('search', search);
+            if (tab === 'templates') {
+              const r = await fetch(`/api/notifications/templates?${params}`, { headers });
+              const res = await r.json();
+              const data = Array.isArray(res) ? res : res.data || [];
+              const cols = ['name', 'type', 'subject', 'content'];
+              const header = cols.join(',');
+              const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const csv = [header, ...rows].join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'notification-templates.csv'; a.click(); URL.revokeObjectURL(url);
+            } else {
+              const r = await fetch(`/api/notifications/logs?${params}`, { headers });
+              const res = await r.json();
+              const data = Array.isArray(res) ? res : res.data || [];
+              const cols = ['recipient', 'channel', 'subject', 'status', 'sentAt'];
+              const header = cols.join(',');
+              const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const csv = [header, ...rows].join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'notification-logs.csv'; a.click(); URL.revokeObjectURL(url);
+            }
+          }} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         {tab === 'templates' ? (

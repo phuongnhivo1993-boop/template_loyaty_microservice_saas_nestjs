@@ -158,6 +158,20 @@ export default function RewardsPage() {
           <span style={{ color: '#64748b', fontSize: '14px' }}>
             {total > 0 ? `${total} results` : ''}
           </span>
+          <button onClick={async () => {
+            const params = new URLSearchParams({ page: '1', limit: '10000' });
+            if (search) params.set('search', search);
+            const res = await fetch(`/api/rewards?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+            const result = await res.json();
+            const data = Array.isArray(result) ? result : result.data || [];
+            const cols = ['name', 'type', 'pointsRequired', 'quantity', 'description'];
+            const header = cols.join(',');
+            const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+            const csv = [header, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'rewards.csv'; a.click(); URL.revokeObjectURL(url);
+          }} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>

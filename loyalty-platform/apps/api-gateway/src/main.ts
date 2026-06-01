@@ -4,6 +4,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ApiGatewayModule } from './api-gateway.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
   const logger = new Logger('ApiGateway');
@@ -13,7 +16,7 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new AuditLogInterceptor(app.get(PrismaService)));
 
   const config = new DocumentBuilder()
     .setTitle('Loyalty Platform - API Gateway')
