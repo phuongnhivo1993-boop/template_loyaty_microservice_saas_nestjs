@@ -43,6 +43,13 @@ export class AuthService {
     return this.generateToken(user.id, user.email, user.role, user.tenantId);
   }
 
+  async loginMember(email: string, password: string) {
+    const member = await this.prisma.member.findUnique({ where: { email } });
+    if (!member) throw new UnauthorizedException('Invalid credentials');
+    if (member.status !== 'ACTIVE') throw new UnauthorizedException('Account is not active');
+    return this.generateToken(member.id, member.email, 'MEMBER', member.tenantId);
+  }
+
   private generateToken(sub: string, email: string, role: string, tenantId?: string) {
     const payload = { sub, email, role, tenantId };
     return {

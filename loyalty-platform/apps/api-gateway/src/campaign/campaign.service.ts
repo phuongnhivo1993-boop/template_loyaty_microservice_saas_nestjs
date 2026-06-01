@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -35,5 +36,18 @@ export class CampaignService {
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.campaign.delete({ where: { id } });
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async autoExpireCampaigns() {
+    const now = new Date();
+    await this.prisma.campaign.updateMany({
+      where: { endDate: { lt: now }, status: { not: 'ENDED' } },
+      data: { status: 'ENDED' },
+    });
+    await this.prisma.campaign.updateMany({
+      where: { startDate: { lte: now }, endDate: { gt: now }, status: { notIn: ['ACTIVE', 'ENDED'] } },
+      data: { status: 'ACTIVE' },
+    });
   }
 }

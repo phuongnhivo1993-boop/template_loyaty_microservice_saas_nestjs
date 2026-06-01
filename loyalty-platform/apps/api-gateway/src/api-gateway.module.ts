@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -7,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { TenantModule } from './tenant/tenant.module';
 import { UserModule } from './user/user.module';
 import { MemberModule } from './member/member.module';
+import { MemberSelfModule } from './member-self/member-self.module';
 import { TierModule } from './tier/tier.module';
 import { PointModule } from './point/point.module';
 import { CampaignModule } from './campaign/campaign.module';
@@ -17,15 +19,19 @@ import { ReferralModule } from './referral/referral.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { UploadModule } from './upload/upload.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
     MulterModule.register({ dest: './uploads' }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     TenantModule,
     UserModule,
     MemberModule,
+    MemberSelfModule,
     TierModule,
     PointModule,
     CampaignModule,
@@ -36,6 +42,8 @@ import { UploadModule } from './upload/upload.module';
     GamificationModule,
     DashboardModule,
     UploadModule,
+    AnalyticsModule,
+    NotificationModule,
   ],
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],
