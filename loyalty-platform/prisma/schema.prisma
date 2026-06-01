@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  HOST
+  ADMIN
+  STAFF
+  MEMBER
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+  PENDING_KYC
+}
+
+model Host {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenants Tenant[]
+
+  @@map("hosts")
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  domain    String       @unique
+  email     String
+  phone     String?
+  address   String?
+  status    TenantStatus @default(ACTIVE)
+  hostId    String
+  host      Host         @relation(fields: [hostId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  users    User[]
+  members  Member[]
+  tiers    Tier[]
+  campaigns    Campaign[]
+  rewards      Reward[]
+  vouchers     Voucher[]
+  promotions   Promotion[]
+  badges       Badge[]
+  missions     Mission[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  phone     String?
+  role      UserRole @default(MEMBER)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Tier {
+  id          String   @id @default(uuid())
+  name        String
+  minPoints   Int      @default(0)
+  maxPoints   Int      @default(999999)
+  benefits    String?
+  color       String?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members Member[]
+
+  @@map("tiers")
+}
+
+model Member {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  fullName     String
+  phone        String?
+  avatar       String?
+  status       MemberStatus @default(ACTIVE)
+  kycVerified  Boolean      @default(false)
+  totalPoints  Int          @default(0)
+  availablePoints Int       @default(0)
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  tierId       String?
+  tier         Tier?        @relation(fields: [tierId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  pointTransactions PointTransaction[]
+  referralsGiven    Referral[]        @relation("ReferralGiven")
+  referralsReceived Referral[]        @relation("ReferralReceived")
+
+  @@map("members")
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id])
+  type      String   // EARN, BURN, EXPIRE, ADJUST
+  amount    Int
+  balance   Int
+  reason    String?
+  reference String?
+  createdAt DateTime @default(now())
+
+  @@map("point_transactions")
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, ENDED
+  budget      Float?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("campaigns")
+}
+
+model Reward {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  type           String   // voucher, gift, cashback, coupon
+  pointsRequired Int
+  quantity       Int      @default(0)
+  imageUrl       String?
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("rewards")
+}
+
+model Voucher {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  type      String   // discount, cashback, gift
+  value     Float
+  maxUsage  Int?
+  usedCount Int      @default(0)
+  expiresAt DateTime?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vouchers")
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  priority    Int      @default(0)
+  status      String   @default("ACTIVE")
+  conditions  Json?
+  actions     Json?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("promotions")
+}
+
+model Referral {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  referrerId  String
+  referrer    Member   @relation("ReferralGiven", fields: [referrerId], references: [id])
+  refereeId   String?
+  referee     Member?  @relation("ReferralReceived", fields: [refereeId], references: [id])
+  status      String   @default("PENDING") // PENDING, CONVERTED, REWARDED
+  rewardGiven Boolean  @default(false)
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("referrals")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  iconUrl     String?
+  criteria    Json?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("badges")
+}
+
+model Mission {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  pointsReward Int     @default(0)
+  criteria    Json?
+  startDate   DateTime?
+  endDate     DateTime?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("missions")
+}

@@ -1,0 +1,168 @@
+# =============================================================================
+# Loyalty Platform - Docker Infrastructure
+# =============================================================================
+# Usage:
+#   docker compose up -d              # Start all infrastructure
+#   docker compose down               # Stop all infrastructure
+#   docker compose ps                 # Check status
+# =============================================================================
+
+name: loyalty-platform
+
+services:
+  # ===========================================================================
+  # POSTGRESQL - Primary Database (single instance, 12 databases)
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_api_gateway
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./.docker/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_api_gateway"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # REDIS - Caching & Job Queues (Bull)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: loyalty-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # ZOOKEEPER - Kafka dependency
+  # ===========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    container_name: loyalty-zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # ===========================================================================
+  # KAFKA - Event Bus / Message Streaming
+  # ===========================================================================
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: loyalty-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  # ===========================================================================
+  # MINIO - S3-compatible Object Storage (KYC docs, reward images)
+  # ===========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: loyalty-minio
+    restart: unless-stopped
+    ports:
+      - "9003:9000"
+      - "9004:9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_secret_123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # KEYCLOAK - SSO / Identity Management
+  # ===========================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0
+    container_name: loyalty-keycloak
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/loyalty_api_gateway
+      KC_DB_USERNAME: loyalty
+      KC_DB_PASSWORD: loyalty_secret
+      KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+    command: start-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ===========================================================================
+  # CLICKHOUSE - Time-series Analytics Database
+  # ===========================================================================
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: loyalty-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+      - "9002:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./.docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  # ===========================================================================
+  # ELASTICSEARCH - Full-text Search
+  # ===========================================================================
+  elasticsearch:
+    image: elasticsearch:8.14.0
+    container_name: loyalty-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  clickhouse_data:
+  elasticsearch_data:
