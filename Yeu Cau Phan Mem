@@ -509,3 +509,5 @@ Infrastructure
 └── Kubernetes
 
 Đối với hệ sinh thái BĐS của bạn, tôi còn khuyến nghị bổ sung Partner Loyalty (đại lý, môi giới, đơn vị phân phối) và Doctor/Healthcare Loyalty nếu mở rộng sang hệ sinh thái y tế, vì hai nhóm này thường tạo ra 70–80% doanh thu giới thiệu và cần cơ chế điểm thưởng, hoa hồng và xếp hạng riêng biệt ngoài loyalty dành cho khách hàng cuối.
+
+Chu y he thong saas moi service 1 db, Microservice, springboot, nextjs, mobile expo router
