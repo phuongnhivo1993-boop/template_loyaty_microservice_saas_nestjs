@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 import { randomBytes } from 'crypto';
@@ -87,5 +88,25 @@ export class VoucherService {
 
     await this.prisma.voucher.createMany({ data: entries, skipDuplicates: true });
     return { generated: codes.length, codes };
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async autoExpireVouchers() {
+    const now = new Date();
+    const result = await this.prisma.voucher.updateMany({
+      where: { expiresAt: { lt: now }, NOT: { expiresAt: null } },
+      data: { maxUsage: 0 },
+    });
+    return { expired: result.count };
+  }
+
+  async getExpiredStats(tenantId?: string) {
+    const now = new Date();
+    const where = tenantId ? { tenantId, expiresAt: { lt: now } } : { expiresAt: { lt: now } };
+    const total = await this.prisma.voucher.count({ where });
+    const withRedemptions = await this.prisma.voucher.count({
+      where: { ...where, usedCount: { gt: 0 } },
+    });
+    return { totalExpired: total, hadRedemptions: withRedemptions };
   }
 }

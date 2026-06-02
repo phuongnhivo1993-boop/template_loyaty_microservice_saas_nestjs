@@ -88,4 +88,35 @@ export class RewardService {
     await this.findOne(id);
     return this.prisma.reward.delete({ where: { id } });
   }
+
+  async getRedemptionStats(id: string) {
+    const reward = await this.findOne(id);
+    const [transactions, memberVouchers] = await Promise.all([
+      this.prisma.pointTransaction.findMany({
+        where: { reason: { contains: `Redeemed reward: ${reward.name}` } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        include: { member: { select: { id: true, fullName: true, email: true } } },
+      }),
+      this.prisma.voucher.findMany({
+        where: { code: { startsWith: `RWD-${reward.id.slice(0, 6)}` } },
+        include: { memberVouchers: { include: { member: { select: { id: true, fullName: true, email: true } } }, take: 1 } },
+      }),
+    ]);
+
+    const totalRedemptions = await this.prisma.pointTransaction.count({
+      where: { reason: { contains: `Redeemed reward: ${reward.name}` } },
+    });
+
+    return {
+      totalRedemptions,
+      recentRedemptions: transactions.map(t => ({
+        memberId: t.memberId,
+        fullName: t.member?.fullName || 'Unknown',
+        email: t.member?.email || '',
+        pointsUsed: Math.abs(t.amount),
+        createdAt: t.createdAt,
+      })),
+    };
+  }
 }

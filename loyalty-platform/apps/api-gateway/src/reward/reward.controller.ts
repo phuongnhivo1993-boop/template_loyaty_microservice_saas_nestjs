@@ -51,4 +51,11 @@ export class RewardController {
   remove(@Param('id') id: string) {
     return this.rewardService.remove(id);
   }
+
+  @Get(':id/redemptions')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Get reward redemption history' })
+  getRedemptionStats(@Param('id') id: string) {
+    return this.rewardService.getRedemptionStats(id);
+  }
 }

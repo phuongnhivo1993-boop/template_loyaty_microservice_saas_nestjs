@@ -10,6 +10,7 @@ export default function RewardDetailPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const [reward, setReward] = useState<any>(null);
+  const [redemptions, setRedemptions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -17,10 +18,14 @@ export default function RewardDetailPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/rewards/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const data = result.data ?? result;
-      setReward(data);
+      const [rewardRes, redRes] = await Promise.all([
+        fetch(`/api/rewards/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/rewards/${id}/redemptions`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const rewardResult = await rewardRes.json();
+      const redResult = await redRes.json();
+      setReward(rewardResult.data ?? rewardResult);
+      setRedemptions(redResult.data ?? redResult);
     } catch { showToast('Failed to load reward', 'error'); }
     setLoading(false);
   };
@@ -64,6 +69,50 @@ export default function RewardDetailPage() {
             </div>
           ))}
         </div>
+
+        {redemptions && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Total Redemptions</p>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: '#16a34a' }}>{redemptions.totalRedemptions?.toLocaleString() || 0}</p>
+            </div>
+            <div style={{ background: '#fffbeb', borderRadius: '12px', padding: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Remaining Stock</p>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: '#d97706' }}>{(reward.quantity || 0).toLocaleString()}</p>
+            </div>
+            <div style={{ background: '#f5f3ff', borderRadius: '12px', padding: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Total Points Spent</p>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: '#7c3aed' }}>{((redemptions.totalRedemptions || 0) * (reward.pointsRequired || 0)).toLocaleString()}</p>
+            </div>
+          </div>
+        )}
+
+        {redemptions?.recentRedemptions?.length > 0 && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Recent Redemptions</h2>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Member</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Points Used</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {redemptions.recentRedemptions.map((r: any, i: number) => (
+                  <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 14px' }}>
+                      <div style={{ fontWeight: 600, fontSize: '14px' }}>{r.fullName}</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>{r.email}</div>
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: '#dc2626' }}>-{r.pointsUsed?.toLocaleString()}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontSize: '13px', color: '#64748b' }}>{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Details</h2>

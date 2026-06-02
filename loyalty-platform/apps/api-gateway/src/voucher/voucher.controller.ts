@@ -64,4 +64,11 @@ export class VoucherController {
   batchGenerate(@Body() body: BatchGenerateVoucherDto) {
     return this.voucherService.batchGenerate(body);
   }
+
+  @Get('stats/expired')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Get expired voucher stats' })
+  getExpiredStats(@Query('tenantId') tenantId?: string) {
+    return this.voucherService.getExpiredStats(tenantId);
+  }
 }
