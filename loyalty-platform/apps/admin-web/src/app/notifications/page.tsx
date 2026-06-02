@@ -173,6 +173,7 @@ export default function NotificationsPage() {
       }}>{l.status}</span>
     )},
     { key: 'sentAt', label: 'Sent At', render: (l: any) => <span style={{ color: '#64748b' }}>{l.sentAt ? new Date(l.sentAt).toLocaleString() : '-'}</span> },
+    { key: 'actions', label: '', render: (l: any) => <button onClick={() => router.push(`/notifications/logs/${l.id}`)} style={{ padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button> },
   ];
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;

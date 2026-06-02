@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberSelfService } from './member-self.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -36,8 +36,15 @@ export class MemberSelfController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change own password' })
-  changePassword(@Req() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
-    return this.memberSelfService.changePassword(req.user.id, body.oldPassword, body.newPassword);
+  changePassword(
+    @Req() req: any,
+    @Body() body: { oldPassword: string; newPassword: string },
+  ) {
+    return this.memberSelfService.changePassword(
+      req.user.id,
+      body.oldPassword,
+      body.newPassword,
+    );
   }
 
   @Get('badges')
@@ -62,5 +69,29 @@ export class MemberSelfController {
   @ApiOperation({ summary: 'Get own vouchers' })
   getVouchers(@Req() req: any) {
     return this.memberSelfService.getVouchers(req.user.id);
+  }
+
+  @Get('missions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own missions' })
+  getMissions(@Req() req: any) {
+    return this.memberSelfService.getMissions(req.user.id);
+  }
+
+  @Get('notifications')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own notifications' })
+  getNotifications(@Req() req: any) {
+    return this.memberSelfService.getNotifications(req.user.id);
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update own profile' })
+  updateProfile(@Req() req: any, @Body() body: { fullName?: string; phone?: string }) {
+    return this.memberSelfService.updateProfile(req.user.id, body);
   }
 }

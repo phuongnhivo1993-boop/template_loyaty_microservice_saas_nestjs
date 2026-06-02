@@ -85,4 +85,12 @@ export class NotificationService {
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
+
+  async findLogOne(id: string) {
+    const log = await this.prisma.notificationLog.findUnique({
+      where: { id },
+    });
+    if (!log) throw new NotFoundException('Notification log not found');
+    return log;
+  }
 }

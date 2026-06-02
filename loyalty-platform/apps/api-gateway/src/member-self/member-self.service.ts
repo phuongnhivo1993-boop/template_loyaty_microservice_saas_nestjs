@@ -124,4 +124,53 @@ export class MemberSelfService {
     });
     return vouchers;
   }
+
+  async getMissions(memberId: string) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      select: { tenantId: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    const missions = await this.prisma.mission.findMany({
+      where: { tenantId: member.tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return missions;
+  }
+
+  async getNotifications(memberId: string) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      select: { tenantId: true, email: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    const notifications = await this.prisma.notificationLog.findMany({
+      where: {
+        tenantId: member.tenantId,
+        OR: [
+          { recipient: member.email },
+          { recipient: memberId },
+        ],
+      },
+      orderBy: { sentAt: 'desc' },
+      take: 50,
+    });
+    return notifications;
+  }
+
+  async updateProfile(memberId: string, data: { fullName?: string; phone?: string }) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    const updateData: any = {};
+    if (data.fullName !== undefined) updateData.fullName = data.fullName;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: updateData,
+    });
+    const { password: _, ...result } = updated;
+    return result;
+  }
 }

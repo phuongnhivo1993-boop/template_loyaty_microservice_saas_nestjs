@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { useNavigation } from '@react-navigation/native';
 import { auth, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
+import { auth } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
@@ -43,6 +44,9 @@ export default function LoginScreen() {
         <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={{ alignItems: 'center', marginTop: 12 }}>
+          <Text style={{ color: '#94a3b8', fontSize: 14 }}>Forgot Password?</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ alignItems: 'center', marginTop: 16 }}>
           <Text style={{ color: '#94a3b8', fontSize: 14 }}>Don't have an account? <Text style={{ color: '#3b82f6', fontWeight: '600' }}>Register</Text></Text>

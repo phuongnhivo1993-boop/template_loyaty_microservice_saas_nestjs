@@ -49,3 +49,5 @@ dist/
 # Logs
 logs/
 *.log
+!apps/admin-web/src/app/notifications/logs/
+!loyalty-platform/apps/admin-web/src/app/notifications/logs/

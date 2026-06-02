@@ -72,6 +72,7 @@ export default function AuditLogPage() {
     { key: 'userEmail', label: 'User', render: (l: any) => <span style={{ color: '#64748b' }}>{l.userEmail || '-'}</span> },
     { key: 'entityId', label: 'Entity ID', render: (l: any) => <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#64748b' }}>{l.entityId?.slice(0, 12)}...</span> },
     { key: 'ipAddress', label: 'IP', render: (l: any) => <span style={{ color: '#94a3b8', fontSize: '13px' }}>{l.ipAddress || '-'}</span> },
+    { key: 'actions', label: '', render: (l: any) => <button onClick={() => router.push(`/audit-log/${l.id}`)} style={{ padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button> },
   ];
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;

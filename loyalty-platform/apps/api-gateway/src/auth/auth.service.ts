@@ -159,6 +159,36 @@ export class AuthService {
     return { message: 'If the email exists, a reset link has been sent', resetToken };
   }
 
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.type !== 'reset')
+        throw new BadRequestException('Invalid reset token');
+      const email = payload.email;
+      const hashed = await this.hashPassword(newPassword);
+      const member = await this.prisma.member.findUnique({ where: { email } });
+      if (member && member.password) {
+        await this.prisma.member.update({
+          where: { email },
+          data: { password: hashed },
+        });
+        return { message: 'Password reset successfully' };
+      }
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      if (user && user.password) {
+        await this.prisma.user.update({
+          where: { email },
+          data: { password: hashed },
+        });
+        return { message: 'Password reset successfully' };
+      }
+      throw new NotFoundException('User not found');
+    } catch (err) {
+      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+  }
+
   async changePassword(user: any, oldPassword: string, newPassword: string) {
     const { sub, role } = user;
 

@@ -52,4 +52,10 @@ export class NotificationController {
   listLogs(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string, @Query('sort') sort?: string) {
     return this.notificationService.listLogs(tenantId, page, limit, search, sort);
   }
+
+  @Get('logs/:id')
+  @ApiOperation({ summary: 'Get notification log by ID' })
+  findLogOne(@Param('id') id: string) {
+    return this.notificationService.findLogOne(id);
+  }
 }

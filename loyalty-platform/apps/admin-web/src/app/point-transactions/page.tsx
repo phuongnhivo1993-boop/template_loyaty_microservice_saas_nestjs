@@ -70,6 +70,7 @@ export default function PointTransactionsPage() {
     { key: 'reason', label: 'Reason', render: (t: any) => <span style={{ color: '#64748b' }}>{t.reason || '-'}</span> },
     { key: 'reference', label: 'Reference', render: (t: any) => <span style={{ color: '#64748b', fontSize: '12px' }}>{t.reference || '-'}</span> },
     { key: 'createdAt', label: 'Created', render: (t: any) => <span style={{ color: '#64748b', fontSize: '13px' }}>{t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}</span> },
+    { key: 'actions', label: '', render: (t: any) => <button onClick={() => router.push(`/point-transactions/${t.id}`)} style={{ padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button> },
   ];
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;

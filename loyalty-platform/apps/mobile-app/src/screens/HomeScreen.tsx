@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
+import { auth } from '../services/api';
+import * as SecureStore from 'expo-secure-store';
 import type { Member, Wallet } from '../services/types';
 import { LoadingState, ErrorState } from '../components';
 
@@ -13,6 +15,11 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = async () => {
+    await auth.logout();
+    logout();
+  };
 
   const load = () => {
     setLoading(true);
@@ -37,7 +44,7 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.notifIcon}>🔔</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={logout}><Text style={styles.logout}>Logout</Text></TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}><Text style={styles.logout}>Logout</Text></TouchableOpacity>
         </View>
       </View>
 
