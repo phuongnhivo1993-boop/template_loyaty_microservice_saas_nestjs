@@ -169,7 +169,7 @@ export default function UsersPage() {
             </div>
           </form>
         </Modal>
-        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="members" entityLabel="members" onImportComplete={load} />
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="users" entityLabel="users" onImportComplete={load} />
       </main>
     </div>
   );

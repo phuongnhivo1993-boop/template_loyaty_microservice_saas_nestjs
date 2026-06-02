@@ -74,6 +74,67 @@ const entityConfigs: Record<string, ImportConfig> = {
       tenantId: row.tenantId || undefined,
     }),
   },
+  users: {
+    requiredFields: ['email', 'fullName'],
+    optionalFields: ['phone', 'role'],
+    transform: (row) => ({
+      email: row.email,
+      fullName: row.fullName,
+      phone: row.phone || undefined,
+      role: (row.role || 'MEMBER').toUpperCase(),
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  tiers: {
+    requiredFields: ['name', 'minPoints', 'maxPoints'],
+    optionalFields: ['benefits', 'color', 'status'],
+    transform: (row) => ({
+      name: row.name,
+      minPoints: parseInt(row.minPoints, 10),
+      maxPoints: parseInt(row.maxPoints, 10),
+      benefits: row.benefits || undefined,
+      color: row.color || undefined,
+      status: (row.status || 'ACTIVE').toUpperCase(),
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  promotions: {
+    requiredFields: ['name'],
+    optionalFields: ['description', 'priority', 'conditions', 'actions', 'status'],
+    transform: (row) => ({
+      name: row.name,
+      description: row.description || undefined,
+      priority: row.priority ? parseInt(row.priority, 10) : 0,
+      conditions: row.conditions ? JSON.parse(row.conditions) : undefined,
+      actions: row.actions ? JSON.parse(row.actions) : undefined,
+      status: (row.status || 'ACTIVE').toUpperCase(),
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  badges: {
+    requiredFields: ['name'],
+    optionalFields: ['description', 'iconUrl', 'criteria'],
+    transform: (row) => ({
+      name: row.name,
+      description: row.description || undefined,
+      iconUrl: row.iconUrl || undefined,
+      criteria: row.criteria ? JSON.parse(row.criteria) : undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  missions: {
+    requiredFields: ['name', 'pointsReward'],
+    optionalFields: ['description', 'criteria', 'startDate', 'endDate'],
+    transform: (row) => ({
+      name: row.name,
+      description: row.description || undefined,
+      pointsReward: parseInt(row.pointsReward, 10),
+      criteria: row.criteria ? JSON.parse(row.criteria) : undefined,
+      startDate: row.startDate ? new Date(row.startDate) : undefined,
+      endDate: row.endDate ? new Date(row.endDate) : undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
 };
 
 @Injectable()
@@ -108,7 +169,17 @@ export class ImportService {
 
     const errors: { row: number; message: string }[] = [];
     const created: Record<string, any>[] = [];
-    const prismaModel = (this.prisma as any)[entity === 'members' ? 'member' : entity === 'tenants' ? 'tenant' : entity === 'rewards' ? 'reward' : entity === 'vouchers' ? 'voucher' : entity];
+    const prismaModel = (this.prisma as any)[
+  entity === 'members' ? 'member' : 
+  entity === 'tenants' ? 'tenant' : 
+  entity === 'rewards' ? 'reward' : 
+  entity === 'vouchers' ? 'voucher' : 
+  entity === 'tiers' ? 'tier' :
+  entity === 'promotions' ? 'promotion' :
+  entity === 'badges' ? 'badge' :
+  entity === 'missions' ? 'mission' :
+  entity === 'users' ? 'user' : entity
+];
 
     for (let i = 0; i < parsed.rows.length; i++) {
       try {

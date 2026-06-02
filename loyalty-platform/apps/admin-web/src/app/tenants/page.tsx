@@ -29,6 +29,7 @@ export default function TenantsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -40,6 +41,7 @@ export default function TenantsPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (filterStatus) params.set('status', filterStatus);
       const res = await fetch(`/api/tenants?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setTenants(Array.isArray(result) ? result : result.data || []);
@@ -52,7 +54,7 @@ export default function TenantsPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+  }, [search, page, filterStatus]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (t: any) => { setEditing(t); setForm({ name: t.name, domain: t.domain, email: t.email, status: t.status, description: t.description || '' }); setShowModal(true); };
@@ -123,6 +125,13 @@ export default function TenantsPage() {
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="SUSPENDED">Suspended</option>
+          </select>
           <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>

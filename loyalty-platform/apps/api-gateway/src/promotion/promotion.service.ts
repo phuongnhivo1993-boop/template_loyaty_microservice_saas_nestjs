@@ -10,7 +10,7 @@ export class PromotionService {
     return this.prisma.promotion.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string, status?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -18,6 +18,9 @@ export class PromotionService {
         { name: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
+    }
+    if (status) {
+      where.status = status;
     }
     const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;

@@ -25,8 +25,9 @@ export class ReferralController {
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('sort') sort?: string,
+    @Query('status') status?: string,
   ) {
-    return this.referralService.findAll(tenantId, page, limit, search, sort);
+    return this.referralService.findAll(tenantId, page, limit, search, sort, status);
   }
 
   @Get('stats')

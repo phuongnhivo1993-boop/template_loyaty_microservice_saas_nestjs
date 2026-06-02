@@ -18,6 +18,8 @@ export default function AuditLogPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [filterEntity, setFilterEntity] = useState('');
+  const [filterAction, setFilterAction] = useState('');
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}` };
@@ -27,6 +29,8 @@ export default function AuditLogPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
+    if (filterEntity) params.set('entityType', filterEntity);
+    if (filterAction) params.set('action', filterAction);
     const r = await fetch(`/api/audit-logs?${params}`, { headers });
     const res = await r.json();
     setLogs(Array.isArray(res) ? res : res.data || []);
@@ -38,7 +42,7 @@ export default function AuditLogPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+  }, [search, page, filterEntity, filterAction]);
 
   const exportCsv = async () => {
     const params = new URLSearchParams({ page: '1', limit: '10000' });
@@ -79,6 +83,28 @@ export default function AuditLogPage() {
         <PageHeader title="Audit Log" subtitle="Track all changes made in the system" />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select value={filterEntity} onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
+            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="">All Entities</option>
+            <option value="tenants">Tenants</option>
+            <option value="users">Users</option>
+            <option value="members">Members</option>
+            <option value="tiers">Tiers</option>
+            <option value="campaigns">Campaigns</option>
+            <option value="rewards">Rewards</option>
+            <option value="vouchers">Vouchers</option>
+            <option value="promotions">Promotions</option>
+            <option value="referrals">Referrals</option>
+            <option value="badges">Badges</option>
+            <option value="missions">Missions</option>
+          </select>
+          <select value={filterAction} onChange={e => { setFilterAction(e.target.value); setPage(1); }}
+            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="">All Actions</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+          </select>
           <input type="text" placeholder="Search by entity type or user email..."
             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '420px' }} />

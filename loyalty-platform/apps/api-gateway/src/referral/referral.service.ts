@@ -13,13 +13,16 @@ export class ReferralService {
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string, status?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
       where.OR = [
         { code: { contains: search, mode: 'insensitive' } },
       ];
+    }
+    if (status) {
+      where.status = status;
     }
     const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;

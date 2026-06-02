@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
+import ImportModal from '@/components/ImportModal';
 
 interface PromotionForm {
   name: string; description: string; priority: string; conditions: string; actions: string; status: string;
@@ -28,6 +29,8 @@ export default function PromotionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [filterStatus, setFilterStatus] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -37,6 +40,7 @@ export default function PromotionsPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (filterStatus) params.set('status', filterStatus);
       const res = await fetch(`/api/promotions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setPromotions(Array.isArray(result) ? result : result.data || []);
@@ -49,7 +53,7 @@ export default function PromotionsPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+  }, [search, page, filterStatus]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (p: any) => {
@@ -112,6 +116,7 @@ export default function PromotionsPage() {
     { key: 'status', label: 'Status', render: (p: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: p.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2', color: p.status === 'ACTIVE' ? '#16a34a' : '#dc2626' }}>{p.status || 'DRAFT'}</span> },
     { key: 'actionsBtn', label: 'Actions', render: (p: any) => (
       <>
+        <button onClick={() => router.push(`/promotions/${p.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
         <button onClick={() => openEdit(p)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
         <button onClick={() => handleDelete(p.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
       </>
@@ -134,6 +139,13 @@ export default function PromotionsPage() {
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
@@ -188,6 +200,7 @@ export default function PromotionsPage() {
             </div>
           </form>
         </Modal>
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="promotions" entityLabel="promotions" onImportComplete={load} />
       </main>
     </div>
   );

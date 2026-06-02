@@ -24,8 +24,9 @@ export class PromotionController {
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('sort') sort?: string,
+    @Query('status') status?: string,
   ) {
-    return this.promotionService.findAll(tenantId, page, limit, search, sort);
+    return this.promotionService.findAll(tenantId, page, limit, search, sort, status);
   }
 
   @Get(':id')
