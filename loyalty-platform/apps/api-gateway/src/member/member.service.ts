@@ -10,23 +10,25 @@ export class MemberService {
     return this.prisma.tenant.findFirst({ where: { domain } });
   }
 
-  async create(data: { email: string; fullName: string; phone?: string; birthday?: string; tenantId: string; tierId?: string }) {
+  async create(data: { email: string; fullName: string; phone?: string; birthday?: string; tags?: string[]; tenantId: string; tierId?: string }) {
     const existing = await this.prisma.member.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('Email already exists');
-    const { birthday, ...rest } = data;
+    const { birthday, tags, ...rest } = data;
     return this.prisma.member.create({
       data: {
         ...rest,
         ...(birthday ? { birthday: new Date(birthday) } : {}),
+        ...(tags ? { tags: { set: tags } } : {}),
       },
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string, sort?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string, sort?: string, tags?: string[]) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (tierId) where.tierId = tierId;
     if (status) where.status = status;
+    if (tags && tags.length > 0) where.tags = { hasSome: tags };
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
@@ -58,14 +60,15 @@ export class MemberService {
     return member;
   }
 
-  async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tierId?: string; status?: string }) {
+  async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tags?: string[]; tierId?: string; status?: string }) {
     await this.findOne(id);
-    const { birthday, ...rest } = data;
+    const { birthday, tags, ...rest } = data;
     return this.prisma.member.update({
       where: { id },
       data: {
         ...rest,
         ...(birthday !== undefined ? { birthday: birthday ? new Date(birthday) : null } : {}),
+        ...(tags !== undefined ? { tags: { set: tags } } : {}),
       } as any,
     });
   }
@@ -111,5 +114,30 @@ export class MemberService {
       }),
     ]);
     return { transactions, vouchers, referrals };
+  }
+
+  async getTierSuggestion(id: string) {
+    const member = await this.prisma.member.findUnique({
+      where: { id },
+      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const tiers = member.tenant.tiers;
+    const currentTierIndex = tiers.findIndex(t => t.id === member.tierId);
+    const nextTier = tiers[currentTierIndex + 1];
+
+    if (!nextTier) return { suggestion: null, message: 'Already at highest tier' };
+
+    const pointsNeeded = nextTier.minPoints - member.totalPoints;
+    return {
+      currentTier: member.tier?.name || 'N/A',
+      nextTier: nextTier.name,
+      pointsNeeded: Math.max(0, pointsNeeded),
+      pointsMultiplier: nextTier.pointsMultiplier,
+      message: pointsNeeded <= 0
+        ? `${member.fullName} đủ điều kiện lên hạng ${nextTier.name}!`
+        : `${member.fullName} cần ${pointsNeeded.toLocaleString()} điểm nữa để lên ${nextTier.name} (x${nextTier.pointsMultiplier} điểm)`,
+    };
   }
 }

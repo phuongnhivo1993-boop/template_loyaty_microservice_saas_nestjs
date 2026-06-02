@@ -31,6 +31,7 @@ import { ImportModule } from './import/import.module';
 import { BulkModule } from './bulk/bulk.module';
 import { SettingsModule } from './settings/settings.module';
 import { CheckinModule } from './checkin/checkin.module';
+import { EarningRuleModule } from './earning-rule/earning-rule.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { CheckinModule } from './checkin/checkin.module';
     BulkModule,
     SettingsModule,
     CheckinModule,
+    EarningRuleModule,
   ],
   controllers: [ApiGatewayController],
   providers: [

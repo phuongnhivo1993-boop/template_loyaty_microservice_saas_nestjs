@@ -35,7 +35,7 @@ export class MemberController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'List members (with pagination & filtering)' })
   findAll(@Query() query: MemberQueryDto) {
-    return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort);
+    return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
   }
 
   @Get(':id')
@@ -80,6 +80,23 @@ export class MemberController {
   @ApiOperation({ summary: 'Lock/Unlock member' })
   toggleStatus(@Param('id') id: string) {
     return this.memberService.toggleStatus(id);
+  }
+
+  @Post(':id/tags')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Update member tags' })
+  updateTags(@Param('id') id: string, @Body() body: { tags: string[] }) {
+    return this.memberService.update(id, { tags: body.tags });
+  }
+
+  @Get(':id/tier-suggestion')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get tier upgrade suggestion' })
+  tierSuggestion(@Param('id') id: string) {
+    return this.memberService.getTierSuggestion(id);
   }
 
   @Get(':id/activity')

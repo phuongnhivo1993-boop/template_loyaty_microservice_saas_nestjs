@@ -15,6 +15,7 @@ const menuItems = [
   { label: 'Notifications', href: '/notifications', icon: '🔔' },
   { label: '  Broadcast', href: '/notifications/broadcast', icon: '📣' },
   { label: 'Tiers', href: '/tiers', icon: '🥇' },
+  { label: 'Earning Rules', href: '/earning-rules', icon: '💰' },
   { label: 'Users', href: '/users', icon: '👤' },
   { label: 'Referrals', href: '/referrals', icon: '🔗' },
   { label: 'Badges', href: '/badges', icon: '🏅' },

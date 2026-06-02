@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VoucherService } from './voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { CreateVoucherDto, UpdateVoucherDto, ValidateVoucherDto, VoucherQueryDto } from './dto/create-voucher.dto';
+import { CreateVoucherDto, UpdateVoucherDto, ValidateVoucherDto, VoucherQueryDto, BatchGenerateVoucherDto } from './dto/create-voucher.dto';
 
 @ApiTags('Vouchers')
 @ApiBearerAuth()
@@ -56,5 +56,12 @@ export class VoucherController {
   @ApiOperation({ summary: 'Delete voucher' })
   remove(@Param('id') id: string) {
     return this.voucherService.remove(id);
+  }
+
+  @Post('batch-generate')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Batch generate vouchers' })
+  batchGenerate(@Body() body: BatchGenerateVoucherDto) {
+    return this.voucherService.batchGenerate(body);
   }
 }

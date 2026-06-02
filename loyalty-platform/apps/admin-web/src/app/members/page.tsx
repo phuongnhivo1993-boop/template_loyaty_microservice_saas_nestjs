@@ -37,6 +37,7 @@ export default function MembersPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [tagFilter, setTagFilter] = useState('');
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -47,6 +48,7 @@ export default function MembersPage() {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
       if (tierFilter) params.set('tierId', tierFilter);
+      if (tagFilter) params.set('tags', tagFilter);
       const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       const payload = result.data ?? result;
@@ -61,7 +63,7 @@ export default function MembersPage() {
     if (!token) { router.push('/login'); return; }
     load();
     fetch('/api/tiers', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(res => { const p = res.data ?? res; setTierOptions(Array.isArray(p) ? p : []); }).catch(() => {});
-  }, [search, page, tierFilter]);
+  }, [search, page, tierFilter, tagFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', birthday: m.birthday ? m.birthday.slice(0, 10) : '', status: m.status }); setShowModal(true); };
@@ -150,6 +152,13 @@ export default function MembersPage() {
           <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }} className="filter-select">
             <option value="">ALL TIERS</option>
             {tierOptions.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <select value={tagFilter} onChange={(e) => { setTagFilter(e.target.value); setPage(1); }} className="filter-select">
+            <option value="">ALL TAGS</option>
+            <option value="VIP">VIP</option>
+            <option value="NEW">NEW</option>
+            <option value="HIGH_SPENDER">HIGH_SPENDER</option>
+            <option value="AT_RISK">AT_RISK</option>
           </select>
           <input type="text" placeholder="Search name, email, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{total > 0 ? `${total} results` : ''}</span>

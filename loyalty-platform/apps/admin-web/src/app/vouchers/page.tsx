@@ -34,6 +34,9 @@ export default function VouchersPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
+  const [showBatch, setShowBatch] = useState(false);
+  const [batchForm, setBatchForm] = useState({ prefix: '', count: '10', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '' });
+  const [batchResult, setBatchResult] = useState<string[] | null>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -77,6 +80,21 @@ export default function VouchersPage() {
       showToast('Voucher deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
+  };
+
+  const handleBatchGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/vouchers/batch-generate', {
+        method: 'POST', headers,
+        body: JSON.stringify({ ...batchForm, count: Number(batchForm.count), value: Number(batchForm.value), maxUsage: batchForm.maxUsage ? Number(batchForm.maxUsage) : undefined, tenantId: localStorage.getItem('tenantId') }),
+      });
+      const result = await res.json();
+      const data = result.data ?? result;
+      setBatchResult(data.codes || []);
+      showToast(`Generated ${data.generated || 0} vouchers`, 'success');
+      load();
+    } catch { showToast('Batch generation failed', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +161,7 @@ export default function VouchersPage() {
           <input type="text" placeholder="Search vouchers..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={() => { setBatchResult(null); setShowBatch(true); }} className="btn-secondary">Batch Generate</button>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
@@ -163,6 +182,32 @@ export default function VouchersPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="vouchers" entityLabel="vouchers" onImportComplete={load} />
+
+        <Modal open={showBatch} title="Batch Generate Vouchers" onClose={() => { setShowBatch(false); setBatchResult(null); }}>
+          {batchResult ? (
+            <div>
+              <p style={{ marginBottom: '12px', color: '#16a34a', fontWeight: 600 }}>✅ Generated {batchResult.length} vouchers</p>
+              <div style={{ maxHeight: '300px', overflow: 'auto', background: '#f8fafc', borderRadius: '8px', padding: '12px', fontFamily: 'monospace', fontSize: '13px' }}>
+                {batchResult.map((code, i) => <div key={i}>{code}</div>)}
+              </div>
+              <button onClick={() => { setShowBatch(false); setBatchResult(null); }} className="btn-primary" style={{ marginTop: '16px' }}>Done</button>
+            </div>
+          ) : (
+            <form onSubmit={handleBatchGenerate}>
+              <div className="grid-2">
+                <FormInput label="Prefix" value={batchForm.prefix} onChange={v => setBatchForm({ ...batchForm, prefix: v })} required placeholder="e.g. TET2024" />
+                <FormInput label="Count" type="number" value={batchForm.count} onChange={v => setBatchForm({ ...batchForm, count: v })} required min={1} max={500} />
+              </div>
+              <FormSelect label="Type" value={batchForm.type} onChange={v => setBatchForm({ ...batchForm, type: v })} options={TYPES.map(t => ({ value: t, label: t }))} />
+              <div className="grid-2">
+                <FormInput label="Value" type="number" value={batchForm.value} onChange={v => setBatchForm({ ...batchForm, value: v })} required />
+                <FormInput label="Max Usage" type="number" value={batchForm.maxUsage} onChange={v => setBatchForm({ ...batchForm, maxUsage: v })} />
+              </div>
+              <FormInput label="Expires At" type="date" value={batchForm.expiresAt} onChange={v => setBatchForm({ ...batchForm, expiresAt: v })} />
+              <FormActions onCancel={() => { setShowBatch(false); setBatchResult(null); }} loading={false} submitLabel={`Generate ${batchForm.count || 10} Vouchers`} />
+            </form>
+          )}
+        </Modal>
       </main>
     </div>
   );

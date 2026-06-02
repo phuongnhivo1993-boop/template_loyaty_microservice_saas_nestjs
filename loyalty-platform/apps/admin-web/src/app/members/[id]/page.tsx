@@ -14,6 +14,7 @@ export default function MemberDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [activity, setActivity] = useState<any>(null);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [tierSuggestion, setTierSuggestion] = useState<any>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -26,6 +27,14 @@ export default function MemberDetailPage() {
       setMember(result.data ?? result);
     } catch { showToast('Failed to load member', 'error'); }
     setLoading(false);
+  };
+
+  const loadTierSuggestion = async () => {
+    try {
+      const res = await fetch(`/api/members/${id}/tier-suggestion`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await res.json();
+      setTierSuggestion(result.data ?? result);
+    } catch {}
   };
 
   const loadActivity = async () => {
@@ -41,6 +50,7 @@ export default function MemberDetailPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
+    loadTierSuggestion();
   }, [id]);
 
   useEffect(() => {

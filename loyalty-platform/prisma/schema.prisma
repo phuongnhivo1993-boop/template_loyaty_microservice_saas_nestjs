@@ -110,6 +110,7 @@ model Member {
   phone        String?
   avatar       String?
   birthday     DateTime?
+  tags         String[]
   status       MemberStatus @default(ACTIVE)
   kycVerified  Boolean      @default(false)
   totalPoints  Int          @default(0)
@@ -345,6 +346,26 @@ model DailyCheckin {
   @@unique([memberId, date])
   @@index([memberId])
   @@map("daily_checkins")
+}
+
+model PointEarningRule {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  pointsPerUnit  Float    @default(1.0)
+  minAmount      Float?
+  maxAmount      Float?
+  category       String?
+  status         String   @default("ACTIVE")
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([status])
+  @@map("point_earning_rules")
 }
 
 model AuditLog {

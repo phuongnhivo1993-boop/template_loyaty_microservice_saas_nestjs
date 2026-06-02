@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class VoucherService {
@@ -64,5 +65,27 @@ export class VoucherService {
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.voucher.delete({ where: { id } });
+  }
+
+  async batchGenerate(data: { prefix: string; count: number; type: string; value: number; maxUsage?: number; expiresAt?: string; tenantId: string }) {
+    const codes: string[] = [];
+    const entries: any[] = [];
+
+    for (let i = 0; i < data.count; i++) {
+      const suffix = randomBytes(3).toString('hex').toUpperCase();
+      const code = `${data.prefix}-${suffix}`;
+      codes.push(code);
+      entries.push({
+        code,
+        type: data.type,
+        value: data.value,
+        maxUsage: data.maxUsage,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+        tenantId: data.tenantId,
+      });
+    }
+
+    await this.prisma.voucher.createMany({ data: entries, skipDuplicates: true });
+    return { generated: codes.length, codes };
   }
 }
