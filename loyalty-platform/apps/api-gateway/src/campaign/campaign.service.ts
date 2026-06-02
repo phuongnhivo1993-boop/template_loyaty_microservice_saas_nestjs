@@ -49,6 +49,48 @@ export class CampaignService {
     return this.prisma.campaign.delete({ where: { id } });
   }
 
+  async getPerformance(id: string) {
+    const campaign = await this.findOne(id);
+    const [earnedInRange, membersEnrolled, vouchersRedeemed] = await Promise.all([
+      this.prisma.pointTransaction.count({
+        where: {
+          type: 'EARN',
+          createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+          member: { tenantId: campaign.tenantId },
+        },
+      }),
+      this.prisma.member.count({
+        where: {
+          tenantId: campaign.tenantId,
+          createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+        },
+      }),
+      this.prisma.memberVoucher.count({
+        where: {
+          createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+          voucher: { tenantId: campaign.tenantId },
+        },
+      }),
+    ]);
+
+    const pointsDistributed = await this.prisma.pointTransaction.aggregate({
+      where: {
+        type: 'EARN',
+        createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+        member: { tenantId: campaign.tenantId },
+      },
+      _sum: { amount: true },
+    });
+
+    return {
+      earnedTransactions: earnedInRange,
+      membersEnrolled,
+      vouchersRedeemed,
+      pointsDistributed: pointsDistributed._sum.amount || 0,
+      daysRunning: Math.ceil((Math.min(campaign.endDate.getTime(), Date.now()) - campaign.startDate.getTime()) / (1000 * 60 * 60 * 24)),
+    };
+  }
+
   @Cron(CronExpression.EVERY_HOUR)
   async autoExpireCampaigns() {
     const now = new Date();

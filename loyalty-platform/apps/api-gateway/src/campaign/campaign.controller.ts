@@ -44,4 +44,11 @@ export class CampaignController {
   remove(@Param('id') id: string) {
     return this.campaignService.remove(id);
   }
+
+  @Get(':id/performance')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Get campaign performance metrics' })
+  getPerformance(@Param('id') id: string) {
+    return this.campaignService.getPerformance(id);
+  }
 }
