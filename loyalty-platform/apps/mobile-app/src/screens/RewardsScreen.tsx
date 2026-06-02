@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { rewards, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 
 export default function RewardsScreen() {
   const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const profile = useAuthStore((s) => s.profile);
 
   useEffect(() => {
-    rewards.list().then((r) => setItems(Array.isArray(r.data) ? r.data : r.data?.data || [])).catch(() => {});
+    rewards.list()
+      .then((r) => setItems(Array.isArray(r.data) ? r.data : r.data?.data || []))
+      .catch(() => setError('Failed to load rewards'))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleRedeem = async (rewardId: string) => {
@@ -24,6 +29,9 @@ export default function RewardsScreen() {
     ]);
   };
 
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -31,7 +39,7 @@ export default function RewardsScreen() {
         <Text style={styles.subtitle}>Redeem your points</Text>
       </View>
       <View style={styles.list}>
-        {items.map((r: any) => (
+        {items.length > 0 ? items.map((r: any) => (
           <View key={r.id} style={styles.card}>
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle}>{r.name}</Text>
@@ -43,7 +51,9 @@ export default function RewardsScreen() {
               <Text style={styles.buttonText}>Redeem</Text>
             </TouchableOpacity>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.emptyText}>No rewards available</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -51,6 +61,7 @@ export default function RewardsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
   title: { fontSize: 24, fontWeight: '700', color: 'white' },
   subtitle: { color: '#94a3b8', marginTop: 4 },
@@ -63,4 +74,6 @@ const styles = StyleSheet.create({
   stock: { fontSize: 12, color: '#64748b', marginTop: 2 },
   button: { backgroundColor: '#2563eb', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
   buttonText: { color: 'white', fontWeight: '600', fontSize: 14 },
+  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

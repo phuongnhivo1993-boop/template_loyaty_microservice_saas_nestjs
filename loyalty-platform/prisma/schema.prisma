@@ -80,6 +80,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("users")
 }
 
@@ -123,6 +124,10 @@ model Member {
   referralsReceived Referral[]        @relation("ReferralReceived")
   memberVouchers    MemberVoucher[]
 
+  @@index([tenantId])
+  @@index([status])
+  @@index([tierId])
+  @@index([createdAt])
   @@map("members")
 }
 
@@ -137,6 +142,9 @@ model PointTransaction {
   reference String?
   createdAt DateTime @default(now())
 
+  @@index([memberId])
+  @@index([type])
+  @@index([createdAt])
   @@map("point_transactions")
 }
 
@@ -153,6 +161,9 @@ model Campaign {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([tenantId])
+  @@index([status])
+  @@index([startDate, endDate])
   @@map("campaigns")
 }
 
@@ -169,6 +180,7 @@ model Reward {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("rewards")
 }
 
@@ -187,6 +199,7 @@ model Voucher {
 
   memberVouchers MemberVoucher[]
 
+  @@index([tenantId])
   @@map("vouchers")
 }
 
@@ -200,6 +213,9 @@ model MemberVoucher {
   redeemedAt DateTime?
   createdAt DateTime @default(now())
 
+  @@index([memberId])
+  @@index([voucherId])
+  @@index([redeemed])
   @@map("member_vouchers")
 }
 
@@ -263,6 +279,9 @@ model Referral {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([tenantId])
+  @@index([referrerId])
+  @@index([status])
   @@map("referrals")
 }
 
@@ -308,5 +327,9 @@ model AuditLog {
   ipAddress  String?
   createdAt  DateTime @default(now())
 
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
   @@map("audit_logs")
 }

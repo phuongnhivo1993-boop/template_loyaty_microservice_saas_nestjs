@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -8,12 +8,20 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<any>(null);
   const [wallet, setWallet] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
-    members.getProfile().then((r) => setProfile(r.data)).catch(() => {});
-    members.getWallet().then((r) => setWallet(r.data)).catch(() => {});
+    Promise.all([
+      members.getProfile().then((r) => setProfile(r.data)),
+      members.getWallet().then((r) => setWallet(r.data)),
+    ]).catch(() => setError('Failed to load data'))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
 
   return (
     <ScrollView style={styles.container}>
@@ -54,6 +62,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
   greeting: { fontSize: 20, fontWeight: '700', color: 'white' },
   logout: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
@@ -68,4 +77,5 @@ const styles = StyleSheet.create({
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
   sectionSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

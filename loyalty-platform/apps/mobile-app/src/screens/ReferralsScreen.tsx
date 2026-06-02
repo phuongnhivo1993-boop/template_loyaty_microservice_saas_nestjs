@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Share, ActivityIndicator } from 'react-native';
 import { members } from '../services/api';
 
 export default function ReferralsScreen() {
   const [referrals, setReferrals] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     members.getReferrals().then((r) => {
       const data = r.data;
       setReferrals(Array.isArray(data) ? data : data?.data || []);
       setStats(data?.stats || null);
-    }).catch(() => {});
+    }).catch(() => setError('Failed to load referrals'))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleShare = async (code: string) => {
     await Share.share({ message: `Join me on Loyalty Platform! Use my referral code: ${code}` });
   };
+
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
 
   return (
     <ScrollView style={styles.container}>
@@ -43,7 +49,7 @@ export default function ReferralsScreen() {
       )}
 
       <View style={styles.list}>
-        {referrals.map((r: any) => (
+        {referrals.length > 0 ? referrals.map((r: any) => (
           <View key={r.id} style={styles.card}>
             <View>
               <Text style={styles.code}>Code: {r.code}</Text>
@@ -51,7 +57,9 @@ export default function ReferralsScreen() {
             </View>
             <Text style={styles.shareLink} onPress={() => handleShare(r.code)}>Share</Text>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.emptyText}>No referrals yet</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -59,6 +67,7 @@ export default function ReferralsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
   title: { fontSize: 24, fontWeight: '700', color: 'white' },
   subtitle: { color: '#94a3b8', marginTop: 4 },
@@ -71,4 +80,6 @@ const styles = StyleSheet.create({
   code: { fontSize: 16, fontWeight: '600', color: '#1e293b', fontFamily: 'monospace' },
   status: { fontSize: 12, color: '#64748b', marginTop: 4 },
   shareLink: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
+  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

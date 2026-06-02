@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import * as XLSX from 'xlsx';
 
 interface ImportConfig {
   requiredFields: string[];
@@ -80,14 +81,27 @@ export class ImportService {
   constructor(private prisma: PrismaService) {}
 
   async importCsv(entity: string, csvContent: string, tenantId?: string) {
+    const rows = this.parseCsvToRows(csvContent);
+    return this.importRows(entity, rows, tenantId);
+  }
+
+  async importExcel(entity: string, base64Content: string, tenantId?: string) {
+    const workbook = XLSX.read(base64Content, { type: 'base64' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new BadRequestException('Excel file has no sheets');
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
+    if (jsonData.length === 0) throw new BadRequestException('Excel file has no data rows');
+    const headers = Object.keys(jsonData[0]);
+    const rows = jsonData.map(row => headers.map(h => row[h]?.toString() || ''));
+    return this.importRows(entity, { headers, rows }, tenantId);
+  }
+
+  private async importRows(entity: string, parsed: { headers: string[]; rows: string[][] }, tenantId?: string) {
     const config = entityConfigs[entity];
     if (!config) throw new BadRequestException(`Unsupported entity: ${entity}`);
 
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) throw new BadRequestException('CSV must have a header row and at least one data row');
-
-    const headers = this.parseCsvRow(lines[0]);
-    const missing = config.requiredFields.filter(f => !headers.includes(f));
+    const missing = config.requiredFields.filter(f => !parsed.headers.includes(f));
     if (missing.length > 0) {
       throw new BadRequestException(`Missing required columns: ${missing.join(', ')}`);
     }
@@ -96,16 +110,16 @@ export class ImportService {
     const created: Record<string, any>[] = [];
     const prismaModel = (this.prisma as any)[entity === 'members' ? 'member' : entity === 'tenants' ? 'tenant' : entity === 'rewards' ? 'reward' : entity === 'vouchers' ? 'voucher' : entity];
 
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = 0; i < parsed.rows.length; i++) {
       try {
-        const values = this.parseCsvRow(lines[i]);
+        const values = parsed.rows[i];
         if (values.length === 0 || values.every(v => !v.trim())) continue;
         const row: Record<string, string> = {};
-        headers.forEach((h, idx) => { row[h] = (values[idx] || '').trim(); });
+        parsed.headers.forEach((h, idx) => { row[h] = (values[idx] || '').trim(); });
 
-        const missingFields = config.requiredFields.filter(f => !row[f]);
-        if (missingFields.length > 0) {
-          errors.push({ row: i + 1, message: `Missing required fields: ${missingFields.join(', ')}` });
+        const rowMissingFields = config.requiredFields.filter(f => !row[f]);
+        if (rowMissingFields.length > 0) {
+          errors.push({ row: i + 2, message: `Missing required fields: ${rowMissingFields.join(', ')}` });
           continue;
         }
 
@@ -115,11 +129,19 @@ export class ImportService {
         const record = await prismaModel.create({ data });
         created.push(record);
       } catch (err: any) {
-        errors.push({ row: i + 1, message: err.message || 'Unknown error' });
+        errors.push({ row: i + 2, message: err.message || 'Unknown error' });
       }
     }
 
-    return { total: lines.length - 1, created: created.length, errors };
+    return { total: parsed.rows.length, created: created.length, errors };
+  }
+
+  private parseCsvToRows(csvContent: string): { headers: string[]; rows: string[][] } {
+    const lines = csvContent.trim().split('\n');
+    if (lines.length < 2) throw new BadRequestException('CSV must have a header row and at least one data row');
+    const headers = this.parseCsvRow(lines[0]);
+    const rows = lines.slice(1).map(line => this.parseCsvRow(line));
+    return { headers, rows };
   }
 
   private parseCsvRow(line: string): string[] {

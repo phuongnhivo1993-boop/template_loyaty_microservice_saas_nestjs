@@ -5,11 +5,12 @@ import { members } from '../services/api';
 export default function VouchersScreen() {
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     members.getVouchers()
       .then(r => setVouchers(Array.isArray(r.data) ? r.data : r.data?.data || []))
-      .catch(() => {})
+      .catch(() => setError('Failed to load vouchers'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -29,6 +30,7 @@ export default function VouchersScreen() {
   );
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
 
   return (
     <View style={styles.container}>
@@ -55,4 +57,5 @@ const styles = StyleSheet.create({
   cardValue: { fontSize: 14, color: '#64748b', marginTop: 4 },
   expiry: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

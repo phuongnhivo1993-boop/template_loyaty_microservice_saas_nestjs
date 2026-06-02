@@ -5,11 +5,12 @@ import api from '../services/api';
 export default function MissionsScreen() {
   const [missions, setMissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/missions')
       .then(r => setMissions(Array.isArray(r.data) ? r.data : r.data?.data || []))
-      .catch(() => {})
+      .catch(() => setError('Failed to load missions'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -27,6 +28,7 @@ export default function MissionsScreen() {
   );
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
 
   return (
     <View style={styles.container}>
@@ -51,4 +53,5 @@ const styles = StyleSheet.create({
   reward: { fontSize: 14, fontWeight: '700', color: '#2563eb' },
   date: { fontSize: 12, color: '#94a3b8' },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

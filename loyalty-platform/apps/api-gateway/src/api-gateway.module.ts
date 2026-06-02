@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { MulterModule } from '@nestjs/platform-express';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ApiGatewayController } from './api-gateway.controller';
@@ -24,9 +26,11 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationModule } from './notification/notification.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { ExportModule } from './export/export.module';
+import { ImportModule } from './import/import.module';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     MulterModule.register({ dest: './uploads' }),
     ScheduleModule.forRoot(),
     PrismaModule,
@@ -50,8 +54,12 @@ import { ExportModule } from './export/export.module';
     NotificationModule,
     AuditLogModule,
     ExportModule,
+    ImportModule,
   ],
   controllers: [ApiGatewayController],
-  providers: [ApiGatewayService],
+  providers: [
+    ApiGatewayService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class ApiGatewayModule {}

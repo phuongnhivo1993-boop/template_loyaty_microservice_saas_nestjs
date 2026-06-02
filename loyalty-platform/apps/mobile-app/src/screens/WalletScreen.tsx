@@ -1,13 +1,21 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { members } from '../services/api';
 
 export default function WalletScreen() {
   const [wallet, setWallet] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    members.getWallet().then((r) => setWallet(r.data)).catch(() => {});
+    members.getWallet()
+      .then((r) => setWallet(r.data))
+      .catch(() => setError('Failed to load wallet'))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
 
   return (
     <ScrollView style={styles.container}>
@@ -18,7 +26,7 @@ export default function WalletScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-        {(wallet?.transactions || []).map((t: any) => (
+        {wallet?.transactions && wallet.transactions.length > 0 ? wallet.transactions.map((t: any) => (
           <View key={t.id} style={styles.transaction}>
             <View>
               <Text style={styles.txType}>{t.type}</Text>
@@ -28,7 +36,9 @@ export default function WalletScreen() {
               {t.amount > 0 ? '+' : ''}{t.amount}
             </Text>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.emptyText}>No transactions yet</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -36,6 +46,7 @@ export default function WalletScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   header: { padding: 32, alignItems: 'center', backgroundColor: '#2563eb' },
   balance: { fontSize: 40, fontWeight: '800', color: 'white' },
   label: { fontSize: 14, color: '#bfdbfe', marginTop: 4 },
@@ -47,4 +58,6 @@ const styles = StyleSheet.create({
   txAmount: { fontWeight: '700', fontSize: 16 },
   positive: { color: '#16a34a' },
   negative: { color: '#dc2626' },
+  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 20, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });
