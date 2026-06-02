@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
+import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
@@ -31,6 +32,7 @@ export default function CampaignsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -150,7 +152,20 @@ export default function CampaignsPage() {
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={campaigns} emptyMessage="No campaigns found" />
+        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
+          onDelete={async () => {
+            if (!confirm(`Delete ${selectedIds.length} campaigns?`)) return;
+            for (const id of selectedIds) await fetch(`/api/campaigns/${id}`, { method: 'DELETE', headers });
+            showToast(`Deleted ${selectedIds.length} campaigns`, 'success');
+            setSelectedIds([]); load();
+          }}
+          onExport={() => {
+            const cols = ['name', 'startDate', 'endDate', 'budget', 'status'];
+            const rows = campaigns.filter(c => selectedIds.includes(c.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+            const a = document.createElement('a'); a.href = url; a.download = 'selected-campaigns.csv'; a.click(); URL.revokeObjectURL(url);
+          }} />
+        <DataTable columns={columns} data={campaigns} emptyMessage="No campaigns found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Campaign' : 'New Campaign'} onClose={() => setShowModal(false)} width={520}>

@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
+import ImportModal from '@/components/ImportModal';
 
 interface AssignForm { memberId: string; voucherId: string; }
 
@@ -22,6 +23,7 @@ export default function MemberVouchersPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState<AssignForm>({ memberId: '', voucherId: '' });
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -68,6 +70,17 @@ export default function MemberVouchersPage() {
     } catch { showToast('Network error', 'error'); }
   };
 
+  const exportCsv = async () => {
+    const params = new URLSearchParams({ page: '1', limit: '10000' });
+    const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+    const result = await res.json();
+    const data = Array.isArray(result) ? result : result.data || [];
+    const cols = ['memberId', 'voucherId', 'redeemed', 'redeemedAt', 'createdAt'];
+    const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+    const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'member-vouchers.csv'; a.click(); URL.revokeObjectURL(url);
+  };
+
   const columns = [
     { key: 'member', label: 'Member', render: (a: any) => <span style={{ fontWeight: 500 }}>{a.member?.fullName || a.memberId?.slice(0, 12) || '-'}</span> },
     { key: 'voucher', label: 'Voucher', render: (a: any) => <span style={{ fontFamily: 'monospace', color: '#7c3aed' }}>{a.voucher?.code || a.voucherId?.slice(0, 12) || '-'}</span> },
@@ -103,10 +116,14 @@ export default function MemberVouchersPage() {
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
+          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={assignments} emptyMessage="No member voucher assignments found" />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="member_vouchers" entityLabel="member vouchers" onImportComplete={load} />
 
         <Modal open={showModal} title="Assign Voucher" onClose={() => setShowModal(false)}>
           <form onSubmit={handleAssign}>

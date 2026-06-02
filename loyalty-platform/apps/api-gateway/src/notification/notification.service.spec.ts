@@ -7,7 +7,7 @@ describe('NotificationService', () => {
   let service: NotificationService;
   let prisma: any;
 
-  beforeEach(async () => {
+    beforeEach(async () => {
     prisma = {
       notificationTemplate: {
         create: jest.fn(),
@@ -20,6 +20,7 @@ describe('NotificationService', () => {
       notificationLog: {
         create: jest.fn(),
         findMany: jest.fn(),
+        findUnique: jest.fn(),
         count: jest.fn(),
       },
     };
@@ -143,6 +144,21 @@ describe('NotificationService', () => {
 
       const result = await service.listLogs('tenant-1', 1, 20);
       expect(result.total).toBe(1);
+    });
+  });
+
+  describe('findLogOne', () => {
+    it('should return a log by id', async () => {
+      prisma.notificationLog.findUnique.mockResolvedValue({ id: 'log-1', recipient: 'test@test.com', status: 'SENT' });
+
+      const result = await service.findLogOne('log-1');
+      expect(result.id).toBe('log-1');
+      expect(result.status).toBe('SENT');
+    });
+
+    it('should throw NotFoundException for non-existing log', async () => {
+      prisma.notificationLog.findUnique.mockResolvedValue(null);
+      await expect(service.findLogOne('invalid')).rejects.toThrow(NotFoundException);
     });
   });
 });

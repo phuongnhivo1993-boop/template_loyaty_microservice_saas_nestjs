@@ -1,8 +1,13 @@
 import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService } from './upload.service';
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 @ApiTags('Upload')
 @ApiBearerAuth()
@@ -12,7 +17,16 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: MAX_SIZE },
+    fileFilter: (_req, file, cb) => {
+      if (!ALLOWED_TYPES.includes(file.mimetype)) {
+        cb(new BadRequestException(`File type ${file.mimetype} is not allowed. Allowed: ${ALLOWED_TYPES.join(', ')}`), false);
+      } else {
+        cb(null, true);
+      }
+    },
+  }))
   @ApiOperation({ summary: 'Upload a file (image, document)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

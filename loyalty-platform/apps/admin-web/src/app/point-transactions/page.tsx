@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
+import ImportModal from '@/components/ImportModal';
 
 const typeColors: Record<string, { bg: string; color: string }> = {
   EARN: { bg: '#dcfce7', color: '#16a34a' },
@@ -25,6 +26,7 @@ export default function PointTransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [showImport, setShowImport] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -93,11 +95,13 @@ export default function PointTransactionsPage() {
             <option value="ADJUST">ADJUST</option>
           </select>
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={transactions} emptyMessage="No transactions found" />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="point_transactions" entityLabel="point transactions" onImportComplete={load} />
       </main>
     </div>
   );
