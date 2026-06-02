@@ -20,9 +20,9 @@ export class RewardController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List rewards (with pagination & sort)' })
+  @ApiOperation({ summary: 'List rewards (with pagination & sort & type filter)' })
   findAll(@Query() query: RewardQueryDto) {
-    return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
+    return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort, query.type);
   }
 
   @Get(':id')

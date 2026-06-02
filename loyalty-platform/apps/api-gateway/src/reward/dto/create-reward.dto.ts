@@ -30,4 +30,5 @@ export class RewardQueryDto {
   @ApiProperty({ required: false, default: 20 }) @IsOptional() limit?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() search?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() sort?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() type?: string;
 }

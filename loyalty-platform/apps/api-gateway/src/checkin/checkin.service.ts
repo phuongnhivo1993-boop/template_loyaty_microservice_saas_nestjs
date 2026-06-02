@@ -83,4 +83,55 @@ export class CheckinService {
       orderBy: { date: 'desc' },
     });
   }
+
+  async getAdminStats(tenantId?: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const memberFilter = tenantId ? { member: { tenantId } } : {};
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const [checkedInToday, totalThisMonth, streaks, recent] = await Promise.all([
+      this.prisma.dailyCheckin.count({
+        where: { date: today, ...memberFilter },
+      }),
+      this.prisma.dailyCheckin.count({
+        where: { date: { gte: startOfMonth }, ...memberFilter },
+      }),
+      this.prisma.dailyCheckin.findMany({
+        where: { ...memberFilter, streak: { gte: 7 } },
+        include: { member: { select: { id: true, fullName: true, email: true } } },
+        orderBy: { streak: 'desc' },
+        take: 10,
+      }),
+      this.prisma.dailyCheckin.findMany({
+        where: memberFilter,
+        include: { member: { select: { id: true, fullName: true, email: true } } },
+        orderBy: { date: 'desc' },
+        take: 20,
+      }),
+    ]);
+
+    return {
+      checkedInToday,
+      totalThisMonth,
+      activeStreaks: streaks.length,
+      topStreaks: (streaks as any[]).map(s => ({
+        memberId: s.memberId,
+        fullName: s.member?.fullName,
+        email: s.member?.email,
+        streak: s.streak,
+        lastCheckin: s.date,
+      })),
+      recentActivity: (recent as any[]).map(r => ({
+        id: r.id,
+        memberId: r.memberId,
+        fullName: r.member?.fullName,
+        streak: r.streak,
+        pointsAwarded: r.pointsAwarded,
+        date: r.date,
+      })),
+    };
+  }
 }

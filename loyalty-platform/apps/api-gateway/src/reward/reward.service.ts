@@ -10,9 +10,10 @@ export class RewardService {
     return this.prisma.reward.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string, type?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
+    if (type) where.type = type;
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },

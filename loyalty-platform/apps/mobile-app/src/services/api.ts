@@ -93,7 +93,7 @@ export const members = {
 };
 
 export const rewards = {
-  list: () => api.get('/rewards'),
+  list: (params?: { type?: string }) => api.get('/rewards', { params }),
   getById: (id: string) => api.get(`/rewards/${id}`),
   redeem: (rewardId: string, data: { memberId: string; quantity?: number }) =>
     api.post(`/rewards/${rewardId}/redeem`, data),

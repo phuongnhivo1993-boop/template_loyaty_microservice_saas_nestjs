@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { rewards, cartRedeem } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -12,6 +12,8 @@ export default function RewardsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const profile = useAuthStore((s) => s.profile);
 
   const load = () => {
@@ -50,6 +52,13 @@ export default function RewardsScreen() {
     const r = items.find(i => i.id === id);
     return sum + (r ? r.pointsRequired * qty : 0);
   }, 0);
+
+  const categories = [...new Set(items.map(r => r.type))];
+  const filteredItems = items.filter(r => {
+    if (typeFilter && r.type !== typeFilter) return false;
+    if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   const handleCartRedeem = () => {
     if (!profile?.id || cartItems.length === 0) return;
@@ -111,8 +120,37 @@ export default function RewardsScreen() {
         </View>
       )}
 
+      <View style={styles.filterRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search rewards..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {categories.length > 1 && (
+        <ScrollView horizontal style={styles.categoryRow} showsHorizontalScrollIndicator={false}>
+          <TouchableOpacity
+            style={[styles.catBtn, !typeFilter && styles.catBtnActive]}
+            onPress={() => setTypeFilter('')}
+          >
+            <Text style={[styles.catText, !typeFilter && styles.catTextActive]}>All</Text>
+          </TouchableOpacity>
+          {categories.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.catBtn, typeFilter === cat && styles.catBtnActive]}
+              onPress={() => setTypeFilter(cat)}
+            >
+              <Text style={[styles.catText, typeFilter === cat && styles.catTextActive]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       <View style={styles.list}>
-        {items.length > 0 ? items.map((r: Reward) => {
+        {filteredItems.length > 0 ? filteredItems.map((r: Reward) => {
           const inCart = cart[r.id] || 0;
           return (
             <View key={r.id} style={styles.card}>
@@ -154,6 +192,16 @@ const styles = StyleSheet.create({
   header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
   title: { fontSize: 24, fontWeight: '700', color: 'white' },
   subtitle: { color: '#94a3b8', marginTop: 4 },
+  filterRow: { paddingHorizontal: 16, paddingTop: 12 },
+  searchInput: {
+    backgroundColor: 'white', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10,
+    fontSize: 14, borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b',
+  },
+  categoryRow: { paddingHorizontal: 16, paddingVertical: 8 },
+  catBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#f1f5f9', marginRight: 8 },
+  catBtnActive: { backgroundColor: '#2563eb' },
+  catText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  catTextActive: { color: 'white' },
   cartBar: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#2563eb',
     margin: 12, padding: 12, borderRadius: 10, gap: 8,
