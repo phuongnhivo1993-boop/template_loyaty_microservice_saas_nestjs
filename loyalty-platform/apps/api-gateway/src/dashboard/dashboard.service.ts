@@ -38,6 +38,26 @@ export class DashboardService {
         return acc;
       }, {} as Record<string, number>);
 
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const ptWhere = { createdAt: { gte: today }, ...(tenantId ? { member: { tenantId } } : {}) };
+      const [earnedToday, burnedToday, newMembersToday, redeemedToday] = await Promise.all([
+        this.prisma.pointTransaction.aggregate({
+          where: { ...ptWhere, amount: { gt: 0 } },
+          _sum: { amount: true },
+        }),
+        this.prisma.pointTransaction.aggregate({
+          where: { ...ptWhere, amount: { lt: 0 } },
+          _sum: { amount: true },
+        }),
+        this.prisma.member.count({
+          where: { createdAt: { gte: today }, ...(tenantId ? { tenantId } : {}) },
+        }),
+        this.prisma.memberVoucher.count({
+          where: { redeemedAt: { gte: today }, ...(tenantId ? { member: { tenantId } } : {}) },
+        }),
+      ]);
+
       return {
         tenants, members, activeCampaigns, rewards, vouchers,
         totalPoints: totalPoints._sum.totalPoints || 0,
@@ -46,6 +66,12 @@ export class DashboardService {
         activeVouchers,
         membersByStatus: statusBreakdown,
         tiers: tiersWithMembers.map(t => ({ name: t.name, color: t.color, memberCount: t._count.members })),
+        today: {
+          earned: earnedToday._sum.amount || 0,
+          burned: Math.abs(burnedToday._sum.amount || 0),
+          newMembers: newMembersToday,
+          redemptions: redeemedToday,
+        },
       };
     } catch (e) {
       throw new InternalServerErrorException('Failed to load dashboard stats');

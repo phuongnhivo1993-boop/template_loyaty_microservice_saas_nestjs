@@ -257,4 +257,26 @@ export class MemberSelfService {
       items: items.map(i => ({ rewardId: i.rewardId, quantity: i.quantity })),
     };
   }
+
+  async getTransactions(memberId: string, page = 1, limit = 50, type?: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const where: any = { memberId };
+    if (type === 'earned') where.amount = { gt: 0 };
+    else if (type === 'burned') where.amount = { lt: 0 };
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.pointTransaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.pointTransaction.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
 }

@@ -59,4 +59,11 @@ export class AnalyticsController {
   getLeaderboard(@Query('limit') limit?: number, @Query('tenantId') tenantId?: string) {
     return this.analyticsService.getLeaderboard(tenantId, limit || 20);
   }
+
+  @Get('voucher-analytics')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Voucher usage analytics (daily trend, popular, by type)' })
+  getVoucherAnalytics(@Query('days') days?: number, @Query('tenantId') tenantId?: string) {
+    return this.analyticsService.getVoucherAnalytics(days || 30, tenantId);
+  }
 }

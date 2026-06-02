@@ -6,35 +6,45 @@ describe('DashboardService', () => {
   let service: DashboardService;
   let prisma: any;
 
-  const createMockPrisma = (overrides?: Partial<typeof prisma>) => ({
-    tenant: { count: jest.fn().mockResolvedValue(2) },
-    member: {
-      count: jest.fn()
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValue(80),
-      aggregate: jest.fn().mockResolvedValue({ _sum: { totalPoints: 50000 } }),
-      groupBy: jest.fn().mockResolvedValue([
-        { status: 'ACTIVE', _count: 80 },
-        { status: 'INACTIVE', _count: 20 },
-      ]),
-    },
-    campaign: { count: jest.fn().mockResolvedValue(5) },
-    reward: { count: jest.fn().mockResolvedValue(10) },
-    voucher: { count: jest.fn().mockResolvedValue(50) },
-    promotion: { count: jest.fn().mockResolvedValue(3) },
-    badge: { count: jest.fn().mockResolvedValue(8) },
-    mission: { count: jest.fn().mockResolvedValue(6) },
-    referral: { count: jest.fn().mockResolvedValue(30) },
-    tier: {
-      findMany: jest.fn().mockResolvedValue([
-        { name: 'Gold', color: '#f59e0b', _count: { members: 30 } },
-        { name: 'Silver', color: '#94a3b8', _count: { members: 70 } },
-      ]),
-    },
-    memberVoucher: { count: jest.fn().mockResolvedValue(40) },
-    ...overrides,
-  });
+  const createMockPrisma = (overrides?: Partial<typeof prisma>) => {
+    const memberCountMock = jest.fn();
+    memberCountMock
+      .mockResolvedValueOnce(100)   // total members
+      .mockResolvedValueOnce(0)     // kyc verified count (first call in position 2)
+      .mockResolvedValueOnce(5);    // new members today
+
+    return {
+      tenant: { count: jest.fn().mockResolvedValue(2) },
+      member: {
+        count: memberCountMock,
+        aggregate: jest.fn().mockResolvedValue({ _sum: { totalPoints: 50000 } }),
+        groupBy: jest.fn().mockResolvedValue([
+          { status: 'ACTIVE', _count: 80 },
+          { status: 'INACTIVE', _count: 20 },
+        ]),
+      },
+      campaign: { count: jest.fn().mockResolvedValue(5) },
+      reward: { count: jest.fn().mockResolvedValue(10) },
+      voucher: { count: jest.fn().mockResolvedValue(50) },
+      promotion: { count: jest.fn().mockResolvedValue(3) },
+      badge: { count: jest.fn().mockResolvedValue(8) },
+      mission: { count: jest.fn().mockResolvedValue(6) },
+      referral: { count: jest.fn().mockResolvedValue(30) },
+      tier: {
+        findMany: jest.fn().mockResolvedValue([
+          { name: 'Gold', color: '#f59e0b', _count: { members: 30 } },
+          { name: 'Silver', color: '#94a3b8', _count: { members: 70 } },
+        ]),
+      },
+      memberVoucher: { count: jest.fn().mockResolvedValue(40) },
+      pointTransaction: {
+        aggregate: jest.fn()
+          .mockResolvedValueOnce({ _sum: { amount: 5000 } })   // earned today
+          .mockResolvedValueOnce({ _sum: { amount: -2000 } }),  // burned today
+      },
+      ...overrides,
+    };
+  };
 
   beforeEach(async () => {
     prisma = createMockPrisma();
@@ -64,12 +74,14 @@ describe('DashboardService', () => {
   });
 
   it('should calculate KYC rate correctly', async () => {
+    const memberCountMock = jest.fn();
+    memberCountMock
+      .mockResolvedValueOnce(100)
+      .mockResolvedValueOnce(60)
+      .mockResolvedValueOnce(5);
     prisma = createMockPrisma({
       member: {
-        count: jest.fn()
-          .mockResolvedValueOnce(100)
-          .mockResolvedValueOnce(60)
-          .mockResolvedValue(100),
+        count: memberCountMock,
         aggregate: jest.fn().mockResolvedValue({ _sum: { totalPoints: 50000 } }),
         groupBy: jest.fn().mockResolvedValue([]),
       },
@@ -84,9 +96,14 @@ describe('DashboardService', () => {
   });
 
   it('should handle empty members', async () => {
+    const memberCountMock = jest.fn();
+    memberCountMock
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0);
     prisma = createMockPrisma({
       member: {
-        count: jest.fn().mockResolvedValue(0),
+        count: memberCountMock,
         aggregate: jest.fn().mockResolvedValue({ _sum: { totalPoints: null } }),
         groupBy: jest.fn().mockResolvedValue([]),
       },

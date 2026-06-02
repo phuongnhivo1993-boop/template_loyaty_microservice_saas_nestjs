@@ -100,6 +100,22 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {stats.today && (
+          <div className="today-metrics" style={{ display: 'flex', gap: '12px', margin: '16px 0' }}>
+            {[
+              { label: 'Earned Today', value: stats.today.earned?.toLocaleString(), color: '#16a34a', bg: '#f0fdf4' },
+              { label: 'Burned Today', value: stats.today.burned?.toLocaleString(), color: '#dc2626', bg: '#fef2f2' },
+              { label: 'New Members Today', value: String(stats.today.newMembers || 0), color: '#2563eb', bg: '#eff6ff' },
+              { label: 'Redemptions Today', value: String(stats.today.redemptions || 0), color: '#d97706', bg: '#fffbeb' },
+            ].map((m) => (
+              <div key={m.label} style={{ flex: 1, background: m.bg, borderRadius: '10px', padding: '14px 18px' }}>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>{m.label}</div>
+                <div style={{ fontSize: '22px', fontWeight: 700, color: m.color }}>{m.value || 0}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="charts-grid">
           {pointsTrend.length > 0 && (
             <div className="card">

@@ -84,6 +84,8 @@ export const members = {
   getVouchers: () => api.get('/me/vouchers'),
   getReferrals: () => api.get('/me/referrals'),
   getMissions: () => api.get('/me/missions'),
+  getTransactions: (params?: { page?: number; limit?: number; type?: string }) =>
+    api.get('/me/transactions', { params }),
   setPassword: (data: { password: string; token: string }) => api.post('/me/set-password', data),
   changePassword: (data: { oldPassword: string; newPassword: string }) => api.post('/me/change-password', data),
   updateProfile: (data: { fullName?: string; phone?: string; avatar?: string }) =>

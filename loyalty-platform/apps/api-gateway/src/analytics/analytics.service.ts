@@ -139,4 +139,40 @@ export class AnalyticsService {
       throw new InternalServerErrorException('Failed to load leaderboard');
     }
   }
+
+  async getVoucherAnalytics(days = 30, tenantId?: string) {
+    try {
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const memberVoucherWhere: any = { redeemedAt: { gte: since } };
+      if (tenantId) memberVoucherWhere.member = { tenantId };
+
+      const redemptions = await this.prisma.memberVoucher.findMany({
+        where: memberVoucherWhere,
+        include: { voucher: { select: { code: true, type: true, value: true } } },
+        orderBy: { redeemedAt: 'asc' },
+      });
+
+      const daily: Record<string, number> = {};
+      const typeCount: Record<string, number> = {};
+      const popular: Record<string, { code: string; count: number; value: number }> = {};
+
+      for (const r of redemptions) {
+        const day = r.redeemedAt!.toISOString().slice(0, 10);
+        daily[day] = (daily[day] || 0) + 1;
+        typeCount[r.voucher.type] = (typeCount[r.voucher.type] || 0) + 1;
+        const key = r.voucher.code;
+        if (!popular[key]) popular[key] = { code: key, count: 0, value: r.voucher.value };
+        popular[key].count++;
+      }
+
+      return {
+        totalRedemptions: redemptions.length,
+        dailyTrend: Object.entries(daily).map(([date, count]) => ({ date, count })),
+        byType: Object.entries(typeCount).map(([type, count]) => ({ type, count })),
+        popular: Object.values(popular).sort((a, b) => b.count - a.count).slice(0, 10),
+      };
+    } catch (e) {
+      throw new InternalServerErrorException('Failed to load voucher analytics');
+    }
+  }
 }

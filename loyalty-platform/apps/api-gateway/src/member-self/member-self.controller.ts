@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberSelfService } from './member-self.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -101,5 +101,18 @@ export class MemberSelfController {
   @ApiOperation({ summary: 'Redeem multiple rewards in one cart' })
   cartRedeem(@Req() req: any, @Body() body: { items: { rewardId: string; quantity: number }[] }) {
     return this.memberSelfService.cartRedeem(req.user.id, body.items);
+  }
+
+  @Get('transactions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own point transactions (paginated, filterable)' })
+  getTransactions(
+    @Req() req: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('type') type?: string,
+  ) {
+    return this.memberSelfService.getTransactions(req.user.id, page || 1, limit || 50, type);
   }
 }

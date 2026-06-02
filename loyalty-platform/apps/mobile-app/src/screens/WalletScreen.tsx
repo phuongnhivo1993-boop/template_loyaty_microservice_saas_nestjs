@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
 import type { PointTransaction } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -12,6 +13,7 @@ interface WalletData {
 const TABS = ['ALL', 'EARN', 'BURN', 'EXPIRE', 'ADJUST'];
 
 export default function WalletScreen() {
+  const navigation = useNavigation<any>();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,6 +93,9 @@ export default function WalletScreen() {
         )) : (
           <EmptyState message="No transactions found" icon="💳" />
         )}
+        <TouchableOpacity style={styles.viewAllBtn} onPress={() => navigation.navigate('PointsHistory')}>
+          <Text style={styles.viewAllText}>View Full History →</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -118,4 +123,6 @@ const styles = StyleSheet.create({
   txAmount: { fontWeight: '700', fontSize: 16 },
   positive: { color: '#16a34a' },
   negative: { color: '#dc2626' },
+  viewAllBtn: { alignItems: 'center', paddingVertical: 14, marginTop: 4 },
+  viewAllText: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
 });
