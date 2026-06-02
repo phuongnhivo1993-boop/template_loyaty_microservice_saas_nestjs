@@ -10,10 +10,16 @@ export class MemberService {
     return this.prisma.tenant.findFirst({ where: { domain } });
   }
 
-  async create(data: { email: string; fullName: string; phone?: string; tenantId: string; tierId?: string }) {
+  async create(data: { email: string; fullName: string; phone?: string; birthday?: string; tenantId: string; tierId?: string }) {
     const existing = await this.prisma.member.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('Email already exists');
-    return this.prisma.member.create({ data });
+    const { birthday, ...rest } = data;
+    return this.prisma.member.create({
+      data: {
+        ...rest,
+        ...(birthday ? { birthday: new Date(birthday) } : {}),
+      },
+    });
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string, sort?: string) {
@@ -52,9 +58,16 @@ export class MemberService {
     return member;
   }
 
-  async update(id: string, data: { fullName?: string; phone?: string; tierId?: string; status?: string }) {
+  async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tierId?: string; status?: string }) {
     await this.findOne(id);
-    return this.prisma.member.update({ where: { id }, data: data as any });
+    const { birthday, ...rest } = data;
+    return this.prisma.member.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(birthday !== undefined ? { birthday: birthday ? new Date(birthday) : null } : {}),
+      } as any,
+    });
   }
 
   async kycVerify(id: string) {
@@ -74,5 +87,29 @@ export class MemberService {
     const member = await this.findOne(id);
     const newStatus = member.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
     return this.prisma.member.update({ where: { id }, data: { status: newStatus as any } });
+  }
+
+  async getActivity(memberId: string) {
+    await this.findOne(memberId);
+    const [transactions, vouchers, referrals] = await Promise.all([
+      this.prisma.pointTransaction.findMany({
+        where: { memberId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      this.prisma.memberVoucher.findMany({
+        where: { memberId },
+        include: { voucher: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.referral.findMany({
+        where: { referrerId: memberId },
+        include: { referee: { select: { id: true, fullName: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+    return { transactions, vouchers, referrals };
   }
 }

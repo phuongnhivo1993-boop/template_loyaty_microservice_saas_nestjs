@@ -104,6 +104,22 @@ export default function SettingsPage() {
               <button onClick={() => setShowPasswordModal(true)} className="btn-primary">Change Password</button>
             </div>
 
+            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Loyalty Config</h2>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>Point Expiry (days)</label>
+                <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: '8px', fontSize: '14px' }}>365</div>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>Birthday Bonus</label>
+                <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: '8px', fontSize: '14px' }}>50,000 points</div>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>Min Redeem Points</label>
+                <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: '8px', fontSize: '14px' }}>100</div>
+              </div>
+            </div>
+
             <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>System Info</h2>
               <div style={{ marginBottom: '12px' }}>

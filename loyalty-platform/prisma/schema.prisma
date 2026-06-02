@@ -108,6 +108,7 @@ model Member {
   fullName     String
   phone        String?
   avatar       String?
+  birthday     DateTime?
   status       MemberStatus @default(ACTIVE)
   kycVerified  Boolean      @default(false)
   totalPoints  Int          @default(0)

@@ -14,10 +14,10 @@ import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface MemberForm {
-  fullName: string; email: string; phone: string; status: string;
+  fullName: string; email: string; phone: string; birthday: string; status: string;
 }
 
-const emptyForm: MemberForm = { fullName: '', email: '', phone: '', status: 'ACTIVE' };
+const emptyForm: MemberForm = { fullName: '', email: '', phone: '', birthday: '', status: 'ACTIVE' };
 
 export default function MembersPage() {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function MembersPage() {
   }, [search, page, tierFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
-  const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', status: m.status }); setShowModal(true); };
+  const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', birthday: m.birthday ? m.birthday.slice(0, 10) : '', status: m.status }); setShowModal(true); };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this member? This action cannot be undone.')) return;
@@ -178,6 +178,7 @@ export default function MembersPage() {
             <FormInput label="Full Name" value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} required />
             <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" />
             <FormInput label="Phone" value={form.phone} onChange={v => setForm({ ...form, phone: v })} type="tel" />
+            <FormInput label="Birthday" value={form.birthday} onChange={v => setForm({ ...form, birthday: v })} type="date" />
             <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })}
               options={[
                 { value: 'ACTIVE', label: 'Active' },

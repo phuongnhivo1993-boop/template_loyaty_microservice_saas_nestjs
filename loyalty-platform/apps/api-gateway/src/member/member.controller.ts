@@ -81,4 +81,12 @@ export class MemberController {
   toggleStatus(@Param('id') id: string) {
     return this.memberService.toggleStatus(id);
   }
+
+  @Get(':id/activity')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get member activity timeline' })
+  getActivity(@Param('id') id: string) {
+    return this.memberService.getActivity(id);
+  }
 }

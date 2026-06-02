@@ -1,10 +1,11 @@
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMemberDto {
   @ApiProperty() @IsEmail() email: string;
   @ApiProperty() @IsString() fullName: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() phone?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsDateString() birthday?: string;
   @ApiProperty() @IsString() tenantId: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() tierId?: string;
 }
@@ -12,6 +13,7 @@ export class CreateMemberDto {
 export class UpdateMemberDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() fullName?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() phone?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsDateString() birthday?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() tierId?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() status?: string;
 }

@@ -22,7 +22,7 @@ export class SettingsService {
       theme: settings.theme ?? { primaryColor: '#2563eb', logoUrl: null, brandName: null },
       emailConfig: settings.emailConfig ?? { senderName: 'Loyalty Platform', senderEmail: null },
       smsConfig: settings.smsConfig ?? { enabled: false, provider: null },
-      loyaltyConfig: settings.loyaltyConfig ?? { defaultPointsPerCurrency: 1, pointExpiryDays: 365, minRedeemPoints: 100 },
+      loyaltyConfig: settings.loyaltyConfig ?? { defaultPointsPerCurrency: 1, pointExpiryDays: 365, minRedeemPoints: 100, birthdayBonus: 50000, autoExpirePoints: true },
     };
   }
 
