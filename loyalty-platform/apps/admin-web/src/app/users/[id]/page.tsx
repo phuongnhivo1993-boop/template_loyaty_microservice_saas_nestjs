@@ -18,7 +18,8 @@ export default function UserDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setUser(data);
     } catch { showToast('Failed to load user', 'error'); }
     setLoading(false);

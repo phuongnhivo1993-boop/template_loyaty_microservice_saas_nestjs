@@ -28,7 +28,12 @@ export default function DashboardPage() {
       fetch('/api/analytics/top-members?limit=5', { headers }).then(r => r.json()),
       fetch('/api/analytics/voucher-stats', { headers }).then(r => r.json()),
     ])
-      .then(([data, trend, growth, top, vStats]) => {
+      .then(([dashRes, trendRes, growthRes, topRes, vStatsRes]) => {
+        const data = dashRes.data ?? dashRes;
+        const trend = trendRes.data ?? trendRes;
+        const growth = growthRes.data ?? growthRes;
+        const top = topRes.data ?? topRes;
+        const vStats = vStatsRes.data ?? vStatsRes;
         setStats(data);
         if (data.tiers) setTiers(data.tiers);
         if (Array.isArray(trend)) setPointsTrend(trend);

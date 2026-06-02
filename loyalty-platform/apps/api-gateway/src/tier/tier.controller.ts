@@ -2,6 +2,8 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TierService } from './tier.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { CreateTierDto, UpdateTierDto, TierQueryDto } from './dto/create-tier.dto';
 
 @ApiTags('Tiers')
 @ApiBearerAuth()
@@ -11,22 +13,20 @@ export class TierController {
   constructor(private tierService: TierService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a tier' })
-  create(@Body() body: { name: string; minPoints: number; maxPoints: number; benefits?: string; color?: string; tenantId: string }) {
-    return this.tierService.create(body);
+  create(@Body() body: CreateTierDto) {
+    return this.tierService.create({
+      ...body,
+      minPoints: body.minPoints ?? 0,
+      maxPoints: body.maxPoints ?? 999999,
+    });
   }
 
   @Get()
   @ApiOperation({ summary: 'List tiers (with pagination & sort)' })
-  async findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.tierService.findAll(tenantId, page ? +page : 1, limit ? +limit : 20, search, sort, status);
+  findAll(@Query() query: TierQueryDto) {
+    return this.tierService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
@@ -36,12 +36,14 @@ export class TierController {
   }
 
   @Put(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update tier' })
-  update(@Param('id') id: string, @Body() body: { name?: string; minPoints?: number; maxPoints?: number; benefits?: string }) {
+  update(@Param('id') id: string, @Body() body: UpdateTierDto) {
     return this.tierService.update(id, body);
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete tier' })
   remove(@Param('id') id: string) {
     return this.tierService.remove(id);

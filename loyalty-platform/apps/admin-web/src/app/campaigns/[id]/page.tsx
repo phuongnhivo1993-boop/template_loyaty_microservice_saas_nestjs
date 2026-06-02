@@ -18,7 +18,8 @@ export default function CampaignDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/campaigns/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setCampaign(data);
     } catch { showToast('Failed to load campaign', 'error'); }
     setLoading(false);

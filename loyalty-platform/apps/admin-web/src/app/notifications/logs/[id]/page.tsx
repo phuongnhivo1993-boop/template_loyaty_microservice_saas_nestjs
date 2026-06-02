@@ -19,7 +19,8 @@ export default function NotificationLogDetailPage() {
       try {
         const res = await fetch(`/api/notifications/logs/${params.id}`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) { setLoading(false); return; }
-        const data = await res.json();
+        const result = await res.json();
+        const data = result.data ?? result;
         setLog(data);
       } catch {}
       setLoading(false);

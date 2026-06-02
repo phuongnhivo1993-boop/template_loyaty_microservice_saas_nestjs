@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { MulterModule } from '@nestjs/platform-express';
 import { ScheduleModule } from '@nestjs/schedule';
+import { RolesGuard } from './auth/roles.guard';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -27,6 +28,8 @@ import { NotificationModule } from './notification/notification.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { ExportModule } from './export/export.module';
 import { ImportModule } from './import/import.module';
+import { BulkModule } from './bulk/bulk.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -55,11 +58,14 @@ import { ImportModule } from './import/import.module';
     AuditLogModule,
     ExportModule,
     ImportModule,
+    BulkModule,
+    SettingsModule,
   ],
   controllers: [ApiGatewayController],
   providers: [
     ApiGatewayService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class ApiGatewayModule {}

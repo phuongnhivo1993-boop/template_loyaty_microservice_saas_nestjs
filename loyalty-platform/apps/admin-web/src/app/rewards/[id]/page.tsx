@@ -18,7 +18,8 @@ export default function RewardDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/rewards/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setReward(data);
     } catch { showToast('Failed to load reward', 'error'); }
     setLoading(false);

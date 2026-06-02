@@ -43,9 +43,10 @@ export default function RewardsPage() {
       if (typeFilter !== 'ALL') params.set('type', typeFilter);
       const res = await fetch(`/api/rewards?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setRewards(Array.isArray(result) ? result : result.data || []);
-      setTotalPages(result.totalPages || 1);
-      setTotal(result.total || 0);
+      const payload = result.data ?? result;
+      setRewards(Array.isArray(payload) ? payload : []);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotal(result.pagination?.totalItems || 0);
     } catch {}
     setLoading(false);
   };
@@ -91,7 +92,7 @@ export default function RewardsPage() {
     if (search) params.set('search', search);
     const res = await fetch(`/api/rewards?${params}`, { headers: { Authorization: `Bearer ${token}` } });
     const result = await res.json();
-    const data = Array.isArray(result) ? result : result.data || [];
+    const data = result.data ?? result;
     const cols = ['name', 'type', 'pointsRequired', 'quantity', 'description'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

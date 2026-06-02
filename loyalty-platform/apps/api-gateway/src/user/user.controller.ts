@@ -2,6 +2,8 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { CreateUserDto, UpdateUserDto, UserQueryDto } from './dto/create-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -11,21 +13,16 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a new user' })
-  create(@Body() body: { email: string; password: string; fullName: string; phone?: string; role?: string; tenantId: string }) {
+  create(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all users (with pagination & sort)' })
-  findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.userService.findAll(tenantId, page, limit, search, sort);
+  findAll(@Query() query: UserQueryDto) {
+    return this.userService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
@@ -35,12 +32,14 @@ export class UserController {
   }
 
   @Put(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update user' })
-  update(@Param('id') id: string, @Body() body: { fullName?: string; phone?: string; role?: string }) {
+  update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.userService.update(id, body);
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete user' })
   remove(@Param('id') id: string) {
     return this.userService.remove(id);

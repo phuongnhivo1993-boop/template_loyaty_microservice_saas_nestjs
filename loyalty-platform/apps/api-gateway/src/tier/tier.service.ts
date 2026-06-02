@@ -6,8 +6,14 @@ import { parseSort } from '../common/utils/sort.util';
 export class TierService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: { name: string; minPoints: number; maxPoints: number; benefits?: string; color?: string; tenantId: string }) {
-    return this.prisma.tier.create({ data });
+  create(data: { name: string; minPoints?: number; maxPoints?: number; benefits?: string; color?: string; tenantId: string }) {
+    return this.prisma.tier.create({
+      data: {
+        ...data,
+        minPoints: data.minPoints ?? 0,
+        maxPoints: data.maxPoints ?? 999999,
+      },
+    });
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string, status?: string) {

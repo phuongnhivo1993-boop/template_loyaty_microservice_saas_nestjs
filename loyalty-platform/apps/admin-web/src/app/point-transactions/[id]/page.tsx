@@ -18,7 +18,8 @@ export default function PointTransactionDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/points/transactions/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setTxn(data);
     } catch { showToast('Failed to load transaction', 'error'); }
     setLoading(false);

@@ -92,18 +92,29 @@ export class PointService {
     return transaction;
   }
 
-  async getTransactions(memberId?: string, page = 1, limit = 20, type?: string) {
+  async getTransactions(memberId?: string, page = 1, limit = 20, type?: string, tenantId?: string, search?: string, sort?: string) {
     const where: any = {};
     if (memberId) where.memberId = memberId;
     if (type) where.type = type;
+    if (tenantId) {
+      where.member = { tenantId };
+    }
+    if (search) {
+      where.OR = [
+        { reason: { contains: search, mode: 'insensitive' } },
+        { reference: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const skip = (page - 1) * limit;
+    const orderBy = sort ? { [sort.split(':')[0]]: (sort.split(':')[1] || 'desc') } : { createdAt: 'desc' as const };
     const [data, total] = await Promise.all([
       this.prisma.pointTransaction.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: orderBy as any,
         skip,
         take: limit,
+        include: { member: { select: { id: true, fullName: true, email: true, tenantId: true } } },
       }),
       this.prisma.pointTransaction.count({ where }),
     ]);

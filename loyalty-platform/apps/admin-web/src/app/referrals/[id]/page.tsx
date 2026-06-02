@@ -18,7 +18,8 @@ export default function ReferralDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/referrals/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setReferral(data);
     } catch { showToast('Failed to load referral', 'error'); }
     setLoading(false);

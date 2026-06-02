@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PromotionService } from './promotion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Promotions')
 @ApiBearerAuth()
@@ -11,6 +12,7 @@ export class PromotionController {
   constructor(private promotionService: PromotionService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a promotion rule' })
   create(@Body() body: { name: string; description?: string; priority?: number; conditions?: any; actions?: any; tenantId: string }) {
     return this.promotionService.create(body);
@@ -36,12 +38,14 @@ export class PromotionController {
   }
 
   @Put(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update promotion rule' })
   update(@Param('id') id: string, @Body() body: { name?: string; description?: string; priority?: number; status?: string; conditions?: any; actions?: any }) {
     return this.promotionService.update(id, body);
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete promotion rule' })
   remove(@Param('id') id: string) {
     return this.promotionService.remove(id);

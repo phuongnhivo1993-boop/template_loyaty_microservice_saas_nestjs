@@ -23,7 +23,7 @@ export default function BroadcastPage() {
     const loadTemplates = async () => {
       const r = await fetch('/api/notifications/templates?limit=1000', { headers });
       const res = await r.json();
-      setTemplates(Array.isArray(res) ? res : res.data || []);
+      const p = res.data ?? res; setTemplates(Array.isArray(p) ? p : []);
       setLoading(false);
     };
     // Try to get tenantId from user info
@@ -48,7 +48,8 @@ export default function BroadcastPage() {
         body: JSON.stringify({ ...form, variables }),
       });
       if (!res.ok) { showToast('Failed to send broadcast', 'error'); return; }
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setResult(data);
       showToast(`Notification sent to ${data.sent} members`, 'success');
     } catch {

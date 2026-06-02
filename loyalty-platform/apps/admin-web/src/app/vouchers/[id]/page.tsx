@@ -18,7 +18,8 @@ export default function VoucherDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/vouchers/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setVoucher(data);
     } catch { showToast('Failed to load voucher', 'error'); }
     setLoading(false);

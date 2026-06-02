@@ -18,7 +18,8 @@ export default function TierDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/tiers/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setTier(data);
     } catch { showToast('Failed to load tier', 'error'); }
     setLoading(false);

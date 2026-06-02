@@ -2,6 +2,8 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberService } from './member.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { CreateMemberDto, UpdateMemberDto, MemberQueryDto, RegisterMemberDto } from './dto/create-member.dto';
 
 @ApiTags('Members')
 @Controller('members')
@@ -10,7 +12,7 @@ export class MemberController {
 
   @Post('register')
   @ApiOperation({ summary: 'Public member self-registration' })
-  async register(@Body() body: { email: string; fullName: string; phone?: string; tenantId?: string; tenantDomain?: string }) {
+  async register(@Body() body: RegisterMemberDto) {
     let { tenantId } = body;
     if (!tenantId && body.tenantDomain) {
       const tenant = await this.memberService.findTenantByDomain(body.tenantDomain);
@@ -22,8 +24,9 @@ export class MemberController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Admin: register a new member' })
-  create(@Body() body: { email: string; fullName: string; phone?: string; tenantId: string; tierId?: string }) {
+  create(@Body() body: CreateMemberDto) {
     return this.memberService.create(body);
   }
 
@@ -31,16 +34,8 @@ export class MemberController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'List members (with pagination & filtering)' })
-  findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('tierId') tierId?: string,
-    @Query('status') status?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.memberService.findAll(tenantId, page, limit, search, tierId, status, sort);
+  findAll(@Query() query: MemberQueryDto) {
+    return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort);
   }
 
   @Get(':id')
@@ -54,14 +49,16 @@ export class MemberController {
   @Put(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Update member' })
-  update(@Param('id') id: string, @Body() body: { fullName?: string; phone?: string; tierId?: string; status?: string }) {
+  update(@Param('id') id: string, @Body() body: UpdateMemberDto) {
     return this.memberService.update(id, body);
   }
 
   @Post(':id/kyc')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Verify KYC for member' })
   kycVerify(@Param('id') id: string) {
     return this.memberService.kycVerify(id);
@@ -70,6 +67,7 @@ export class MemberController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete member' })
   remove(@Param('id') id: string) {
     return this.memberService.remove(id);
@@ -78,6 +76,7 @@ export class MemberController {
   @Post(':id/toggle-status')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Lock/Unlock member' })
   toggleStatus(@Param('id') id: string) {
     return this.memberService.toggleStatus(id);

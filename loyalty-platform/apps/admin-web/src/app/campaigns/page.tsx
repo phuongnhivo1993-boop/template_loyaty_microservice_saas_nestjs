@@ -45,9 +45,10 @@ export default function CampaignsPage() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       const res = await fetch(`/api/campaigns?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setCampaigns(Array.isArray(result) ? result : result.data || []);
-      setTotalPages(result.totalPages || 1);
-      setTotal(result.total || 0);
+      const payload = result.data ?? result;
+      setCampaigns(Array.isArray(payload) ? payload : []);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotal(result.pagination?.totalItems || 0);
     } catch {}
     setLoading(false);
   };
@@ -97,7 +98,7 @@ export default function CampaignsPage() {
     if (statusFilter !== 'ALL') params.set('status', statusFilter);
     const res = await fetch(`/api/campaigns?${params}`, { headers: { Authorization: `Bearer ${token}` } });
     const result = await res.json();
-    const data = Array.isArray(result) ? result : result.data || [];
+    const data = result.data ?? result;
     const cols = ['name', 'startDate', 'endDate', 'budget', 'status'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

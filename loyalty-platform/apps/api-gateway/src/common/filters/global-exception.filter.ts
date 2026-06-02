@@ -25,9 +25,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       success: false,
-      statusCode: status,
-      message: Array.isArray(message) ? message : [message],
-      timestamp: new Date().toISOString(),
+      message: Array.isArray(message) ? message.join('; ') : message,
+      data: null,
+      errors: Array.isArray(message) ? message : [message],
     });
   }
 }

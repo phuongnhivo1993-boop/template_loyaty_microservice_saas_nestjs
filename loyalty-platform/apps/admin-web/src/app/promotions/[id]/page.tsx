@@ -18,7 +18,8 @@ export default function PromotionDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/promotions/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setPromotion(data);
     } catch { showToast('Failed to load promotion', 'error'); }
     setLoading(false);

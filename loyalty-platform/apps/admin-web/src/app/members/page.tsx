@@ -46,9 +46,10 @@ export default function MembersPage() {
       if (tierFilter) params.set('tierId', tierFilter);
       const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setMembers(Array.isArray(result) ? result : result.data || []);
-      setTotalPages(result.totalPages || 1);
-      setTotal(result.total || 0);
+      const payload = result.data ?? result;
+      setMembers(Array.isArray(payload) ? payload : []);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotal(result.pagination?.totalItems || 0);
     } catch {}
     setLoading(false);
   };
@@ -56,7 +57,7 @@ export default function MembersPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-    fetch('/api/tiers', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(res => setTierOptions(Array.isArray(res) ? res : res.data || [])).catch(() => {});
+    fetch('/api/tiers', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(res => { const p = res.data ?? res; setTierOptions(Array.isArray(p) ? p : []); }).catch(() => {});
   }, [search, page, tierFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
@@ -91,7 +92,7 @@ export default function MembersPage() {
     if (tierFilter) params.set('tierId', tierFilter);
     const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
     const result = await res.json();
-    const data = Array.isArray(result) ? result : result.data || [];
+    const data = result.data ?? result;
     const cols = ['fullName', 'email', 'availablePoints', 'status'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

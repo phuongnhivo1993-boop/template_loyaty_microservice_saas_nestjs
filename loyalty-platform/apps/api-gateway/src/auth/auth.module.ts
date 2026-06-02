@@ -10,7 +10,8 @@ import { RolesGuard } from './roles.guard';
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'loyalty_jwt_secret_key_change_in_production',
+      secret:
+        process.env.JWT_SECRET || 'loyalty_jwt_secret_key_change_in_production',
       signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '24h') as any },
     }),
   ],

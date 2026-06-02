@@ -25,7 +25,8 @@ export default function LoginPage() {
         return;
       }
 
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       localStorage.setItem('token', data.accessToken);
       router.push('/dashboard');
     } catch {

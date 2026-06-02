@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VoucherService } from './voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Vouchers')
 @ApiBearerAuth()
@@ -11,6 +12,7 @@ export class VoucherController {
   constructor(private voucherService: VoucherService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a voucher' })
   create(@Body() body: { code: string; type: string; value: number; maxUsage?: number; expiresAt?: string; tenantId: string }) {
     return this.voucherService.create(body);
@@ -41,18 +43,21 @@ export class VoucherController {
   }
 
   @Post(':id/redeem')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem/use a voucher' })
   redeem(@Param('id') id: string) {
     return this.voucherService.redeem(id);
   }
 
   @Put(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update voucher' })
   update(@Param('id') id: string, @Body() body: { value?: number; maxUsage?: number; expiresAt?: string }) {
     return this.voucherService.update(id, body);
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete voucher' })
   remove(@Param('id') id: string) {
     return this.voucherService.remove(id);

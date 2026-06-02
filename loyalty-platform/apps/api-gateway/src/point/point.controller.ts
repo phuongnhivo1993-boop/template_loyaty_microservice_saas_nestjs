@@ -2,7 +2,8 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PointService } from './point.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AdjustPointsDto, EarnPointsDto } from '../common/dto/common.dto';
+import { Roles } from '../auth/roles.decorator';
+import { EarnPointsDto, BurnPointsDto, AdjustPointsDto, PointTransactionQueryDto } from './dto/point.dto';
 
 @ApiTags('Points')
 @ApiBearerAuth()
@@ -18,14 +19,16 @@ export class PointController {
   }
 
   @Post('earn')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Earn points' })
   earn(@Body() body: EarnPointsDto) {
     return this.pointService.earn(body.memberId, body.amount, body.reason);
   }
 
   @Post('burn')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Burn points' })
-  burn(@Body() body: EarnPointsDto) {
+  burn(@Body() body: BurnPointsDto) {
     return this.pointService.burn(body.memberId, body.amount, body.reason);
   }
 
@@ -37,16 +40,12 @@ export class PointController {
 
   @Get('transactions')
   @ApiOperation({ summary: 'List point transactions (paginated)' })
-  getTransactions(
-    @Query('memberId') memberId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('type') type?: string,
-  ) {
-    return this.pointService.getTransactions(memberId, page, limit, type);
+  getTransactions(@Query() query: PointTransactionQueryDto) {
+    return this.pointService.getTransactions(query.memberId, query.page, query.limit, query.type, query.tenantId, query.search, query.sort);
   }
 
   @Post('adjust')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Admin: adjust member points' })
   adjust(@Body() body: AdjustPointsDto) {
     return this.pointService.adjust(body.memberId, body.amount, body.reason);

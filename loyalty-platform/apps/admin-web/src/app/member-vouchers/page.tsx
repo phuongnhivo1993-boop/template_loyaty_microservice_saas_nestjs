@@ -36,9 +36,10 @@ export default function MemberVouchersPage() {
       if (search) params.set('search', search);
       const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setAssignments(Array.isArray(result) ? result : result.data || []);
-      setTotalPages(result.totalPages || 1);
-      setTotal(result.total || 0);
+      const payload = result.data ?? result;
+      setAssignments(Array.isArray(payload) ? payload : []);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotal(result.pagination?.totalItems || 0);
     } catch {}
     setLoading(false);
   };
@@ -74,7 +75,7 @@ export default function MemberVouchersPage() {
     const params = new URLSearchParams({ page: '1', limit: '10000' });
     const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
     const result = await res.json();
-    const data = Array.isArray(result) ? result : result.data || [];
+    const data = result.data ?? result;
     const cols = ['memberId', 'voucherId', 'redeemed', 'redeemedAt', 'createdAt'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

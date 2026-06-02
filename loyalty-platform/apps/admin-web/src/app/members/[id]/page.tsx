@@ -19,8 +19,8 @@ export default function MemberDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/members/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setMember(data);
+      const result = await res.json();
+      setMember(result.data ?? result);
     } catch { showToast('Failed to load member', 'error'); }
     setLoading(false);
   };

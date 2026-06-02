@@ -18,7 +18,8 @@ export default function BadgeDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/badges/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setBadge(data);
     } catch { showToast('Failed to load badge', 'error'); }
     setLoading(false);

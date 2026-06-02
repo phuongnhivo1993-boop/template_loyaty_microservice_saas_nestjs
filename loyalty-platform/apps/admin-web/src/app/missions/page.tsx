@@ -41,9 +41,10 @@ export default function MissionsPage() {
       if (search) params.set('search', search);
       const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
-      setMissions(Array.isArray(result) ? result : result.data || []);
-      setTotalPages(result.totalPages || 1);
-      setTotal(result.total || 0);
+      const payload = result.data ?? result;
+      setMissions(Array.isArray(payload) ? payload : []);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotal(result.pagination?.totalItems || 0);
     } catch {}
     setLoading(false);
   };
@@ -97,7 +98,7 @@ export default function MissionsPage() {
     if (search) params.set('search', search);
     const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
     const result = await res.json();
-    const data = Array.isArray(result) ? result : result.data || [];
+    const data = result.data ?? result;
     const cols = ['name', 'pointsReward', 'startDate', 'endDate', 'criteria'];
     const header = cols.join(',');
     const rows = data.map((item: any) => cols.map((col: string) => { const v = typeof item[col] === 'object' ? JSON.stringify(item[col]) : (item[col]?.toString() || ''); return v.includes(',') ? `"${v}"` : v; }).join(','));

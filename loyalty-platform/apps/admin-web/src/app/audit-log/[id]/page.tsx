@@ -18,7 +18,8 @@ export default function AuditLogDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/audit-logs/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setLog(data);
     } catch { showToast('Failed to load audit log', 'error'); }
     setLoading(false);

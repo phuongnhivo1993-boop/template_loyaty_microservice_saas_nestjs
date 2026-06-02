@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardService } from './reward.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Rewards')
 @ApiBearerAuth()
@@ -11,6 +12,7 @@ export class RewardController {
   constructor(private rewardService: RewardService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a reward' })
   create(@Body() body: { name: string; description?: string; type: string; pointsRequired: number; quantity: number; imageUrl?: string; tenantId: string }) {
     return this.rewardService.create(body);
@@ -35,18 +37,21 @@ export class RewardController {
   }
 
   @Post(':id/redeem')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem reward with member points' })
   redeem(@Param('id') id: string, @Body() body: { memberId: string; quantity?: number }) {
     return this.rewardService.redeem(id, body.memberId, body.quantity);
   }
 
   @Put(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update reward' })
   update(@Param('id') id: string, @Body() body: { name?: string; description?: string; pointsRequired?: number; quantity?: number }) {
     return this.rewardService.update(id, body);
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete reward' })
   remove(@Param('id') id: string) {
     return this.rewardService.remove(id);

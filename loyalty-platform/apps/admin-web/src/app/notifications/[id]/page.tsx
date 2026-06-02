@@ -18,7 +18,8 @@ export default function NotificationDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/notifications/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data ?? result;
       setNotification(data);
     } catch { showToast('Failed to load notification template', 'error'); }
     setLoading(false);
