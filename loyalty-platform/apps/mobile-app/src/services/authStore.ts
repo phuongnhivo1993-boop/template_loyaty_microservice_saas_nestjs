@@ -1,17 +1,10 @@
 import { create } from 'zustand';
-
-interface AuthState {
-  token: string | null;
-  profile: any | null;
-  setToken: (token: string | null) => void;
-  setProfile: (profile: any) => void;
-  logout: () => void;
-}
+import type { AuthState } from './types';
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   profile: null,
-  setToken: (token) => set({ token }),
+  setToken: (token: string) => set({ token }),
   setProfile: (profile) => set({ profile }),
   logout: () => set({ token: null, profile: null }),
 }));

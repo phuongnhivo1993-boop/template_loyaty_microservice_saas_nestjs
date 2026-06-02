@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({});
   const [tiers, setTiers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pointsTrend, setPointsTrend] = useState<any[]>([]);
@@ -28,17 +29,7 @@ export default function DashboardPage() {
       fetch('/api/analytics/voucher-stats', { headers }).then(r => r.json()),
     ])
       .then(([data, trend, growth, top, vStats]) => {
-        setStats([
-          { label: 'Total Members', value: String(data.members || '--'), icon: '👥' },
-          { label: 'Active Tenants', value: String(data.tenants || '--'), icon: '🏢' },
-          { label: 'Campaigns Running', value: String(data.activeCampaigns || '--'), icon: '📢' },
-          { label: 'Total Rewards', value: String(data.rewards || '--'), icon: '🎁' },
-          { label: 'Vouchers', value: String(data.vouchers || '--'), icon: '🎟️' },
-          { label: 'Total Points', value: (data.totalPoints || 0).toLocaleString(), icon: '⭐' },
-          { label: 'Promotions', value: String(data.promotions || '--'), icon: '⚡' },
-          { label: 'Badges', value: String(data.badges || '--'), icon: '🏅' },
-          { label: 'Referrals', value: String(data.referrals || '--'), icon: '🔗' },
-        ]);
+        setStats(data);
         if (data.tiers) setTiers(data.tiers);
         if (Array.isArray(trend)) setPointsTrend(trend);
         if (Array.isArray(growth)) setMemberGrowth(growth);
@@ -51,6 +42,22 @@ export default function DashboardPage() {
 
   const maxTrend = Math.max(1, ...pointsTrend.map((p: any) => p.earned || 0));
   const maxGrowth = Math.max(1, ...memberGrowth.map((g: any) => g.totalMembers || 0));
+  const statusColors: Record<string, string> = { ACTIVE: '#16a34a', INACTIVE: '#94a3b8', LOCKED: '#dc2626', PENDING_KYC: '#f59e0b' };
+
+  const statCards = [
+    { label: 'Total Members', value: String(stats.members || '--'), icon: '👥' },
+    { label: 'Active Tenants', value: String(stats.tenants || '--'), icon: '🏢' },
+    { label: 'Campaigns Running', value: String(stats.activeCampaigns || '--'), icon: '📢' },
+    { label: 'Total Rewards', value: String(stats.rewards || '--'), icon: '🎁' },
+    { label: 'Vouchers', value: String(stats.vouchers || '--'), icon: '🎟️' },
+    { label: 'Active Vouchers', value: String(stats.activeVouchers || '--'), icon: '✅' },
+    { label: 'Total Points', value: (stats.totalPoints || 0).toLocaleString(), icon: '⭐' },
+    { label: 'KYC Rate', value: `${stats.kycRate || 0}%`, icon: '🪪' },
+    { label: 'Promotions', value: String(stats.promotions || '--'), icon: '⚡' },
+    { label: 'Badges', value: String(stats.badges || '--'), icon: '🏅' },
+    { label: 'Missions', value: String(stats.missions || '--'), icon: '🎯' },
+    { label: 'Referrals', value: String(stats.referrals || '--'), icon: '🔗' },
+  ];
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
 
@@ -58,13 +65,10 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
       <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Dashboard</h1>
-          <p style={{ color: '#64748b', marginTop: '4px' }}>Welcome to Loyalty Platform Admin</p>
-        </div>
+        <PageHeader title="Dashboard" subtitle="Welcome to Loyalty Platform Admin" />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-          {stats.map((stat) => (
+          {statCards.map((stat) => (
             <div key={stat.label} style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{ fontSize: '28px' }}>{stat.icon}</div>
               <div>
@@ -109,6 +113,20 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {stats.membersByStatus && Object.keys(stats.membersByStatus).length > 0 && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Member Status Distribution</h2>
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              {Object.entries(stats.membersByStatus).map(([status, count]) => (
+                <div key={status} style={{ padding: '16px', borderRadius: '8px', background: (statusColors[status] || '#f1f5f9') + '18', border: `1px solid ${statusColors[status] || '#e2e8f0'}`, minWidth: '120px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: statusColors[status] || '#475569' }}>{String(count)}</div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{status}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
           {topMembers.length > 0 && (
             <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -136,28 +154,16 @@ export default function DashboardPage() {
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Voucher Usage</h2>
               <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                 <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-                  <div style={{
-                    width: '120px', height: '120px', borderRadius: '50%',
-                    background: `conic-gradient(#3b82f6 0% ${voucherStats.usageRate || 0}%, #f1f5f9 ${voucherStats.usageRate || 0}% 100%)`,
-                  }} />
+                  <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: `conic-gradient(#3b82f6 0% ${voucherStats.usageRate || 0}%, #f1f5f9 ${voucherStats.usageRate || 0}% 100%)` }} />
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', borderRadius: '50%', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
                     <span style={{ fontSize: '20px', fontWeight: 700, color: '#2563eb' }}>{voucherStats.usageRate || 0}%</span>
                     <span style={{ fontSize: '11px', color: '#94a3b8' }}>used</span>
                   </div>
                 </div>
                 <div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#64748b' }}>Total</div>
-                    <div style={{ fontSize: '22px', fontWeight: 700 }}>{voucherStats.total || 0}</div>
-                  </div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#64748b' }}>Used</div>
-                    <div style={{ fontSize: '22px', fontWeight: 700, color: '#dc2626' }}>{voucherStats.used || 0}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#64748b' }}>Remaining</div>
-                    <div style={{ fontSize: '22px', fontWeight: 700, color: '#16a34a' }}>{voucherStats.remaining || 0}</div>
-                  </div>
+                  <div style={{ marginBottom: '12px' }}><div style={{ fontSize: '13px', color: '#64748b' }}>Total</div><div style={{ fontSize: '22px', fontWeight: 700 }}>{voucherStats.total || 0}</div></div>
+                  <div style={{ marginBottom: '12px' }}><div style={{ fontSize: '13px', color: '#64748b' }}>Used</div><div style={{ fontSize: '22px', fontWeight: 700, color: '#dc2626' }}>{voucherStats.used || 0}</div></div>
+                  <div><div style={{ fontSize: '13px', color: '#64748b' }}>Remaining</div><div style={{ fontSize: '22px', fontWeight: 700, color: '#16a34a' }}>{voucherStats.remaining || 0}</div></div>
                 </div>
               </div>
             </div>

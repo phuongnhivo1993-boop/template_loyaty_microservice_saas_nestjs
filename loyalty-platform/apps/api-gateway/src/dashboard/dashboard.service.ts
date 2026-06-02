@@ -11,7 +11,7 @@ export class DashboardService {
     const [
       tenants, members, activeCampaigns, rewards, vouchers,
       totalPoints, promotions, badges, missions, referrals,
-      tiersWithMembers,
+      tiersWithMembers, membersByStatus, kycCount, activeVouchers,
     ] = await Promise.all([
       this.prisma.tenant.count(),
       this.prisma.member.count({ where: tenantId ? { tenantId } : {} }),
@@ -28,7 +28,15 @@ export class DashboardService {
         include: { _count: { select: { members: true } } },
         orderBy: { minPoints: 'asc' },
       }),
+      this.prisma.member.groupBy({ by: ['status'], where: tenantFilter, _count: true }),
+      this.prisma.member.count({ where: { ...tenantFilter, kycVerified: true } }),
+      this.prisma.memberVoucher.count({ where: { redeemed: false, ...(tenantId ? { member: { tenantId } } : {}) } }),
     ]);
+
+    const statusBreakdown = membersByStatus.reduce((acc, cur) => {
+      acc[cur.status] = cur._count;
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
       tenants,
@@ -41,6 +49,9 @@ export class DashboardService {
       badges,
       missions,
       referrals,
+      kycRate: members > 0 ? Math.round((kycCount / members) * 100) : 0,
+      activeVouchers,
+      membersByStatus: statusBreakdown,
       tiers: tiersWithMembers.map(t => ({ name: t.name, color: t.color, memberCount: t._count.members })),
     };
   }
