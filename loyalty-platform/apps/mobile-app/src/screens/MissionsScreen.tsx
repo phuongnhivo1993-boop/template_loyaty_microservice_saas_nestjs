@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import api from '../services/api';
+import type { Mission } from '../services/types';
+import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function MissionsScreen() {
-  const [missions, setMissions] = useState<any[]>([]);
+  const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     api.get('/missions')
       .then(r => setMissions(Array.isArray(r.data) ? r.data : r.data?.data || []))
       .catch(() => setError('Failed to load missions'))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  const renderItem = ({ item }: { item: any }) => (
+  useEffect(() => { load(); }, []);
+
+  const renderItem = ({ item }: { item: Mission }) => (
     <View style={styles.card}>
       <Text style={styles.name}>{item.name}</Text>
       {item.description && <Text style={styles.desc}>{item.description}</Text>}
@@ -27,15 +33,15 @@ export default function MissionsScreen() {
     </View>
   );
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Missions</Text>
-      <FlatList data={missions} renderItem={renderItem} keyExtractor={(item) => item.id}
+      <FlatList data={missions} renderItem={renderItem} keyExtractor={(item: Mission) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No missions available</Text>}
+        ListEmptyComponent={<EmptyState message="No missions available" icon="🎯" />}
       />
     </View>
   );
@@ -52,6 +58,5 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   reward: { fontSize: 14, fontWeight: '700', color: '#2563eb' },
   date: { fontSize: 12, color: '#94a3b8' },
-  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
   errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

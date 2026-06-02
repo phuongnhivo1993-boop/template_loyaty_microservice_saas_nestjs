@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { members } from '../services/api';
+import type { MemberVoucher } from '../services/types';
+import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function VouchersScreen() {
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<MemberVoucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     members.getVouchers()
       .then(r => setVouchers(Array.isArray(r.data) ? r.data : r.data?.data || []))
       .catch(() => setError('Failed to load vouchers'))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  const renderItem = ({ item }: { item: any }) => (
+  useEffect(() => { load(); }, []);
+
+  const renderItem = ({ item }: { item: MemberVoucher }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardCode}>{item.voucher?.code || item.code}</Text>
@@ -29,15 +35,15 @@ export default function VouchersScreen() {
     </View>
   );
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My Vouchers</Text>
-      <FlatList data={vouchers} renderItem={renderItem} keyExtractor={(item) => item.id}
+      <FlatList data={vouchers} renderItem={renderItem} keyExtractor={(item: MemberVoucher) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No vouchers yet</Text>}
+        ListEmptyComponent={<EmptyState message="No vouchers yet" icon="🎟️" />}
       />
     </View>
   );
@@ -56,6 +62,5 @@ const styles = StyleSheet.create({
   redeemedBadge: { backgroundColor: '#f1f5f9', color: '#64748b' },
   cardValue: { fontSize: 14, color: '#64748b', marginTop: 4 },
   expiry: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
-  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
   errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

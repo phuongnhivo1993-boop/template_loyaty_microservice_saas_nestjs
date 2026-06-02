@@ -8,6 +8,7 @@ import ReferralsScreen from '../screens/ReferralsScreen';
 import BadgesScreen from '../screens/BadgesScreen';
 import VouchersScreen from '../screens/VouchersScreen';
 import MissionsScreen from '../screens/MissionsScreen';
+import PasswordScreen from '../screens/PasswordScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -26,6 +27,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Badges" component={BadgesScreen} />
           <Stack.Screen name="Vouchers" component={VouchersScreen} />
           <Stack.Screen name="Missions" component={MissionsScreen} />
+          <Stack.Screen name="Password" component={PasswordScreen} />
         </>
       ) : (
         <>

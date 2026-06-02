@@ -1,27 +1,33 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
+import type { Member, Wallet } from '../services/types';
+import { LoadingState, ErrorState } from '../components';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const [profile, setProfile] = useState<any>(null);
-  const [wallet, setWallet] = useState<any>(null);
+  const [profile, setProfile] = useState<Member | null>(null);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     Promise.all([
       members.getProfile().then((r) => setProfile(r.data)),
       members.getWallet().then((r) => setWallet(r.data)),
     ]).catch(() => setError('Failed to load data'))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <ScrollView style={styles.container}>
@@ -32,7 +38,7 @@ export default function HomeScreen() {
 
       <View style={styles.pointsCard}>
         <Text style={styles.pointsLabel}>Available Points</Text>
-        <Text style={styles.pointsValue}>{(wallet?.availablePoints || 0).toLocaleString()}</Text>
+        <Text style={styles.pointsValue}>{(wallet?.available ?? profile?.availablePoints ?? 0).toLocaleString()}</Text>
         <Text style={styles.tier}>{profile?.tier?.name || 'Bronze'}</Text>
       </View>
 
@@ -44,6 +50,7 @@ export default function HomeScreen() {
           { label: 'Badges', icon: '🏅', screen: 'Badges' },
           { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
           { label: 'Missions', icon: '🎯', screen: 'Missions' },
+          { label: 'Password', icon: '🔒', screen: 'Password' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>
             <Text style={styles.menuIcon}>{item.icon}</Text>

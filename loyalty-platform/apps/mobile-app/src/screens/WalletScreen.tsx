@@ -1,21 +1,32 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { members } from '../services/api';
+import type { PointTransaction } from '../services/types';
+import { Card, LoadingState, ErrorState, EmptyState } from '../components';
+
+interface WalletData {
+  availablePoints: number;
+  transactions: PointTransaction[];
+}
 
 export default function WalletScreen() {
-  const [wallet, setWallet] = useState<any>(null);
+  const [wallet, setWallet] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     members.getWallet()
       .then((r) => setWallet(r.data))
       .catch(() => setError('Failed to load wallet'))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <ScrollView style={styles.container}>
@@ -26,7 +37,7 @@ export default function WalletScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-        {wallet?.transactions && wallet.transactions.length > 0 ? wallet.transactions.map((t: any) => (
+        {wallet?.transactions && wallet.transactions.length > 0 ? wallet.transactions.map((t: PointTransaction) => (
           <View key={t.id} style={styles.transaction}>
             <View>
               <Text style={styles.txType}>{t.type}</Text>
@@ -37,7 +48,7 @@ export default function WalletScreen() {
             </Text>
           </View>
         )) : (
-          <Text style={styles.emptyText}>No transactions yet</Text>
+          <EmptyState message="No transactions yet" icon="💳" />
         )}
       </View>
     </ScrollView>

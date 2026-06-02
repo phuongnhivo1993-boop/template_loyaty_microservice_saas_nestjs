@@ -1,28 +1,38 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Share, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Share } from 'react-native';
 import { members } from '../services/api';
+import type { Referral } from '../services/types';
+import { LoadingState, ErrorState, EmptyState } from '../components';
+
+interface ReferralStats {
+  total: number; converted: number; pending: number;
+}
 
 export default function ReferralsScreen() {
-  const [referrals, setReferrals] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [stats, setStats] = useState<ReferralStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     members.getReferrals().then((r) => {
       const data = r.data;
       setReferrals(Array.isArray(data) ? data : data?.data || []);
       setStats(data?.stats || null);
     }).catch(() => setError('Failed to load referrals'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const handleShare = async (code: string) => {
     await Share.share({ message: `Join me on Loyalty Platform! Use my referral code: ${code}` });
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <ScrollView style={styles.container}>
@@ -49,7 +59,7 @@ export default function ReferralsScreen() {
       )}
 
       <View style={styles.list}>
-        {referrals.length > 0 ? referrals.map((r: any) => (
+        {referrals.length > 0 ? referrals.map((r: Referral) => (
           <View key={r.id} style={styles.card}>
             <View>
               <Text style={styles.code}>Code: {r.code}</Text>
@@ -58,7 +68,7 @@ export default function ReferralsScreen() {
             <Text style={styles.shareLink} onPress={() => handleShare(r.code)}>Share</Text>
           </View>
         )) : (
-          <Text style={styles.emptyText}>No referrals yet</Text>
+          <EmptyState message="No referrals yet" icon="🔗" />
         )}
       </View>
     </ScrollView>
@@ -80,6 +90,5 @@ const styles = StyleSheet.create({
   code: { fontSize: 16, fontWeight: '600', color: '#1e293b', fontFamily: 'monospace' },
   status: { fontSize: 12, color: '#64748b', marginTop: 4 },
   shareLink: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
-  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 15 },
   errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

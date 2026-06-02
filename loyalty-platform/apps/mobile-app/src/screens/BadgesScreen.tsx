@@ -1,31 +1,37 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { members } from '../services/api';
+import type { Badge } from '../services/types';
+import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function BadgesScreen() {
-  const [badges, setBadges] = useState<any[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     members.getBadges()
       .then(res => setBadges(Array.isArray(res.data) ? res.data : res.data.data || []))
       .catch(() => setError('Failed to load badges'))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.error}>{error}</Text></View>;
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Badges</Text>
       <FlatList
         data={badges}
-        keyExtractor={item => item.id}
-        contentContainerStyle={badges.length === 0 ? styles.emptyContainer : undefined}
-        ListEmptyComponent={<Text style={styles.empty}>No badges earned yet</Text>}
-        renderItem={({ item }) => (
+        keyExtractor={(item: Badge) => item.id}
+        contentContainerStyle={badges.length === 0 ? styles.emptyContainer : styles.list}
+        ListEmptyComponent={<EmptyState message="No badges earned yet" icon="🏅" />}
+        renderItem={({ item }: { item: Badge }) => (
           <View style={styles.card}>
             <Text style={styles.badgeIcon}>{item.iconUrl || '🏅'}</Text>
             <View style={{ flex: 1 }}>
@@ -43,9 +49,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', padding: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   title: { fontSize: 24, fontWeight: '700', color: '#1e293b', marginBottom: 16 },
-  error: { color: '#dc2626', fontSize: 14 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  empty: { color: '#94a3b8', fontSize: 14 },
+  list: { paddingBottom: 20 },
   card: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 12,
     padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,

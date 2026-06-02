@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { rewards, members } from '../services/api';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { rewards } from '../services/api';
 import { useAuthStore } from '../services/authStore';
+import type { Reward } from '../services/types';
+import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function RewardsScreen() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const profile = useAuthStore((s) => s.profile);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError('');
     rewards.list()
       .then((r) => setItems(Array.isArray(r.data) ? r.data : r.data?.data || []))
       .catch(() => setError('Failed to load rewards'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const handleRedeem = async (rewardId: string) => {
     if (!profile?.id) return;
@@ -29,8 +35,8 @@ export default function RewardsScreen() {
     ]);
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /></View>;
-  if (error) return <View style={styles.center}><Text style={styles.errorText}>{error}</Text></View>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <ScrollView style={styles.container}>
@@ -39,7 +45,7 @@ export default function RewardsScreen() {
         <Text style={styles.subtitle}>Redeem your points</Text>
       </View>
       <View style={styles.list}>
-        {items.length > 0 ? items.map((r: any) => (
+        {items.length > 0 ? items.map((r: Reward) => (
           <View key={r.id} style={styles.card}>
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle}>{r.name}</Text>
@@ -52,7 +58,7 @@ export default function RewardsScreen() {
             </TouchableOpacity>
           </View>
         )) : (
-          <Text style={styles.emptyText}>No rewards available</Text>
+          <EmptyState message="No rewards available" icon="🎁" />
         )}
       </View>
     </ScrollView>

@@ -124,4 +124,5 @@ export type RootStackParamList = {
   Badges: undefined;
   Vouchers: undefined;
   Missions: undefined;
+  Password: undefined;
 };
