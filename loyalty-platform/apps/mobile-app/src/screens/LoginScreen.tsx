@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { auth } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
+  const navigation = useNavigation<any>();
   const [email, setEmail] = useState('nguyen.van.a@sunshine.vn');
   const [password, setPassword] = useState('Member@123456');
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,9 @@ export default function LoginScreen() {
         <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ alignItems: 'center', marginTop: 16 }}>
+          <Text style={{ color: '#94a3b8', fontSize: 14 }}>Don't have an account? <Text style={{ color: '#3b82f6', fontWeight: '600' }}>Register</Text></Text>
         </TouchableOpacity>
       </View>
     </View>

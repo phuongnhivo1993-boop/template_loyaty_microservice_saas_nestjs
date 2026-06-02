@@ -1,10 +1,13 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import WalletScreen from '../screens/WalletScreen';
 import RewardsScreen from '../screens/RewardsScreen';
 import ReferralsScreen from '../screens/ReferralsScreen';
 import BadgesScreen from '../screens/BadgesScreen';
+import VouchersScreen from '../screens/VouchersScreen';
+import MissionsScreen from '../screens/MissionsScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -21,9 +24,14 @@ export default function AppNavigator() {
           <Stack.Screen name="Rewards" component={RewardsScreen} />
           <Stack.Screen name="Referrals" component={ReferralsScreen} />
           <Stack.Screen name="Badges" component={BadgesScreen} />
+          <Stack.Screen name="Vouchers" component={VouchersScreen} />
+          <Stack.Screen name="Missions" component={MissionsScreen} />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
       )}
     </Stack.Navigator>
   );

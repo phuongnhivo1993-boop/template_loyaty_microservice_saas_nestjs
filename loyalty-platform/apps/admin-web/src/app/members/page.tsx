@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { useToast } from '@/components/Toast';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; status: string;
@@ -12,6 +13,7 @@ const emptyForm: MemberForm = { fullName: '', email: '', phone: '', status: 'ACT
 
 export default function MembersPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -54,17 +56,25 @@ export default function MembersPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this member? This action cannot be undone.')) return;
-    await fetch(`/api/members/${id}`, { method: 'DELETE', headers });
-    load();
+    try {
+      const res = await fetch(`/api/members/${id}`, { method: 'DELETE', headers });
+      if (!res.ok) { showToast('Failed to delete member', 'error'); return; }
+      showToast('Member deleted successfully', 'success');
+      load();
+    } catch { showToast('Network error', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = editing ? `/api/members/${editing.id}` : '/api/members';
-    const method = editing ? 'PATCH' : 'POST';
-    await fetch(url, { method, headers, body: JSON.stringify(form) });
-    setShowModal(false);
-    load();
+    try {
+      const url = editing ? `/api/members/${editing.id}` : '/api/members';
+      const method = editing ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
+      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      showToast(editing ? 'Member updated successfully' : 'Member created successfully', 'success');
+      setShowModal(false);
+      load();
+    } catch { showToast('Network error', 'error'); }
   };
 
   const modal = showModal && (
@@ -178,7 +188,9 @@ export default function MembersPage() {
                 <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No members found</td></tr>
               ) : members.map((m: any) => (
                 <tr key={m.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>{m.fullName}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>
+                    <a href={`/members/${m.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{m.fullName}</a>
+                  </td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{m.email}</td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

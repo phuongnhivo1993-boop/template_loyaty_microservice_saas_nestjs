@@ -17,15 +17,16 @@ export class CampaignController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List campaigns (with pagination)' })
+  @ApiOperation({ summary: 'List campaigns (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: string,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.campaignService.findAll(tenantId, page, limit, status, search);
+    return this.campaignService.findAll(tenantId, page, limit, status, search, sort);
   }
 
   @Get(':id')

@@ -34,6 +34,8 @@ export default function HomeScreen() {
           { label: 'Rewards', icon: '🎁', screen: 'Rewards' },
           { label: 'Referrals', icon: '🔗', screen: 'Referrals' },
           { label: 'Badges', icon: '🏅', screen: 'Badges' },
+          { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
+          { label: 'Missions', icon: '🎯', screen: 'Missions' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>
             <Text style={styles.menuIcon}>{item.icon}</Text>

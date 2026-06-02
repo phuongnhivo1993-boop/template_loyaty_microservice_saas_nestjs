@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 12);
   }
 
   async create(data: { email: string; password: string; fullName: string; phone?: string; role?: string; tenantId: string }) {
@@ -16,7 +16,7 @@ export class UserService {
     return this.prisma.user.create({
       data: {
         email: data.email,
-        password: this.hashPassword(data.password),
+        password: await this.hashPassword(data.password),
         fullName: data.fullName,
         phone: data.phone,
         role: data.role as any || 'MEMBER',

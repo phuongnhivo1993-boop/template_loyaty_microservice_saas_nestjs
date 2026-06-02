@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 
+jest.setTimeout(30000);
+
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: any;

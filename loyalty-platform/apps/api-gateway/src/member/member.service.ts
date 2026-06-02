@@ -59,6 +59,11 @@ export class MemberService {
     });
   }
 
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.member.delete({ where: { id } });
+  }
+
   async toggleStatus(id: string) {
     const member = await this.findOne(id);
     const newStatus = member.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';

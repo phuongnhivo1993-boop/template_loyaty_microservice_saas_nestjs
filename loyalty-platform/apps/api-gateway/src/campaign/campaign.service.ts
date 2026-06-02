@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class CampaignService {
   constructor(private prisma: PrismaService) {}
 
   create(data: { name: string; description?: string; startDate: string; endDate: string; budget?: number; tenantId: string }) {
-    return this.prisma.campaign.create({ data: { ...data, startDate: new Date(data.startDate), endDate: new Date(data.endDate) } });
+    const startDate = new Date(data.startDate);
+    const endDate = new Date(data.endDate);
+    if (startDate >= endDate) throw new BadRequestException('startDate must be before endDate');
+    return this.prisma.campaign.create({ data: { ...data, startDate, endDate } });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, status?: string, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, status?: string, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (status) where.status = status;
@@ -20,9 +24,10 @@ export class CampaignService {
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.campaign.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.campaign.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

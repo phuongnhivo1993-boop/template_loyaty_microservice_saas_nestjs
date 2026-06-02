@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberService } from './member.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -59,6 +59,14 @@ export class MemberController {
   @ApiOperation({ summary: 'Verify KYC for member' })
   kycVerify(@Param('id') id: string) {
     return this.memberService.kycVerify(id);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete member' })
+  remove(@Param('id') id: string) {
+    return this.memberService.remove(id);
   }
 
   @Post(':id/toggle-status')
