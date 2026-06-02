@@ -16,26 +16,31 @@ export class PointService {
   }
 
   async earn(memberId: string, amount: number, reason?: string) {
-    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      include: { tier: true },
+    });
     if (!member) throw new NotFoundException('Member not found');
 
-    const newTotal = member.totalPoints + amount;
+    const multiplier = member.tier?.pointsMultiplier ?? 1.0;
+    const finalAmount = Math.round(amount * multiplier);
+    const newTotal = member.totalPoints + finalAmount;
 
     const [transaction] = await this.prisma.$transaction([
       this.prisma.pointTransaction.create({
         data: {
           memberId,
           type: 'EARN',
-          amount,
-          balance: member.availablePoints + amount,
-          reason,
+          amount: finalAmount,
+          balance: member.availablePoints + finalAmount,
+          reason: reason ? `${reason} (x${multiplier})` : undefined,
         },
       }),
       this.prisma.member.update({
         where: { id: memberId },
         data: {
-          totalPoints: { increment: amount },
-          availablePoints: { increment: amount },
+          totalPoints: { increment: finalAmount },
+          availablePoints: { increment: finalAmount },
         },
       }),
     ]);

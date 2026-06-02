@@ -106,4 +106,10 @@ export const notifications = {
   list: () => api.get('/me/notifications'),
 };
 
+export const checkin = {
+  do: () => api.post('/checkin'),
+  stats: () => api.get('/checkin/stats'),
+  history: () => api.get('/checkin/history'),
+};
+
 export default api;

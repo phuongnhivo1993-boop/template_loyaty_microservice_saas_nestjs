@@ -85,16 +85,17 @@ model User {
 }
 
 model Tier {
-  id          String   @id @default(uuid())
-  name        String
-  minPoints   Int      @default(0)
-  maxPoints   Int      @default(999999)
-  benefits    String?
-  color       String?
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  minPoints        Int      @default(0)
+  maxPoints        Int      @default(999999)
+  pointsMultiplier Float    @default(1.0)
+  benefits         String?
+  color            String?
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   members Member[]
 
@@ -124,6 +125,7 @@ model Member {
   referralsGiven    Referral[]        @relation("ReferralGiven")
   referralsReceived Referral[]        @relation("ReferralReceived")
   memberVouchers    MemberVoucher[]
+  dailyCheckins     DailyCheckin[]
 
   @@index([tenantId])
   @@index([status])
@@ -205,17 +207,19 @@ model Voucher {
 }
 
 model MemberVoucher {
-  id        String   @id @default(uuid())
-  memberId  String
-  member    Member   @relation(fields: [memberId], references: [id])
-  voucherId String
-  voucher   Voucher  @relation(fields: [voucherId], references: [id])
-  redeemed  Boolean  @default(false)
+  id         String   @id @default(uuid())
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id])
+  voucherId  String
+  voucher    Voucher  @relation(fields: [voucherId], references: [id])
+  qrCode     String   @unique
+  redeemed   Boolean  @default(false)
   redeemedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   @@index([memberId])
   @@index([voucherId])
+  @@index([qrCode])
   @@index([redeemed])
   @@map("member_vouchers")
 }
@@ -328,6 +332,19 @@ model Settings {
   @@unique([scope, scopeId, key])
   @@index([scope, scopeId])
   @@map("settings")
+}
+
+model DailyCheckin {
+  id        String   @id @default(uuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id])
+  date      DateTime @default(now())
+  streak    Int      @default(1)
+  pointsAwarded Int  @default(0)
+
+  @@unique([memberId, date])
+  @@index([memberId])
+  @@map("daily_checkins")
 }
 
 model AuditLog {

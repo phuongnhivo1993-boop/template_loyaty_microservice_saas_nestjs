@@ -106,6 +106,21 @@ export interface Mission {
   endDate?: string;
 }
 
+export interface DailyCheckin {
+  id: string;
+  memberId: string;
+  date: string;
+  streak: number;
+  pointsAwarded: number;
+}
+
+export interface CheckinStats {
+  currentStreak: number;
+  totalCheckins: number;
+  longestStreak: number;
+  checkedInToday: boolean;
+}
+
 export interface AuthState {
   token: string | null;
   profile: Member | null;
@@ -130,4 +145,5 @@ export type RootStackParamList = {
   Profile: undefined;
   ResetPassword: undefined;
   Notifications: undefined;
+  Checkin: undefined;
 };

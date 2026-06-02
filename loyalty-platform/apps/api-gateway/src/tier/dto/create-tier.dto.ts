@@ -5,6 +5,7 @@ export class CreateTierDto {
   @ApiProperty() @IsString() name: string;
   @ApiProperty({ required: false, default: 0 }) @IsOptional() @IsNumber() minPoints?: number;
   @ApiProperty({ required: false, default: 999999 }) @IsOptional() @IsNumber() maxPoints?: number;
+  @ApiProperty({ required: false, default: 1.0 }) @IsOptional() @IsNumber() pointsMultiplier?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() benefits?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() color?: string;
   @ApiProperty() @IsString() tenantId: string;
@@ -14,6 +15,7 @@ export class UpdateTierDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() minPoints?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() maxPoints?: number;
+  @ApiProperty({ required: false }) @IsOptional() @IsNumber() pointsMultiplier?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() benefits?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() color?: string;
 }

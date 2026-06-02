@@ -30,6 +30,7 @@ import { ExportModule } from './export/export.module';
 import { ImportModule } from './import/import.module';
 import { BulkModule } from './bulk/bulk.module';
 import { SettingsModule } from './settings/settings.module';
+import { CheckinModule } from './checkin/checkin.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { SettingsModule } from './settings/settings.module';
     ImportModule,
     BulkModule,
     SettingsModule,
+    CheckinModule,
   ],
   controllers: [ApiGatewayController],
   providers: [

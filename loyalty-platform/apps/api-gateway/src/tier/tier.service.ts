@@ -9,12 +9,13 @@ export class TierService {
 
   constructor(private prisma: PrismaService) {}
 
-  create(data: { name: string; minPoints?: number; maxPoints?: number; benefits?: string; color?: string; tenantId: string }) {
+  create(data: { name: string; minPoints?: number; maxPoints?: number; pointsMultiplier?: number; benefits?: string; color?: string; tenantId: string }) {
     return this.prisma.tier.create({
       data: {
         ...data,
         minPoints: data.minPoints ?? 0,
         maxPoints: data.maxPoints ?? 999999,
+        pointsMultiplier: data.pointsMultiplier ?? 1.0,
       },
     });
   }

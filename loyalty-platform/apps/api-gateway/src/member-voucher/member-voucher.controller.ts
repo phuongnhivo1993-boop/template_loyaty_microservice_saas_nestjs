@@ -43,4 +43,18 @@ export class MemberVoucherController {
   redeem(@Param('id') id: string) {
     return this.memberVoucherService.redeem(id);
   }
+
+  @Post('validate-qr')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Validate a member voucher by QR code' })
+  validateQr(@Body() body: { qrCode: string }) {
+    return this.memberVoucherService.validateByQr(body.qrCode);
+  }
+
+  @Post('redeem-qr')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Redeem a member voucher by QR code' })
+  redeemQr(@Body() body: { qrCode: string }) {
+    return this.memberVoucherService.redeemByQr(body.qrCode);
+  }
 }

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class MemberVoucherService {
@@ -11,7 +12,7 @@ export class MemberVoucherService {
     });
     if (existing) throw new ConflictException('Voucher already assigned to this member');
     return this.prisma.memberVoucher.create({
-      data: { memberId, voucherId },
+      data: { memberId, voucherId, qrCode: randomUUID() },
       include: { voucher: true, member: { select: { id: true, fullName: true, email: true } } },
     });
   }
@@ -61,6 +62,31 @@ export class MemberVoucherService {
     if (mv.redeemed) throw new ConflictException('Voucher already redeemed');
     return this.prisma.memberVoucher.update({
       where: { id },
+      data: { redeemed: true, redeemedAt: new Date() },
+    });
+  }
+
+  async validateByQr(qrCode: string) {
+    const mv = await this.prisma.memberVoucher.findUnique({
+      where: { qrCode },
+      include: { voucher: true, member: { select: { id: true, fullName: true, email: true } } },
+    });
+    if (!mv) throw new NotFoundException('Invalid QR code');
+    if (mv.redeemed) throw new BadRequestException('Voucher already redeemed');
+    if (mv.voucher.expiresAt && mv.voucher.expiresAt < new Date()) throw new BadRequestException('Voucher expired');
+    return { valid: true, memberVoucher: mv };
+  }
+
+  async redeemByQr(qrCode: string) {
+    const mv = await this.prisma.memberVoucher.findUnique({
+      where: { qrCode },
+      include: { voucher: true },
+    });
+    if (!mv) throw new NotFoundException('Invalid QR code');
+    if (mv.redeemed) throw new ConflictException('Voucher already redeemed');
+    if (mv.voucher.expiresAt && mv.voucher.expiresAt < new Date()) throw new BadRequestException('Voucher expired');
+    return this.prisma.memberVoucher.update({
+      where: { id: mv.id },
       data: { redeemed: true, redeemedAt: new Date() },
     });
   }
