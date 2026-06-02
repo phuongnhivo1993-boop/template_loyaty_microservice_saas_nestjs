@@ -1,4 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -26,7 +34,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login as tenant admin/user' })
   loginTenant(@Body() body: LoginDto & { tenantId?: string }) {
-    return this.authService.loginTenant(body.email, body.password, body.tenantId);
+    return this.authService.loginTenant(
+      body.email,
+      body.password,
+      body.tenantId,
+    );
   }
 
   @Post('member/login')
@@ -42,5 +54,20 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   refresh(@Body() body: { refreshToken: string }) {
     return this.authService.refreshToken(body.refreshToken);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  async changePassword(
+    @Request() req: any,
+    @Body() body: { oldPassword: string; newPassword: string },
+  ) {
+    return this.authService.changePassword(
+      req.user,
+      body.oldPassword,
+      body.newPassword,
+    );
   }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
@@ -17,6 +18,7 @@ const emptyForm: CampaignForm = { name: '', description: '', startDate: '', endD
 
 export default function CampaignsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -65,18 +67,26 @@ export default function CampaignsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this campaign?')) return;
-    await fetch(`/api/campaigns/${id}`, { method: 'DELETE', headers });
-    load();
+    try {
+      const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE', headers });
+      if (!res.ok) { showToast('Failed to delete campaign', 'error'); return; }
+      showToast('Campaign deleted successfully', 'success');
+      load();
+    } catch { showToast('Network error', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = { ...form, budget: form.budget ? Number(form.budget) : undefined };
-    const url = editing ? `/api/campaigns/${editing.id}` : '/api/campaigns';
-    const method = editing ? 'PATCH' : 'POST';
-    await fetch(url, { method, headers, body: JSON.stringify(body) });
-    setShowModal(false);
-    load();
+    try {
+      const body = { ...form, budget: form.budget ? Number(form.budget) : undefined };
+      const url = editing ? `/api/campaigns/${editing.id}` : '/api/campaigns';
+      const method = editing ? 'PATCH' : 'POST';
+      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
+      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      showToast(editing ? 'Campaign updated successfully' : 'Campaign created successfully', 'success');
+      setShowModal(false);
+      load();
+    } catch { showToast('Network error', 'error'); }
   };
 
   const exportCsv = async () => {

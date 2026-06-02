@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import api from '../services/api';
+import { members } from '../services/api';
 import type { Mission } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
 
@@ -12,7 +12,7 @@ export default function MissionsScreen() {
   const load = () => {
     setLoading(true);
     setError('');
-    api.get('/missions')
+    members.getMissions()
       .then(r => setMissions(Array.isArray(r.data) ? r.data : r.data?.data || []))
       .catch(() => setError('Failed to load missions'))
       .finally(() => setLoading(false));

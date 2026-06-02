@@ -1,13 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import * as crypto from 'crypto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MemberSelfService {
+  private readonly saltRounds = 12;
+
   constructor(private prisma: PrismaService) {}
 
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, this.saltRounds);
+  }
+
+  private async comparePassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(password, hash);
   }
 
   async getProfile(memberId: string) {
@@ -16,7 +29,7 @@ export class MemberSelfService {
       include: { tier: true },
     });
     if (!member) throw new NotFoundException('Member not found');
-    const { password, ...data } = member;
+    const { password: _, ...data } = member;
     return data;
   }
 
@@ -43,26 +56,38 @@ export class MemberSelfService {
   }
 
   async setPassword(memberId: string, password: string) {
-    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+    });
     if (!member) throw new NotFoundException('Member not found');
-    if (member.password) throw new BadRequestException('Password already set. Use change-password instead.');
+    if (member.password)
+      throw new BadRequestException(
+        'Password already set. Use change-password instead.',
+      );
     await this.prisma.member.update({
       where: { id: memberId },
-      data: { password: this.hashPassword(password) },
+      data: { password: await this.hashPassword(password) },
     });
     return { message: 'Password set successfully' };
   }
 
-  async changePassword(memberId: string, oldPassword: string, newPassword: string) {
-    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+  async changePassword(
+    memberId: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+    });
     if (!member) throw new NotFoundException('Member not found');
-    if (!member.password) throw new BadRequestException('No password set. Use set-password first.');
-    if (member.password !== this.hashPassword(oldPassword)) {
+    if (!member.password)
+      throw new BadRequestException('No password set. Use set-password first.');
+    if (!(await this.comparePassword(oldPassword, member.password))) {
       throw new BadRequestException('Current password is incorrect');
     }
     await this.prisma.member.update({
       where: { id: memberId },
-      data: { password: this.hashPassword(newPassword) },
+      data: { password: await this.hashPassword(newPassword) },
     });
     return { message: 'Password changed successfully' };
   }
@@ -81,7 +106,7 @@ export class MemberSelfService {
       orderBy: { createdAt: 'desc' },
     });
     const total = referrals.length;
-    const converted = referrals.filter(r => r.status === 'CONVERTED').length;
+    const converted = referrals.filter((r) => r.status === 'CONVERTED').length;
     return {
       referralCode: `REF-${memberId.slice(0, 8)}`,
       total,

@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 const API_URL = 'http://localhost:3001/api/v1';
 
 const api = axios.create({ baseURL: API_URL });
@@ -12,11 +13,65 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value: any) => void; reject: (reason?: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  failedQueue = [];
+};
+
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+      originalRequest._retry = true;
+      isRefreshing = true;
+      try {
+        const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        if (!refreshToken) throw new Error('No refresh token');
+        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+        const { accessToken, refreshToken: newRefresh } = res.data;
+        await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
+        if (newRefresh) await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefresh);
+        processQueue(null, accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (err) {
+        processQueue(err, null);
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export const auth = {
   login: (data: { email: string; password: string; role: 'host' | 'tenant' | 'member' }) =>
     api.post(`/auth/${data.role}/login`, data),
   memberLogin: (data: { email: string; password: string; tenantDomain: string }) =>
     api.post('/auth/member/login', { email: data.email, password: data.password, tenantDomain: data.tenantDomain }),
+  logout: async () => {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+  },
+  forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
 };
 
 export const members = {
@@ -27,14 +82,27 @@ export const members = {
   getBadges: () => api.get('/me/badges'),
   getVouchers: () => api.get('/me/vouchers'),
   getReferrals: () => api.get('/me/referrals'),
+  getMissions: () => api.get('/me/missions'),
   setPassword: (data: { password: string; token: string }) => api.post('/me/set-password', data),
   changePassword: (data: { oldPassword: string; newPassword: string }) => api.post('/me/change-password', data),
+  updateProfile: (data: { fullName?: string; phone?: string; avatar?: string }) =>
+    api.patch('/me/profile', data),
 };
 
 export const rewards = {
   list: () => api.get('/rewards'),
+  getById: (id: string) => api.get(`/rewards/${id}`),
   redeem: (rewardId: string, data: { memberId: string; quantity?: number }) =>
     api.post(`/rewards/${rewardId}/redeem`, data),
+};
+
+export const vouchers = {
+  redeemInStore: (id: string) => api.post(`/vouchers/${id}/redeem`),
+  validate: (code: string) => api.post('/vouchers/validate', { code }),
+};
+
+export const notifications = {
+  list: () => api.get('/me/notifications'),
 };
 
 export default api;

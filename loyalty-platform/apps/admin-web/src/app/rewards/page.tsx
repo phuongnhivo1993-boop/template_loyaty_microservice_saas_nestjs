@@ -25,6 +25,7 @@ export default function RewardsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<RewardForm>(emptyForm);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -39,6 +40,7 @@ export default function RewardsPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (typeFilter !== 'ALL') params.set('type', typeFilter);
       const res = await fetch(`/api/rewards?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setRewards(Array.isArray(result) ? result : result.data || []);
@@ -51,7 +53,7 @@ export default function RewardsPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+  }, [search, page, typeFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (r: any) => {
@@ -124,6 +126,14 @@ export default function RewardsPage() {
         />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="ALL">All Types</option>
+            <option value="PHYSICAL">Physical</option>
+            <option value="DIGITAL">Digital</option>
+            <option value="GIFT_CARD">Gift Card</option>
+            <option value="DISCOUNT">Discount</option>
+          </select>
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>

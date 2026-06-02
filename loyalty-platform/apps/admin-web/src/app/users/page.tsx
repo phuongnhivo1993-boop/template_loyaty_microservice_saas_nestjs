@@ -27,6 +27,7 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<UserForm>(emptyForm);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -41,6 +42,7 @@ export default function UsersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (roleFilter !== 'ALL') params.set('role', roleFilter);
       const res = await fetch(`/api/users?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setUsers(Array.isArray(result) ? result : result.data || []);
@@ -53,7 +55,7 @@ export default function UsersPage() {
   useEffect(() => {
     if (!token) { router.push('/login'); return; }
     load();
-  }, [search, page]);
+  }, [search, page, roleFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (u: any) => {
@@ -125,6 +127,11 @@ export default function UsersPage() {
         />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <option value="ALL">All Roles</option>
+            {roles.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>

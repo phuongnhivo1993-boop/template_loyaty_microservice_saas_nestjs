@@ -1,24 +1,32 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { auth } from '../services/api';
+import { auth, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
-  const [email, setEmail] = useState('nguyen.van.a@sunshine.vn');
-  const [password, setPassword] = useState('Member@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const setToken = useAuthStore((s) => s.setToken);
+  const { setToken, setProfile } = useAuthStore();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
     setLoading(true);
     try {
       const res = await auth.login({ email, password, role: 'member' });
       const token = res.data.accessToken;
       await SecureStore.setItemAsync('auth_token', token);
       setToken(token);
+      try {
+        const profileRes = await members.getProfile();
+        setProfile(profileRes.data);
+      } catch {}
     } catch {
       Alert.alert('Error', 'Login failed. Check your credentials.');
     } finally {

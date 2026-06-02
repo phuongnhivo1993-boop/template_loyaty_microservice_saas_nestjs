@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
+import ImportModal from '@/components/ImportModal';
 
 interface TemplateForm { name: string; type: string; subject: string; content: string; variables: string; }
 
@@ -24,12 +25,15 @@ export default function NotificationsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<TemplateForm>(emptyForm);
   const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [sendForm, setSendForm] = useState({ templateId: '', recipient: '', channel: 'EMAIL', variables: '{}' });
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -39,6 +43,7 @@ export default function NotificationsPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
+    if (filterType) params.set('type', filterType);
     const r = await fetch(`/api/notifications/templates?${params}`, { headers });
     const res = await r.json();
     setTemplates(Array.isArray(res) ? res : res.data || []);
@@ -52,6 +57,7 @@ export default function NotificationsPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
+    if (filterStatus) params.set('status', filterStatus);
     const r = await fetch(`/api/notifications/logs?${params}`, { headers });
     const res = await r.json();
     setLogs(Array.isArray(res) ? res : res.data || []);
@@ -64,7 +70,7 @@ export default function NotificationsPage() {
     if (!token) { router.push('/login'); return; }
     if (tab === 'templates') loadTemplates();
     else loadLogs();
-  }, [tab, search, page]);
+  }, [tab, search, page, filterType, filterStatus]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (t: any) => {
@@ -148,6 +154,7 @@ export default function NotificationsPage() {
     { key: 'subject', label: 'Subject', render: (t: any) => <span style={{ color: '#64748b' }}>{t.subject || '-'}</span> },
     { key: 'actions', label: 'Actions', render: (t: any) => (
       <>
+        <button onClick={() => router.push(`/notifications/${t.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
         <button onClick={() => openEdit(t)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
         <button onClick={() => handleDelete(t.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
       </>
@@ -195,10 +202,31 @@ export default function NotificationsPage() {
         </div>
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {tab === 'templates' && (
+            <select value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }}
+              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+              <option value="">All Types</option>
+              <option value="EMAIL">Email</option>
+              <option value="SMS">SMS</option>
+              <option value="PUSH">Push</option>
+            </select>
+          )}
+          {tab === 'logs' && (
+            <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+              <option value="">All Status</option>
+              <option value="SENT">Sent</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          )}
           <input type="text" placeholder={tab === 'templates' ? 'Search templates...' : 'Search logs...'}
             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           {total > 0 && <span style={{ color: '#64748b', fontSize: '14px' }}>{total} results</span>}
+          {tab === 'templates' && (
+            <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
+          )}
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
@@ -256,6 +284,8 @@ export default function NotificationsPage() {
             </div>
           </form>
         </Modal>
+
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="notification_templates" entityLabel="templates" onImportComplete={loadTemplates} />
 
         <Modal open={showSendModal} title="Send Notification" onClose={() => setShowSendModal(false)}>
           <form onSubmit={handleSend}>
