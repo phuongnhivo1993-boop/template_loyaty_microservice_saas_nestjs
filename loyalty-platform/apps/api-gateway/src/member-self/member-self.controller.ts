@@ -94,4 +94,12 @@ export class MemberSelfController {
   updateProfile(@Req() req: any, @Body() body: { fullName?: string; phone?: string }) {
     return this.memberSelfService.updateProfile(req.user.id, body);
   }
+
+  @Post('cart-redeem')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Redeem multiple rewards in one cart' })
+  cartRedeem(@Req() req: any, @Body() body: { items: { rewardId: string; quantity: number }[] }) {
+    return this.memberSelfService.cartRedeem(req.user.id, body.items);
+  }
 }

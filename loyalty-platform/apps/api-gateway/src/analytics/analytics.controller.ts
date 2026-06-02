@@ -52,4 +52,11 @@ export class AnalyticsController {
   getExpiringPoints(@Query('tenantId') tenantId?: string) {
     return this.analyticsService.getExpiringPoints(tenantId);
   }
+
+  @Get('leaderboard')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Member leaderboard ranked by points' })
+  getLeaderboard(@Query('limit') limit?: number, @Query('tenantId') tenantId?: string) {
+    return this.analyticsService.getLeaderboard(tenantId, limit || 20);
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 
@@ -139,5 +139,33 @@ export class MemberService {
         ? `${member.fullName} đủ điều kiện lên hạng ${nextTier.name}!`
         : `${member.fullName} cần ${pointsNeeded.toLocaleString()} điểm nữa để lên ${nextTier.name} (x${nextTier.pointsMultiplier} điểm)`,
     };
+  }
+
+  async adjustPoints(id: string, amount: number, reason: string) {
+    const member = await this.findOne(id);
+    if (amount < 0 && member.availablePoints < Math.abs(amount)) {
+      throw new BadRequestException(`Insufficient points. Available: ${member.availablePoints}, requested: ${Math.abs(amount)}`);
+    }
+
+    const [transaction] = await this.prisma.$transaction([
+      this.prisma.pointTransaction.create({
+        data: {
+          memberId: id,
+          type: amount >= 0 ? 'EARN' : 'BURN',
+          amount,
+          balance: member.availablePoints + amount,
+          reason: `Admin adjustment: ${reason}`,
+        },
+      }),
+      this.prisma.member.update({
+        where: { id },
+        data: {
+          totalPoints: { increment: amount },
+          availablePoints: { increment: amount },
+        },
+      }),
+    ]);
+
+    return { transaction, newBalance: member.availablePoints + amount };
   }
 }

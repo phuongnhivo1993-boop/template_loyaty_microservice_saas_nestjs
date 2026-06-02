@@ -106,4 +106,13 @@ export class MemberController {
   getActivity(@Param('id') id: string) {
     return this.memberService.getActivity(id);
   }
+
+  @Post(':id/points')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Manual point adjustment (admin)' })
+  adjustPoints(@Param('id') id: string, @Body() body: { amount: number; reason: string }) {
+    return this.memberService.adjustPoints(id, body.amount, body.reason);
+  }
 }

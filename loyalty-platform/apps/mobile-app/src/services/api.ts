@@ -112,4 +112,11 @@ export const checkin = {
   history: () => api.get('/checkin/history'),
 };
 
+export const analytics = {
+  leaderboard: (limit = 10) => api.get('/analytics/leaderboard', { params: { limit } }),
+};
+
+export const cartRedeem = (items: { rewardId: string; quantity: number }[]) =>
+  api.post('/me/cart-redeem', { items });
+
 export default api;

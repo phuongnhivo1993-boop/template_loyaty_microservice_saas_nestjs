@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { members } from '../services/api';
+import { members, analytics } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import { auth } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
@@ -12,6 +12,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<Member | null>(null);
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
@@ -27,6 +28,7 @@ export default function HomeScreen() {
     Promise.all([
       members.getProfile().then((r) => setProfile(r.data)),
       members.getWallet().then((r) => setWallet(r.data)),
+      analytics.leaderboard(5).then((r) => setLeaderboard(Array.isArray(r.data) ? r.data : r.data?.data || [])),
     ]).catch(() => setError('Failed to load data'))
       .finally(() => setLoading(false));
   };
@@ -72,10 +74,23 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Rewards Near You</Text>
-        <Text style={styles.sectionSubtitle}>Redeem your points for great rewards</Text>
-      </View>
+      {leaderboard.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
+          {leaderboard.map((m: any) => (
+            <View key={m.id} style={styles.leaderboardRow}>
+              <View style={[styles.rankBadge, { backgroundColor: m.rank <= 3 ? '#f59e0b' : '#e2e8f0' }]}>
+                <Text style={[styles.rankText, { color: m.rank <= 3 ? 'white' : '#64748b' }]}>{m.rank}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '600', color: '#1e293b' }}>{m.fullName}</Text>
+                <Text style={{ fontSize: 12, color: m.tierColor || '#94a3b8' }}>{m.tier}</Text>
+              </View>
+              <Text style={{ fontWeight: '700', color: '#2563eb' }}>{m.totalPoints?.toLocaleString()} pts</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -98,5 +113,15 @@ const styles = StyleSheet.create({
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
   sectionSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  leaderboardRow: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'white',
+    borderRadius: 10, padding: 14, marginTop: 8, gap: 12,
+    shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  },
+  rankBadge: {
+    width: 32, height: 32, borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  rankText: { fontSize: 14, fontWeight: '700' },
   errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

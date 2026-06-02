@@ -114,4 +114,29 @@ export class AnalyticsService {
       throw new InternalServerErrorException('Failed to load expiring points');
     }
   }
+
+  async getLeaderboard(tenantId?: string, limit = 20) {
+    try {
+      const where = tenantId ? { tenantId } : {};
+      if (tenantId) where.tenantId = tenantId;
+      const members = await this.prisma.member.findMany({
+        where,
+        orderBy: { totalPoints: 'desc' },
+        take: limit,
+        include: { tier: { select: { name: true, color: true } } },
+      });
+      return members.map((m, i) => ({
+        rank: i + 1,
+        id: m.id,
+        fullName: m.fullName,
+        email: m.email,
+        totalPoints: m.totalPoints,
+        availablePoints: m.availablePoints,
+        tier: m.tier?.name || 'Bronze',
+        tierColor: m.tier?.color || '#94a3b8',
+      }));
+    } catch (e) {
+      throw new InternalServerErrorException('Failed to load leaderboard');
+    }
+  }
 }
