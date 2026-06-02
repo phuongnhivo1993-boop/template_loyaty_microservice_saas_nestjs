@@ -16,8 +16,17 @@ export class MemberVoucherService {
     });
   }
 
-  async findAll(memberId?: string, page = 1, limit = 20) {
-    const where = memberId ? { memberId } : {};
+  async findAll(memberId?: string, page = 1, limit = 20, search?: string) {
+    const where: any = {};
+    if (memberId) where.memberId = memberId;
+    if (search) {
+      where.member = {
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.memberVoucher.findMany({

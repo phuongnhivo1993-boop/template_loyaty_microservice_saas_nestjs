@@ -18,8 +18,8 @@ export class MemberVoucherController {
 
   @Get()
   @ApiOperation({ summary: 'List member-voucher assignments' })
-  findAll(@Query('memberId') memberId?: string, @Query('page') page?: number, @Query('limit') limit?: number) {
-    return this.memberVoucherService.findAll(memberId, page, limit);
+  findAll(@Query('memberId') memberId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
+    return this.memberVoucherService.findAll(memberId, page, limit, search);
   }
 
   @Get(':id')

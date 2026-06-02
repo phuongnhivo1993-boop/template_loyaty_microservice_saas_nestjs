@@ -6,6 +6,10 @@ import { parseSort } from '../common/utils/sort.util';
 export class MemberService {
   constructor(private prisma: PrismaService) {}
 
+  async findTenantByDomain(domain: string) {
+    return this.prisma.tenant.findFirst({ where: { domain } });
+  }
+
   async create(data: { email: string; fullName: string; phone?: string; tenantId: string; tierId?: string }) {
     const existing = await this.prisma.member.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('Email already exists');

@@ -135,6 +135,67 @@ const entityConfigs: Record<string, ImportConfig> = {
       tenantId: row.tenantId || undefined,
     }),
   },
+  referrals: {
+    requiredFields: ['referrerId'],
+    optionalFields: ['code', 'status', 'refereeId'],
+    transform: (row) => ({
+      referrerId: row.referrerId,
+      code: row.code || undefined,
+      status: (row.status || 'PENDING').toUpperCase(),
+      refereeId: row.refereeId || undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  notification_templates: {
+    requiredFields: ['name', 'type', 'subject', 'content'],
+    optionalFields: ['variables'],
+    transform: (row) => ({
+      name: row.name,
+      type: (row.type || 'EMAIL').toUpperCase(),
+      subject: row.subject,
+      content: row.content,
+      variables: row.variables || undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  member_vouchers: {
+    requiredFields: ['memberId', 'voucherId'],
+    optionalFields: ['redeemed'],
+    transform: (row) => ({
+      memberId: row.memberId,
+      voucherId: row.voucherId,
+      redeemed: row.redeemed ? row.redeemed.toLowerCase() === 'true' : false,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  point_transactions: {
+    requiredFields: ['memberId', 'type', 'amount'],
+    optionalFields: ['reason', 'reference', 'balance'],
+    transform: (row) => ({
+      memberId: row.memberId,
+      type: (row.type || 'EARN').toUpperCase(),
+      amount: parseInt(row.amount, 10),
+      reason: row.reason || undefined,
+      reference: row.reference || undefined,
+      balance: row.balance ? parseInt(row.balance, 10) : undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  audit_logs: {
+    requiredFields: ['entityType', 'entityId', 'action'],
+    optionalFields: ['oldValue', 'newValue', 'ipAddress', 'userEmail', 'userId'],
+    transform: (row) => ({
+      entityType: row.entityType,
+      entityId: row.entityId,
+      action: (row.action || 'CREATE').toUpperCase(),
+      oldValue: row.oldValue ? row.oldValue : undefined,
+      newValue: row.newValue ? row.newValue : undefined,
+      ipAddress: row.ipAddress || undefined,
+      userEmail: row.userEmail || undefined,
+      userId: row.userId || undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
 };
 
 @Injectable()
@@ -178,7 +239,12 @@ export class ImportService {
   entity === 'promotions' ? 'promotion' :
   entity === 'badges' ? 'badge' :
   entity === 'missions' ? 'mission' :
-  entity === 'users' ? 'user' : entity
+  entity === 'users' ? 'user' :
+  entity === 'referrals' ? 'referral' :
+  entity === 'notification_templates' ? 'notificationTemplate' :
+  entity === 'member_vouchers' ? 'memberVoucher' :
+  entity === 'point_transactions' ? 'pointTransaction' :
+  entity === 'audit_logs' ? 'auditLog' : entity
 ];
 
     for (let i = 0; i < parsed.rows.length; i++) {

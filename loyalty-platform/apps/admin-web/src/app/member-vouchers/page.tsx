@@ -33,7 +33,7 @@ export default function MemberVouchersPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('memberId', search);
+      if (search) params.set('search', search);
       const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       setAssignments(Array.isArray(result) ? result : result.data || []);
@@ -112,7 +112,7 @@ export default function MemberVouchersPage() {
         />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <input type="text" placeholder="Search by member ID..." value={search}
+          <input type="text" placeholder="Search by member name or email..." value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>

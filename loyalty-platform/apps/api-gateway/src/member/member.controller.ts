@@ -10,8 +10,13 @@ export class MemberController {
 
   @Post('register')
   @ApiOperation({ summary: 'Public member self-registration' })
-  register(@Body() body: { email: string; fullName: string; phone?: string; tenantId: string }) {
-    return this.memberService.create(body);
+  async register(@Body() body: { email: string; fullName: string; phone?: string; tenantId?: string; tenantDomain?: string }) {
+    let { tenantId } = body;
+    if (!tenantId && body.tenantDomain) {
+      const tenant = await this.memberService.findTenantByDomain(body.tenantDomain);
+      if (tenant) tenantId = tenant.id;
+    }
+    return this.memberService.create({ ...body, tenantId: tenantId || '' });
   }
 
   @Post()
