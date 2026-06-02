@@ -115,6 +115,13 @@ export class SendNotificationDto {
   @ApiProperty({ required: false }) @IsOptional() variables?: Record<string, string>;
 }
 
+export class BroadcastNotificationDto {
+  @ApiProperty() @IsString() templateId: string;
+  @ApiProperty() @IsString() channel: string;
+  @ApiProperty({ required: false }) @IsOptional() variables?: Record<string, string>;
+  @ApiProperty() @IsString() tenantId: string;
+}
+
 export class CreateReferralLinkDto {
   @ApiProperty() @IsString() referrerId: string;
   @ApiProperty() @IsString() tenantId: string;

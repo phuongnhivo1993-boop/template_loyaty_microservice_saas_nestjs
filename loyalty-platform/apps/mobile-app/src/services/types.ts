@@ -127,5 +127,7 @@ export type RootStackParamList = {
   Vouchers: undefined;
   Missions: undefined;
   Password: undefined;
+  Profile: undefined;
+  ResetPassword: undefined;
   Notifications: undefined;
 };

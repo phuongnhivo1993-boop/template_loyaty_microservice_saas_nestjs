@@ -62,6 +62,7 @@ export default function HomeScreen() {
           { label: 'Badges', icon: '🏅', screen: 'Badges' },
           { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
           { label: 'Missions', icon: '🎯', screen: 'Missions' },
+          { label: 'Profile', icon: '👤', screen: 'Profile' },
           { label: 'Password', icon: '🔒', screen: 'Password' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>

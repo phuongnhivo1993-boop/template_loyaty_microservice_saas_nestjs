@@ -72,6 +72,7 @@ export const auth = {
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   },
   forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
+  resetPassword: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password', data),
 };
 
 export const members = {

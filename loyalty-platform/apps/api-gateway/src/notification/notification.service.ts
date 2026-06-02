@@ -86,6 +86,40 @@ export class NotificationService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  async broadcast(data: { templateId: string; channel: string; variables?: Record<string, string>; tenantId: string }) {
+    const template = await this.prisma.notificationTemplate.findUnique({ where: { id: data.templateId } });
+    if (!template) throw new NotFoundException('Notification template not found');
+
+    const members = await this.prisma.member.findMany({
+      where: { tenantId: data.tenantId, status: 'ACTIVE' },
+    });
+
+    if (members.length === 0) {
+      return { sent: 0, total: 0, message: 'No active members found for this tenant' };
+    }
+
+    const logs = members.map((member) => {
+      const content = data.variables
+        ? Object.entries(data.variables).reduce((acc, [key, val]) => acc.replace(new RegExp(`{{${key}}}`, 'g'), val), template.content)
+        : template.content;
+
+      return {
+        templateId: data.templateId,
+        recipient: member.email,
+        channel: data.channel,
+        subject: template.subject,
+        content,
+        status: 'SENT',
+        sentAt: new Date(),
+        tenantId: data.tenantId,
+      };
+    });
+
+    await this.prisma.notificationLog.createMany({ data: logs });
+
+    return { sent: logs.length, total: members.length, message: `Notification sent to ${logs.length} members` };
+  }
+
   async findLogOne(id: string) {
     const log = await this.prisma.notificationLog.findUnique({
       where: { id },

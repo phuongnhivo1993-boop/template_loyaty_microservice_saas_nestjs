@@ -10,6 +10,8 @@ import BadgesScreen from '../screens/BadgesScreen';
 import VouchersScreen from '../screens/VouchersScreen';
 import MissionsScreen from '../screens/MissionsScreen';
 import PasswordScreen from '../screens/PasswordScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import RewardDetailScreen from '../screens/RewardDetailScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
 import { useAuthStore } from '../services/authStore';
@@ -32,6 +34,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Vouchers" component={VouchersScreen} />
           <Stack.Screen name="Missions" component={MissionsScreen} />
           <Stack.Screen name="Password" component={PasswordScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Notifications" component={NotificationCenterScreen} />
         </>
       ) : (
@@ -39,6 +42,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       )}
     </Stack.Navigator>

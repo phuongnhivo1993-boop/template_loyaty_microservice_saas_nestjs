@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateNotificationTemplateDto, SendNotificationDto } from '../common/dto/common.dto';
+import { CreateNotificationTemplateDto, SendNotificationDto, BroadcastNotificationDto } from '../common/dto/common.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -45,6 +45,12 @@ export class NotificationController {
   @ApiOperation({ summary: 'Send a notification (email/SMS)' })
   send(@Body() body: SendNotificationDto) {
     return this.notificationService.send(body);
+  }
+
+  @Post('broadcast')
+  @ApiOperation({ summary: 'Broadcast notification to all active members of a tenant' })
+  broadcast(@Body() body: BroadcastNotificationDto) {
+    return this.notificationService.broadcast(body);
   }
 
   @Get('logs')

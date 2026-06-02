@@ -42,8 +42,11 @@ export default function ForgotPasswordScreen() {
         <TouchableOpacity style={styles.button} onPress={handleForgotPassword} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Send Reset Link'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ alignItems: 'center', marginTop: 16 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ alignItems: 'center', marginTop: 12 }}>
           <Text style={{ color: '#3b82f6', fontSize: 14, fontWeight: '600' }}>Back to Login</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')} style={{ alignItems: 'center', marginTop: 8 }}>
+          <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '500' }}>Already have a reset token? Set new password</Text>
         </TouchableOpacity>
       </View>
     </View>

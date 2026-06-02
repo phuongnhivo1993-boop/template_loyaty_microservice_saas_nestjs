@@ -12,6 +12,7 @@ const menuItems = [
   { label: 'Member Vouchers', href: '/member-vouchers', icon: '🎫' },
   { label: 'Promotions', href: '/promotions', icon: '⚡' },
   { label: 'Notifications', href: '/notifications', icon: '🔔' },
+  { label: '  Broadcast', href: '/notifications/broadcast', icon: '📣' },
   { label: 'Tiers', href: '/tiers', icon: '🥇' },
   { label: 'Users', href: '/users', icon: '👤' },
   { label: 'Referrals', href: '/referrals', icon: '🔗' },
