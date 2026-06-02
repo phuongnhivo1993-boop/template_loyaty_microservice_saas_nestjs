@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class PromotionService {
@@ -9,7 +10,7 @@ export class PromotionService {
     return this.prisma.promotion.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -18,9 +19,10 @@ export class PromotionService {
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.promotion.findMany({ where, orderBy: { priority: 'asc' }, skip, take: limit }),
+      this.prisma.promotion.findMany({ where, orderBy: sort ? { [orderBy]: orderDirection } : { priority: 'asc' }, skip, take: limit }),
       this.prisma.promotion.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

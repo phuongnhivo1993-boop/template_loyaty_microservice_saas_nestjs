@@ -18,14 +18,15 @@ export class ReferralController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List referrals (with pagination)' })
+  @ApiOperation({ summary: 'List referrals (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.referralService.findAll(tenantId, page, limit, search);
+    return this.referralService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get('stats')

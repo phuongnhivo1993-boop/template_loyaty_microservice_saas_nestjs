@@ -19,8 +19,8 @@ export class NotificationController {
 
   @Get('templates')
   @ApiOperation({ summary: 'List notification templates' })
-  listTemplates(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
-    return this.notificationService.listTemplates(tenantId, page, limit, search);
+  listTemplates(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string, @Query('sort') sort?: string) {
+    return this.notificationService.listTemplates(tenantId, page, limit, search, sort);
   }
 
   @Put('templates/:id')
@@ -43,7 +43,7 @@ export class NotificationController {
 
   @Get('logs')
   @ApiOperation({ summary: 'List notification logs' })
-  listLogs(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
-    return this.notificationService.listLogs(tenantId, page, limit, search);
+  listLogs(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string, @Query('sort') sort?: string) {
+    return this.notificationService.listLogs(tenantId, page, limit, search, sort);
   }
 }

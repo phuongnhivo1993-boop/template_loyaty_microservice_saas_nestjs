@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class UserService {
@@ -25,7 +26,7 @@ export class UserService {
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -34,9 +35,10 @@ export class UserService {
         { fullName: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.user.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.user.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

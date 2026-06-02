@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class ReferralService {
@@ -12,7 +13,7 @@ export class ReferralService {
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -20,12 +21,13 @@ export class ReferralService {
         { code: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.referral.findMany({
         where,
         include: { referrer: true, referee: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [orderBy]: orderDirection },
         skip,
         take: limit,
       }),

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class AuditLogService {
@@ -18,7 +19,7 @@ export class AuditLogService {
     return this.prisma.auditLog.create({ data: params });
   }
 
-  async findAll(page = 1, limit = 20, search?: string, entityType?: string, action?: string, userId?: string) {
+  async findAll(page = 1, limit = 20, search?: string, entityType?: string, action?: string, userId?: string, sort?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (entityType) where.entityType = entityType;
@@ -30,8 +31,9 @@ export class AuditLogService {
         { userEmail: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const [data, total] = await Promise.all([
-      this.prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.auditLog.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.auditLog.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

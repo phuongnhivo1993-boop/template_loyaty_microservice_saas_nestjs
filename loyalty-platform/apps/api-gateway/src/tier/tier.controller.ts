@@ -17,14 +17,15 @@ export class TierController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List tiers (with pagination)' })
+  @ApiOperation({ summary: 'List tiers (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.tierService.findAll(tenantId, page, limit, search);
+    return this.tierService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get(':id')

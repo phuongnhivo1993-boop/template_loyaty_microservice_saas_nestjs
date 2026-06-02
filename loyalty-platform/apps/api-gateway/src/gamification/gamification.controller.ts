@@ -17,14 +17,15 @@ export class GamificationController {
   }
 
   @Get('badges')
-  @ApiOperation({ summary: 'List badges (with pagination)' })
+  @ApiOperation({ summary: 'List badges (with pagination & sort)' })
   findAllBadges(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.gamificationService.findAllBadges(tenantId, page, limit, search);
+    return this.gamificationService.findAllBadges(tenantId, page, limit, search, sort);
   }
 
   @Put('badges/:id')
@@ -46,14 +47,15 @@ export class GamificationController {
   }
 
   @Get('missions')
-  @ApiOperation({ summary: 'List missions (with pagination)' })
+  @ApiOperation({ summary: 'List missions (with pagination & sort)' })
   findAllMissions(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.gamificationService.findAllMissions(tenantId, page, limit, search);
+    return this.gamificationService.findAllMissions(tenantId, page, limit, search, sort);
   }
 
   @Put('missions/:id')

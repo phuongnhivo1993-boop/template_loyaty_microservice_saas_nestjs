@@ -17,14 +17,15 @@ export class RewardController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List rewards (with pagination)' })
+  @ApiOperation({ summary: 'List rewards (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.rewardService.findAll(tenantId, page, limit, search);
+    return this.rewardService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get(':id')

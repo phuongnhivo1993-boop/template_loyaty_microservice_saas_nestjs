@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class GamificationService {
@@ -10,7 +11,7 @@ export class GamificationService {
     return this.prisma.badge.create({ data });
   }
 
-  async findAllBadges(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAllBadges(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -18,9 +19,10 @@ export class GamificationService {
         { name: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.badge.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.badge.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.badge.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -53,7 +55,7 @@ export class GamificationService {
     });
   }
 
-  async findAllMissions(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAllMissions(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -61,9 +63,10 @@ export class GamificationService {
         { name: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.mission.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.mission.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.mission.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

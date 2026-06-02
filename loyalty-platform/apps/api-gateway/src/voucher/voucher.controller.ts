@@ -17,14 +17,15 @@ export class VoucherController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List vouchers (with pagination)' })
+  @ApiOperation({ summary: 'List vouchers (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.voucherService.findAll(tenantId, page, limit, search);
+    return this.voucherService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get(':id')

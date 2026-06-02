@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class VoucherService {
@@ -13,7 +14,7 @@ export class VoucherService {
     });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -22,9 +23,10 @@ export class VoucherService {
         { type: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.voucher.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.voucher.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.voucher.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

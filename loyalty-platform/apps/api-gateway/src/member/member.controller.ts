@@ -33,8 +33,9 @@ export class MemberController {
     @Query('search') search?: string,
     @Query('tierId') tierId?: string,
     @Query('status') status?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.memberService.findAll(tenantId, page, limit, search, tierId, status);
+    return this.memberService.findAll(tenantId, page, limit, search, tierId, status, sort);
   }
 
   @Get(':id')

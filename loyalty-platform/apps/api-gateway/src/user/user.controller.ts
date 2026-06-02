@@ -17,14 +17,15 @@ export class UserController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all users (with pagination)' })
+  @ApiOperation({ summary: 'List all users (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.userService.findAll(tenantId, page, limit, search);
+    return this.userService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get(':id')

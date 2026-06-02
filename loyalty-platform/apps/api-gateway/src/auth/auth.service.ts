@@ -86,4 +86,14 @@ export class AuthService {
       refreshToken: this.jwtService.sign({ sub, type: 'refresh' }, { expiresIn: '7d' }),
     };
   }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      if (payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token');
+      return this.generateToken(payload.sub, payload.email || payload.sub, payload.role || 'MEMBER', payload.tenantId);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
 }

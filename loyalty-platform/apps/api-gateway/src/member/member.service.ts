@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class MemberService {
@@ -11,7 +12,7 @@ export class MemberService {
     return this.prisma.member.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (tierId) where.tierId = tierId;
@@ -23,12 +24,13 @@ export class MemberService {
         { phone: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.member.findMany({
         where,
         include: { tier: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [orderBy]: orderDirection },
         skip,
         take: limit,
       }),

@@ -17,14 +17,15 @@ export class PromotionController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List promotion rules (with pagination)' })
+  @ApiOperation({ summary: 'List promotion rules (with pagination & sort)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.promotionService.findAll(tenantId, page, limit, search);
+    return this.promotionService.findAll(tenantId, page, limit, search, sort);
   }
 
   @Get(':id')

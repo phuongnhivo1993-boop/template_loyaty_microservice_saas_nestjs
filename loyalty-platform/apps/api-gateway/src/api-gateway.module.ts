@@ -23,6 +23,7 @@ import { UploadModule } from './upload/upload.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationModule } from './notification/notification.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
     AnalyticsModule,
     NotificationModule,
     AuditLogModule,
+    ExportModule,
   ],
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],

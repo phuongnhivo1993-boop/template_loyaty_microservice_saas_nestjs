@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class NotificationService {
@@ -9,7 +10,7 @@ export class NotificationService {
     return this.prisma.notificationTemplate.create({ data });
   }
 
-  async listTemplates(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async listTemplates(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -18,9 +19,10 @@ export class NotificationService {
         { subject: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.notificationTemplate.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.notificationTemplate.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.notificationTemplate.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -62,7 +64,7 @@ export class NotificationService {
     return { logId: log.id, channel: data.channel, recipient: data.recipient, status: 'SENT' };
   }
 
-  async listLogs(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async listLogs(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -71,9 +73,10 @@ export class NotificationService {
         { subject: { contains: search, mode: 'insensitive' } },
       ];
     }
+    const { orderBy, orderDirection } = parseSort(sort);
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.notificationLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.notificationLog.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.notificationLog.count({ where }),
     ]);
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };

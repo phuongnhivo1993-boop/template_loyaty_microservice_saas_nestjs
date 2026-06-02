@@ -19,7 +19,8 @@ export class AuditLogController {
     @Query('entityType') entityType?: string,
     @Query('action') action?: string,
     @Query('userId') userId?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.auditLogService.findAll(page, limit, search, entityType, action, userId);
+    return this.auditLogService.findAll(page, limit, search, entityType, action, userId, sort);
   }
 }
