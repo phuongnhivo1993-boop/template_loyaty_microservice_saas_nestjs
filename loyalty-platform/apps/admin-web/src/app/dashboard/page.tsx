@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [memberGrowth, setMemberGrowth] = useState<any[]>([]);
   const [topMembers, setTopMembers] = useState<any[]>([]);
   const [voucherStats, setVoucherStats] = useState<any>(null);
+  const [expiringPoints, setExpiringPoints] = useState<any[]>([]);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}` };
@@ -27,19 +28,22 @@ export default function DashboardPage() {
       fetch('/api/analytics/member-growth?days=14', { headers }).then(r => r.json()),
       fetch('/api/analytics/top-members?limit=5', { headers }).then(r => r.json()),
       fetch('/api/analytics/voucher-stats', { headers }).then(r => r.json()),
+      fetch('/api/analytics/expiring-points', { headers }).then(r => r.json()),
     ])
-      .then(([dashRes, trendRes, growthRes, topRes, vStatsRes]) => {
+      .then(([dashRes, trendRes, growthRes, topRes, vStatsRes, expiringRes]) => {
         const data = dashRes.data ?? dashRes;
         const trend = trendRes.data ?? trendRes;
         const growth = growthRes.data ?? growthRes;
         const top = topRes.data ?? topRes;
         const vStats = vStatsRes.data ?? vStatsRes;
+        const expiring = expiringRes.data ?? expiringRes;
         setStats(data);
         if (data.tiers) setTiers(data.tiers);
         if (Array.isArray(trend)) setPointsTrend(trend);
         if (Array.isArray(growth)) setMemberGrowth(growth);
         if (Array.isArray(top)) setTopMembers(top);
         if (vStats) setVoucherStats(vStats);
+        if (Array.isArray(expiring)) setExpiringPoints(expiring);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -196,6 +200,38 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {expiringPoints.length > 0 && (
+          <div className="card" style={{ marginTop: '24px' }}>
+            <h2 className="card-title" style={{ color: '#d97706' }}>⚠️ Points Nearing Expiry</h2>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: '13px', color: '#64748b' }}>Member</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: '13px', color: '#64748b' }}>Available Points</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: '13px', color: '#64748b' }}>Oldest Earn</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: '13px', color: '#64748b' }}>Days Ago</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expiringPoints.map((m: any) => (
+                  <tr key={m.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 12px' }}>
+                      <a href={`/members/${m.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{m.fullName}</a>
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 600, color: '#d97706' }}>{m.availablePoints?.toLocaleString()}</td>
+                    <td style={{ padding: '10px 12px', color: '#64748b', fontSize: '14px' }}>{m.oldestEarnDate ? new Date(m.oldestEarnDate).toLocaleDateString('vi-VN') : '-'}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '8px', fontWeight: 600, fontSize: '13px' }}>
+                        {m.daysSinceOldestEarn}d
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 

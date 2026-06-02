@@ -64,6 +64,7 @@ model Tenant {
   missions     Mission[]
   notificationLogs NotificationLog[]
   notificationTemplates NotificationTemplate[]
+  pointEarningRules    PointEarningRule[]
 
   @@map("tenants")
 }

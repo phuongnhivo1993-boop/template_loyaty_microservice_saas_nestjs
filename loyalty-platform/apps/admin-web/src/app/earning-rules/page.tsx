@@ -144,7 +144,7 @@ export default function EarningRulesPage() {
             <FormInput label="Rule Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
             <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
             <div className="grid-2">
-              <FormInput label="Points Per Unit" type="number" value={form.pointsPerUnit} onChange={v => setForm({ ...form, pointsPerUnit: v })} required step="0.1" />
+              <FormInput label="Points Per Unit" type="number" value={form.pointsPerUnit} onChange={v => setForm({ ...form, pointsPerUnit: v })} required />
               <FormInput label="Category" value={form.category} onChange={v => setForm({ ...form, category: v })} placeholder="e.g. Food, Retail" />
             </div>
             <div className="grid-2">

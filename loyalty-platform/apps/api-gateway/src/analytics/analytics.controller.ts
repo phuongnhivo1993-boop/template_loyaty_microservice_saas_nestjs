@@ -45,4 +45,11 @@ export class AnalyticsController {
   getVoucherStats(@Query('tenantId') tenantId?: string) {
     return this.analyticsService.getVoucherStats(tenantId);
   }
+
+  @Get('expiring-points')
+  @Roles('HOST', 'ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Members with points nearing expiry' })
+  getExpiringPoints(@Query('tenantId') tenantId?: string) {
+    return this.analyticsService.getExpiringPoints(tenantId);
+  }
 }

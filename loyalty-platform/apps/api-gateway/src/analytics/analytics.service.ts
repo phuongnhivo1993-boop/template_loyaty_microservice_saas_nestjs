@@ -84,4 +84,34 @@ export class AnalyticsService {
       throw new InternalServerErrorException('Failed to load voucher stats');
     }
   }
+
+  async getExpiringPoints(tenantId?: string) {
+    try {
+      const where = tenantId ? { tenantId } : {};
+      const members = await this.prisma.member.findMany({
+        where: { ...where, availablePoints: { gt: 0 } },
+        select: { id: true, fullName: true, email: true, availablePoints: true, totalPoints: true },
+        orderBy: { availablePoints: 'desc' },
+        take: 10,
+      });
+
+      const membersWithExpiry = await Promise.all(members.map(async (m) => {
+        const oldestEarn = await this.prisma.pointTransaction.findFirst({
+          where: { memberId: m.id, type: 'EARN' },
+          orderBy: { createdAt: 'asc' },
+        });
+        return {
+          ...m,
+          oldestEarnDate: oldestEarn?.createdAt || null,
+          daysSinceOldestEarn: oldestEarn
+            ? Math.floor((Date.now() - oldestEarn.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+        };
+      }));
+
+      return membersWithExpiry.filter(m => m.daysSinceOldestEarn !== null && m.daysSinceOldestEarn > 300);
+    } catch (e) {
+      throw new InternalServerErrorException('Failed to load expiring points');
+    }
+  }
 }

@@ -115,6 +115,25 @@ export default function MemberDetailPage() {
           </div>
         </div>
 
+        {tierSuggestion?.suggestion !== null && tierSuggestion?.pointsNeeded > 0 && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <strong style={{ color: '#d97706' }}>⬆ {tierSuggestion.message}</strong>
+            </div>
+            <span style={{ background: '#fef3c7', padding: '6px 14px', borderRadius: '8px', fontWeight: 700, color: '#d97706', fontSize: '18px' }}>
+              +{tierSuggestion.pointsNeeded.toLocaleString()}
+            </span>
+          </div>
+        )}
+
+        {member.tags?.length > 0 && (
+          <div style={{ marginBottom: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {member.tags.map((tag: string) => (
+              <span key={tag} style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: '#eff6ff', color: '#2563eb' }}>{tag}</span>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Available Points', value: member.availablePoints?.toLocaleString(), color: '#2563eb', bg: '#eff6ff' },

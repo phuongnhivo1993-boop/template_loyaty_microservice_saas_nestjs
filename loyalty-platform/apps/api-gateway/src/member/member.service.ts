@@ -119,7 +119,7 @@ export class MemberService {
   async getTierSuggestion(id: string) {
     const member = await this.prisma.member.findUnique({
       where: { id },
-      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
+      include: { tier: true, tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
     });
     if (!member) throw new NotFoundException('Member not found');
 

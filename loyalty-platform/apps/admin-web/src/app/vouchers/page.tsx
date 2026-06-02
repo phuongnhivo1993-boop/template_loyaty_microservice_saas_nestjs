@@ -196,7 +196,7 @@ export default function VouchersPage() {
             <form onSubmit={handleBatchGenerate}>
               <div className="grid-2">
                 <FormInput label="Prefix" value={batchForm.prefix} onChange={v => setBatchForm({ ...batchForm, prefix: v })} required placeholder="e.g. TET2024" />
-                <FormInput label="Count" type="number" value={batchForm.count} onChange={v => setBatchForm({ ...batchForm, count: v })} required min={1} max={500} />
+                <FormInput label="Count" type="number" value={batchForm.count} onChange={v => setBatchForm({ ...batchForm, count: v })} required />
               </div>
               <FormSelect label="Type" value={batchForm.type} onChange={v => setBatchForm({ ...batchForm, type: v })} options={TYPES.map(t => ({ value: t, label: t }))} />
               <div className="grid-2">

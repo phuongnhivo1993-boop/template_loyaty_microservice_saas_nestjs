@@ -6,7 +6,7 @@ export class EarningRuleService {
   constructor(private prisma: PrismaService) {}
 
   create(data: { name: string; description?: string; pointsPerUnit?: number; minAmount?: number; maxAmount?: number; category?: string; tenantId: string }) {
-    return this.prisma.pointEarningRule.create({ data });
+    return this.prisma.pointEarningRule.create({ data: data as any });
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, category?: string) {
@@ -35,7 +35,7 @@ export class EarningRuleService {
 
   async update(id: string, data: { name?: string; description?: string; pointsPerUnit?: number; minAmount?: number; maxAmount?: number; category?: string; status?: string }) {
     await this.findOne(id);
-    return this.prisma.pointEarningRule.update({ where: { id }, data });
+    return this.prisma.pointEarningRule.update({ where: { id }, data: data as any });
   }
 
   async remove(id: string) {
