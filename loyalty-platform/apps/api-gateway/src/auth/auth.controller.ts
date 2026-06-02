@@ -60,14 +60,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change password for authenticated user' })
-  async changePassword(
-    @Request() req: any,
-    @Body() body: { oldPassword: string; newPassword: string },
-  ) {
-    return this.authService.changePassword(
-      req.user,
-      body.oldPassword,
-      body.newPassword,
-    );
+  async changePassword(@Request() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
+    return this.authService.changePassword(req.user, body.oldPassword, body.newPassword);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset (sends email with reset token)' })
+  forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
   }
 }

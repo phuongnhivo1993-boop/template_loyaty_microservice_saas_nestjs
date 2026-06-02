@@ -29,6 +29,12 @@ export class PointController {
     return this.pointService.burn(body.memberId, body.amount, body.reason);
   }
 
+  @Get('transactions/:id')
+  @ApiOperation({ summary: 'Get point transaction by ID' })
+  getTransaction(@Param('id') id: string) {
+    return this.pointService.getTransaction(id);
+  }
+
   @Get('transactions')
   @ApiOperation({ summary: 'List point transactions (paginated)' })
   getTransactions(

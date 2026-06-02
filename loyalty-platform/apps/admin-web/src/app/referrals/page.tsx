@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
+import ImportModal from '@/components/ImportModal';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ReferralsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [showImport, setShowImport] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -137,11 +139,13 @@ export default function ReferralsPage() {
             <option value="PENDING">Pending</option>
             <option value="CONVERTED">Converted</option>
           </select>
+          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
           <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={referrals} emptyMessage="No referrals found" />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="referrals" entityLabel="referrals" onImportComplete={load} />
       </main>
     </div>
   );

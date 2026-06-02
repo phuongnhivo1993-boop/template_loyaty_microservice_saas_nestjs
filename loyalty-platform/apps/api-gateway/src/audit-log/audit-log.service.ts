@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 
@@ -17,6 +17,12 @@ export class AuditLogService {
     ipAddress?: string;
   }) {
     return this.prisma.auditLog.create({ data: params });
+  }
+
+  async findOne(id: string) {
+    const log = await this.prisma.auditLog.findUnique({ where: { id } });
+    if (!log) throw new NotFoundException('Audit log not found');
+    return log;
   }
 
   async findAll(page = 1, limit = 20, search?: string, entityType?: string, action?: string, userId?: string, sort?: string) {

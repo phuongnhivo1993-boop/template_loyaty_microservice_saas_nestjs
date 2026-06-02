@@ -33,7 +33,12 @@ export default function HomeScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, {profile?.fullName || 'Member'}</Text>
-        <TouchableOpacity onPress={logout}><Text style={styles.logout}>Logout</Text></TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.notifIcon}>🔔</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={logout}><Text style={styles.logout}>Logout</Text></TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.pointsCard}>
@@ -73,6 +78,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
   greeting: { fontSize: 20, fontWeight: '700', color: 'white' },
   logout: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  notifIcon: { fontSize: 20 },
   pointsCard: { margin: 16, padding: 24, backgroundColor: '#2563eb', borderRadius: 16, alignItems: 'center' },
   pointsLabel: { fontSize: 14, color: '#bfdbfe' },
   pointsValue: { fontSize: 36, fontWeight: '800', color: 'white', marginVertical: 4 },

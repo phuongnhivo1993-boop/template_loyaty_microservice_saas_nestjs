@@ -120,9 +120,11 @@ export type RootStackParamList = {
   Home: undefined;
   Wallet: undefined;
   Rewards: undefined;
+  RewardDetail: { id: string };
   Referrals: undefined;
   Badges: undefined;
   Vouchers: undefined;
   Missions: undefined;
   Password: undefined;
+  Notifications: undefined;
 };

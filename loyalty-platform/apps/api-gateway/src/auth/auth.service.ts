@@ -147,6 +147,18 @@ export class AuthService {
     }
   }
 
+  async forgotPassword(email: string) {
+    const member = await this.prisma.member.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    const host = await this.prisma.host.findUnique({ where: { email } });
+    if (!member && !user && !host) {
+      return { message: 'If the email exists, a reset link has been sent' };
+    }
+    const resetToken = this.jwtService.sign({ email, type: 'reset' }, { expiresIn: '15m' });
+    // TODO: Integrate with email service to send reset link
+    return { message: 'If the email exists, a reset link has been sent', resetToken };
+  }
+
   async changePassword(user: any, oldPassword: string, newPassword: string) {
     const { sub, role } = user;
 

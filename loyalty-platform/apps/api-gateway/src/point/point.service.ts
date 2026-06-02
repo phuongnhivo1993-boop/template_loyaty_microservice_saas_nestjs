@@ -83,6 +83,15 @@ export class PointService {
     return transaction;
   }
 
+  async getTransaction(id: string) {
+    const transaction = await this.prisma.pointTransaction.findUnique({
+      where: { id },
+      include: { member: { select: { id: true, fullName: true, email: true } } },
+    });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    return transaction;
+  }
+
   async getTransactions(memberId?: string, page = 1, limit = 20, type?: string) {
     const where: any = {};
     if (memberId) where.memberId = memberId;

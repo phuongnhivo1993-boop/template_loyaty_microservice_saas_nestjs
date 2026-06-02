@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditLogService } from './audit-log.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,6 +9,12 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('audit-logs')
 export class AuditLogController {
   constructor(private auditLogService: AuditLogService) {}
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get audit log by ID' })
+  findOne(@Param('id') id: string) {
+    return this.auditLogService.findOne(id);
+  }
 
   @Get()
   @ApiOperation({ summary: 'List audit logs (paginated & filterable)' })

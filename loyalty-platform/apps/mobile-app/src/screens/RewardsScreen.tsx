@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { rewards } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import type { Reward } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function RewardsScreen() {
+  const navigation = useNavigation<any>();
   const [items, setItems] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,7 +48,7 @@ export default function RewardsScreen() {
       </View>
       <View style={styles.list}>
         {items.length > 0 ? items.map((r: Reward) => (
-          <View key={r.id} style={styles.card}>
+          <TouchableOpacity key={r.id} style={styles.card} onPress={() => navigation.navigate('RewardDetail', { id: r.id })}>
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle}>{r.name}</Text>
               <Text style={styles.cardType}>{r.type}</Text>
@@ -56,7 +58,7 @@ export default function RewardsScreen() {
             <TouchableOpacity style={styles.button} onPress={() => handleRedeem(r.id)}>
               <Text style={styles.buttonText}>Redeem</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )) : (
           <EmptyState message="No rewards available" icon="🎁" />
         )}

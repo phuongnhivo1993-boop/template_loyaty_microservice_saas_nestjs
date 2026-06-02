@@ -9,6 +9,7 @@ const menuItems = [
   { label: 'Campaigns', href: '/campaigns', icon: '📢' },
   { label: 'Rewards', href: '/rewards', icon: '🎁' },
   { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
+  { label: 'Member Vouchers', href: '/member-vouchers', icon: '🎫' },
   { label: 'Promotions', href: '/promotions', icon: '⚡' },
   { label: 'Notifications', href: '/notifications', icon: '🔔' },
   { label: 'Tiers', href: '/tiers', icon: '🥇' },
