@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ExportService } from '../common/services/export.service';
@@ -100,7 +100,7 @@ export class ExportController {
   ) {
     const config = entityConfig[entity];
     if (!config) {
-      return res.status(404).json({ message: `Unknown entity: ${entity}` });
+      throw new NotFoundException(`Unknown entity: ${entity}`);
     }
 
     const prismaModel = (this.prisma as any)[config.model];

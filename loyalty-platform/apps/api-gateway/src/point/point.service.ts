@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -62,7 +62,7 @@ export class PointService {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Member not found');
     if (member.availablePoints < amount) {
-      throw new Error('Insufficient points');
+      throw new BadRequestException('Insufficient points');
     }
 
     const [transaction] = await this.prisma.$transaction([
@@ -106,7 +106,7 @@ export class PointService {
     if (!member) throw new NotFoundException('Member not found');
 
     const newAvailable = member.availablePoints + amount;
-    if (newAvailable < 0) throw new Error('Insufficient points');
+    if (newAvailable < 0) throw new BadRequestException('Insufficient points');
 
     const [transaction] = await this.prisma.$transaction([
       this.prisma.pointTransaction.create({

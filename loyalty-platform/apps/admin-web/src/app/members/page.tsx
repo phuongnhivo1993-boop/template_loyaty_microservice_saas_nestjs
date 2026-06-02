@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
+import PageHeader from '@/components/PageHeader';
+import DataTable from '@/components/DataTable';
+import Pagination from '@/components/Pagination';
+import Modal from '@/components/Modal';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; status: string;
@@ -77,45 +81,33 @@ export default function MembersPage() {
     } catch { showToast('Network error', 'error'); }
   };
 
-  const modal = showModal && (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }} onClick={() => setShowModal(false)}>
-      <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '480px' }}
-        onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>{editing ? 'Edit Member' : 'New Member'}</h2>
-        <form onSubmit={handleSubmit}>
-          {(['fullName', 'email', 'phone'] as const).map(f => (
-            <div key={f} style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>
-                {f === 'fullName' ? 'Full Name' : f.charAt(0).toUpperCase() + f.slice(1)}
-              </label>
-              <input value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} required={f !== 'phone'}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-          ))}
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Status</label>
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="LOCKED">Locked</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-            <button type="button" onClick={() => setShowModal(false)}
-              style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit"
-              style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-              {editing ? 'Save' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+  const exportCsv = async () => {
+    const params = new URLSearchParams({ page: '1', limit: '10000' });
+    if (search) params.set('search', search);
+    if (tierFilter) params.set('tierId', tierFilter);
+    const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+    const result = await res.json();
+    const data = Array.isArray(result) ? result : result.data || [];
+    const cols = ['fullName', 'email', 'availablePoints', 'status'];
+    const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+    const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'members.csv'; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const columns = [
+    { key: 'fullName', label: 'Name', render: (m: any) => <a href={`/members/${m.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{m.fullName}</a> },
+    { key: 'email', label: 'Email', render: (m: any) => <span style={{ color: '#64748b' }}>{m.email}</span> },
+    { key: 'tier', label: 'Tier', render: (m: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: m.tier?.color ? m.tier.color + '22' : '#f1f5f9', color: m.tier?.color || '#64748b' }}>{m.tier?.name || 'N/A'}</span> },
+    { key: 'availablePoints', label: 'Points', render: (m: any) => <span style={{ fontWeight: 600 }}>{m.availablePoints?.toLocaleString()}</span> },
+    { key: 'status', label: 'Status', render: (m: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: m.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2', color: m.status === 'ACTIVE' ? '#16a34a' : '#dc2626' }}>{m.status}</span> },
+    { key: 'kycVerified', label: 'KYC', render: (m: any) => m.kycVerified ? '✅ Verified' : '❌ Pending' },
+    { key: 'actions', label: 'Actions', render: (m: any) => (
+      <>
+        <button onClick={() => openEdit(m)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
+        <button onClick={() => handleDelete(m.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+      </>
+    )},
+  ];
 
   if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
 
@@ -123,16 +115,11 @@ export default function MembersPage() {
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
       <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Members</h1>
-            <p style={{ color: '#64748b' }}>Manage loyalty program members</p>
-          </div>
-          <button onClick={openCreate} style={{
-            padding: '10px 20px', background: '#2563eb', color: 'white',
-            border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer',
-          }}>+ New Member</button>
-        </div>
+        <PageHeader
+          title="Members"
+          subtitle="Manage loyalty program members"
+          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Member</button>}
+        />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }}
@@ -140,122 +127,45 @@ export default function MembersPage() {
             <option value="">ALL TIERS</option>
             {tierOptions.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{
-              padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px',
-              fontSize: '14px', flex: 1, maxWidth: '360px',
-            }}
-          />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>
-            {total > 0 ? `${total} results` : ''}
-          </span>
-          <button onClick={async () => {
-            const params = new URLSearchParams({ page: '1', limit: '10000' });
-            if (search) params.set('search', search);
-            if (tierFilter) params.set('tierId', tierFilter);
-            const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-            const result = await res.json();
-            const data = Array.isArray(result) ? result : result.data || [];
-            const cols = ['fullName', 'email', 'availablePoints', 'status'];
-            const header = cols.join(',');
-            const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const csv = [header, ...rows].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'members.csv'; a.click(); URL.revokeObjectURL(url);
-          }} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
+          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
         </div>
 
-        <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Name</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Email</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Tier</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Points</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Status</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>KYC</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No members found</td></tr>
-              ) : members.map((m: any) => (
-                <tr key={m.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>
-                    <a href={`/members/${m.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{m.fullName}</a>
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{m.email}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-                      background: m.tier?.color ? m.tier.color + '22' : '#f1f5f9',
-                      color: m.tier?.color || '#64748b',
-                    }}>{m.tier?.name || 'N/A'}</span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{m.availablePoints?.toLocaleString()}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-                      background: m.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2',
-                      color: m.status === 'ACTIVE' ? '#16a34a' : '#dc2626',
-                    }}>{m.status}</span>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {m.kycVerified ? '✅ Verified' : '❌ Pending'}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <button onClick={() => openEdit(m)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-                    <button onClick={() => handleDelete(m.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              style={{
-                padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px',
-                background: page <= 1 ? '#f1f5f9' : 'white', cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                color: page <= 1 ? '#94a3b8' : '#475569', fontWeight: 500,
-              }}
-            >Previous</button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-              const p = start + i;
-              if (p > totalPages) return null;
-              return (
-                <button key={p} onClick={() => setPage(p)}
-                  style={{
-                    padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '6px',
-                    background: p === page ? '#2563eb' : 'white', color: p === page ? 'white' : '#475569',
-                    cursor: 'pointer', fontWeight: 600,
-                  }}
-                >{p}</button>
-              );
-            })}
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              style={{
-                padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px',
-                background: page >= totalPages ? '#f1f5f9' : 'white', cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                color: page >= totalPages ? '#94a3b8' : '#475569', fontWeight: 500,
-              }}
-            >Next</button>
-          </div>
-        )}
-        {modal}
+        <DataTable columns={columns} data={members} emptyMessage="No members found" />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+        <Modal open={showModal} title={editing ? 'Edit Member' : 'New Member'} onClose={() => setShowModal(false)}>
+          <form onSubmit={handleSubmit}>
+            {(['fullName', 'email', 'phone'] as const).map(f => (
+              <div key={f} style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>
+                  {f === 'fullName' ? 'Full Name' : f.charAt(0).toUpperCase() + f.slice(1)}
+                </label>
+                <input value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} required={f !== 'phone'}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+              </div>
+            ))}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Status</label>
+              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="LOCKED">Locked</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <button type="button" onClick={() => setShowModal(false)}
+                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit"
+                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                {editing ? 'Save' : 'Create'}
+              </button>
+            </div>
+          </form>
+        </Modal>
       </main>
     </div>
   );

@@ -36,6 +36,25 @@ export class ReferralService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  async findOne(id: string) {
+    const referral = await this.prisma.referral.findUnique({
+      where: { id },
+      include: { referrer: true, referee: true },
+    });
+    if (!referral) throw new NotFoundException('Referral not found');
+    return referral;
+  }
+
+  async update(id: string, data: { status?: string }) {
+    await this.findOne(id);
+    return this.prisma.referral.update({ where: { id }, data });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.referral.delete({ where: { id } });
+  }
+
   async getStats(tenantId?: string) {
     const where = tenantId ? { tenantId } : {};
     const total = await this.prisma.referral.count({ where });

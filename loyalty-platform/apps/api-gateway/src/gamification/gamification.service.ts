@@ -38,10 +38,14 @@ export class GamificationService {
     return this.prisma.badge.delete({ where: { id } });
   }
 
-  private async findBadge(id: string) {
+  async findOneBadge(id: string) {
     const badge = await this.prisma.badge.findUnique({ where: { id } });
     if (!badge) throw new NotFoundException('Badge not found');
     return badge;
+  }
+
+  private async findBadge(id: string) {
+    return this.findOneBadge(id);
   }
 
   // Missions
@@ -72,15 +76,19 @@ export class GamificationService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateMission(id: string, data: { name?: string; description?: string; pointsReward?: number; criteria?: any }) {
+  async findOneMission(id: string) {
     const mission = await this.prisma.mission.findUnique({ where: { id } });
     if (!mission) throw new NotFoundException('Mission not found');
+    return mission;
+  }
+
+  async updateMission(id: string, data: { name?: string; description?: string; pointsReward?: number; criteria?: any }) {
+    await this.findOneMission(id);
     return this.prisma.mission.update({ where: { id }, data });
   }
 
   async removeMission(id: string) {
-    const mission = await this.prisma.mission.findUnique({ where: { id } });
-    if (!mission) throw new NotFoundException('Mission not found');
+    await this.findOneMission(id);
     return this.prisma.mission.delete({ where: { id } });
   }
 }

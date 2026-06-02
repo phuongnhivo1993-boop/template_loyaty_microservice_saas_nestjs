@@ -28,6 +28,12 @@ export class GamificationController {
     return this.gamificationService.findAllBadges(tenantId, page, limit, search, sort);
   }
 
+  @Get('badges/:id')
+  @ApiOperation({ summary: 'Get badge by ID' })
+  findOneBadge(@Param('id') id: string) {
+    return this.gamificationService.findOneBadge(id);
+  }
+
   @Put('badges/:id')
   @ApiOperation({ summary: 'Update badge' })
   updateBadge(@Param('id') id: string, @Body() body: { name?: string; description?: string; iconUrl?: string; criteria?: any }) {
@@ -56,6 +62,12 @@ export class GamificationController {
     @Query('sort') sort?: string,
   ) {
     return this.gamificationService.findAllMissions(tenantId, page, limit, search, sort);
+  }
+
+  @Get('missions/:id')
+  @ApiOperation({ summary: 'Get mission by ID' })
+  findOneMission(@Param('id') id: string) {
+    return this.gamificationService.findOneMission(id);
   }
 
   @Put('missions/:id')

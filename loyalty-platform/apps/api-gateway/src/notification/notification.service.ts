@@ -28,15 +28,19 @@ export class NotificationService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateTemplate(id: string, data: { name?: string; subject?: string; content?: string; variables?: string }) {
+  async findTemplateOne(id: string) {
     const template = await this.prisma.notificationTemplate.findUnique({ where: { id } });
     if (!template) throw new NotFoundException('Notification template not found');
+    return template;
+  }
+
+  async updateTemplate(id: string, data: { name?: string; subject?: string; content?: string; variables?: string }) {
+    await this.findTemplateOne(id);
     return this.prisma.notificationTemplate.update({ where: { id }, data });
   }
 
   async deleteTemplate(id: string) {
-    const template = await this.prisma.notificationTemplate.findUnique({ where: { id } });
-    if (!template) throw new NotFoundException('Notification template not found');
+    await this.findTemplateOne(id);
     await this.prisma.notificationTemplate.delete({ where: { id } });
     return { deleted: true };
   }

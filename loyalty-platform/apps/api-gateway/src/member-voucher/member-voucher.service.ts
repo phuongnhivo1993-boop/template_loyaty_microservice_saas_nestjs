@@ -32,6 +32,20 @@ export class MemberVoucherService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  async findOne(id: string) {
+    const mv = await this.prisma.memberVoucher.findUnique({
+      where: { id },
+      include: { voucher: true, member: { select: { id: true, fullName: true, email: true } } },
+    });
+    if (!mv) throw new NotFoundException('Assignment not found');
+    return mv;
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.memberVoucher.delete({ where: { id } });
+  }
+
   async redeem(id: string) {
     const mv = await this.prisma.memberVoucher.findUnique({ where: { id }, include: { voucher: true } });
     if (!mv) throw new NotFoundException('Assignment not found');

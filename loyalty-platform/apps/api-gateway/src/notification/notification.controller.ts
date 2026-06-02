@@ -23,6 +23,12 @@ export class NotificationController {
     return this.notificationService.listTemplates(tenantId, page, limit, search, sort);
   }
 
+  @Get('templates/:id')
+  @ApiOperation({ summary: 'Get notification template by ID' })
+  findTemplateOne(@Param('id') id: string) {
+    return this.notificationService.findTemplateOne(id);
+  }
+
   @Put('templates/:id')
   @ApiOperation({ summary: 'Update notification template' })
   updateTemplate(@Param('id') id: string, @Body() body: Partial<CreateNotificationTemplateDto>) {
