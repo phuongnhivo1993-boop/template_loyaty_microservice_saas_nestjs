@@ -11,9 +11,11 @@ export class MemberService {
     return this.prisma.member.create({ data });
   }
 
-  async findAll(tenantId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
+    if (tierId) where.tierId = tierId;
+    if (status) where.status = status;
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },

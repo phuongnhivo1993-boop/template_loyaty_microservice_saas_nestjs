@@ -1,21 +1,25 @@
 import { PrismaClient } from '@prisma/client';
-import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
 }
 
 async function main() {
   console.log('Seeding database...');
+
+  const hostPass = await hashPassword('Host@123456');
+  const adminPass = await hashPassword('Admin@123456');
+  const memberPass = await hashPassword('Member@123456');
 
   const host = await prisma.host.upsert({
     where: { email: 'host@loyalty.vn' },
     update: {},
     create: {
       email: 'host@loyalty.vn',
-      password: hashPassword('Host@123456'),
+      password: hostPass,
       name: 'Super Admin',
     },
   });
@@ -40,7 +44,7 @@ async function main() {
     update: {},
     create: {
       email: 'admin@sunshine.vn',
-      password: hashPassword('Admin@123456'),
+      password: adminPass,
       fullName: 'Tran Van Admin',
       role: 'ADMIN',
       tenantId: tenant.id,
@@ -79,10 +83,10 @@ async function main() {
 
   const member = await prisma.member.upsert({
     where: { email: 'nguyen.van.a@sunshine.vn' },
-    update: { password: hashPassword('Member@123456') },
+    update: { password: memberPass },
     create: {
       email: 'nguyen.van.a@sunshine.vn',
-      password: hashPassword('Member@123456'),
+      password: memberPass,
       fullName: 'Nguyen Van A',
       phone: '0909000111',
       tenantId: tenant.id,
@@ -210,6 +214,17 @@ async function main() {
     }
     console.log('  ✓ Member voucher assigned');
   }
+
+  await prisma.notificationTemplate.create({
+    data: {
+      name: 'Welcome Email',
+      type: 'email',
+      subject: 'Welcome {{name}} to {{tenant}}!',
+      content: 'Dear {{name}}, thank you for joining {{tenant}}. You have received {{points}} bonus points!',
+      tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Sample notification template created');
 
   await prisma.notificationLog.create({
     data: {

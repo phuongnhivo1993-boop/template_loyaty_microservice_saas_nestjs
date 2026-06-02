@@ -25,14 +25,16 @@ export class MemberController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'List members (with pagination)' })
+  @ApiOperation({ summary: 'List members (with pagination & filtering)' })
   findAll(
     @Query('tenantId') tenantId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('tierId') tierId?: string,
+    @Query('status') status?: string,
   ) {
-    return this.memberService.findAll(tenantId, page, limit, search);
+    return this.memberService.findAll(tenantId, page, limit, search, tierId, status);
   }
 
   @Get(':id')

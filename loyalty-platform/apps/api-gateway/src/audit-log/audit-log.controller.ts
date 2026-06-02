@@ -11,12 +11,15 @@ export class AuditLogController {
   constructor(private auditLogService: AuditLogService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List audit logs (paginated)' })
+  @ApiOperation({ summary: 'List audit logs (paginated & filterable)' })
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('entityType') entityType?: string,
+    @Query('action') action?: string,
+    @Query('userId') userId?: string,
   ) {
-    return this.auditLogService.findAll(page, limit, search);
+    return this.auditLogService.findAll(page, limit, search, entityType, action, userId);
   }
 }

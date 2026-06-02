@@ -83,12 +83,49 @@ export class PointService {
     return transaction;
   }
 
-  getTransactions(memberId?: string) {
-    const where = memberId ? { memberId } : {};
-    return this.prisma.pointTransaction.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+  async getTransactions(memberId?: string, page = 1, limit = 20, type?: string) {
+    const where: any = {};
+    if (memberId) where.memberId = memberId;
+    if (type) where.type = type;
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.pointTransaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.pointTransaction.count({ where }),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async adjust(memberId: string, amount: number, reason: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const newAvailable = member.availablePoints + amount;
+    if (newAvailable < 0) throw new Error('Insufficient points');
+
+    const [transaction] = await this.prisma.$transaction([
+      this.prisma.pointTransaction.create({
+        data: {
+          memberId,
+          type: 'ADJUST',
+          amount,
+          balance: newAvailable,
+          reason,
+        },
+      }),
+      this.prisma.member.update({
+        where: { id: memberId },
+        data: {
+          totalPoints: { increment: amount >= 0 ? amount : 0 },
+          availablePoints: { increment: amount },
+        },
+      }),
+    ]);
+    return transaction;
   }
 }

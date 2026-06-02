@@ -92,3 +92,34 @@ export class EarnPointsDto {
   @ApiProperty() amount: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() reason?: string;
 }
+
+export class AdjustPointsDto {
+  @ApiProperty() @IsString() memberId: string;
+  @ApiProperty() amount: number;
+  @ApiProperty() @IsString() reason: string;
+}
+
+export class CreateNotificationTemplateDto {
+  @ApiProperty() @IsString() name: string;
+  @ApiProperty() @IsString() type: string;
+  @ApiProperty() @IsString() subject: string;
+  @ApiProperty() @IsString() content: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() variables?: string;
+  @ApiProperty() @IsString() tenantId: string;
+}
+
+export class SendNotificationDto {
+  @ApiProperty() @IsString() templateId: string;
+  @ApiProperty() @IsString() recipient: string;
+  @ApiProperty() @IsString() channel: string;
+  @ApiProperty({ required: false }) @IsOptional() variables?: Record<string, string>;
+}
+
+export class CreateReferralLinkDto {
+  @ApiProperty() @IsString() referrerId: string;
+  @ApiProperty() @IsString() tenantId: string;
+}
+
+export class ConvertReferralDto {
+  @ApiProperty() @IsString() refereeId: string;
+}

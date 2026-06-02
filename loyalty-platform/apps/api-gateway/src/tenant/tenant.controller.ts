@@ -19,13 +19,14 @@ export class TenantController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tenants (with pagination)' })
+  @ApiOperation({ summary: 'List all tenants (with pagination & filtering)' })
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('status') status?: string,
   ) {
-    return this.tenantService.findAll(page, limit, search);
+    return this.tenantService.findAll(page, limit, search, status);
   }
 
   @Get(':id')

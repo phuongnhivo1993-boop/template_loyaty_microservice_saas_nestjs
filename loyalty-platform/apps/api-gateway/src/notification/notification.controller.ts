@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateNotificationTemplateDto, SendNotificationDto } from '../common/dto/common.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -12,7 +13,7 @@ export class NotificationController {
 
   @Post('templates')
   @ApiOperation({ summary: 'Create a notification template' })
-  createTemplate(@Body() body: { name: string; type: string; subject: string; content: string; variables?: string; tenantId: string }) {
+  createTemplate(@Body() body: CreateNotificationTemplateDto) {
     return this.notificationService.createTemplate(body);
   }
 
@@ -24,7 +25,7 @@ export class NotificationController {
 
   @Put('templates/:id')
   @ApiOperation({ summary: 'Update notification template' })
-  updateTemplate(@Param('id') id: string, @Body() body: { name?: string; subject?: string; content?: string; variables?: string }) {
+  updateTemplate(@Param('id') id: string, @Body() body: Partial<CreateNotificationTemplateDto>) {
     return this.notificationService.updateTemplate(id, body);
   }
 
@@ -36,7 +37,7 @@ export class NotificationController {
 
   @Post('send')
   @ApiOperation({ summary: 'Send a notification (email/SMS)' })
-  send(@Body() body: { templateId: string; recipient: string; channel: string; variables?: Record<string, string> }) {
+  send(@Body() body: SendNotificationDto) {
     return this.notificationService.send(body);
   }
 

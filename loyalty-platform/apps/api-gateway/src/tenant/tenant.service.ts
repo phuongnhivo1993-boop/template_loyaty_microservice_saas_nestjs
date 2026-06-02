@@ -15,15 +15,17 @@ export class TenantService {
     });
   }
 
-  async findAll(page = 1, limit = 20, search?: string) {
+  async findAll(page = 1, limit = 20, search?: string, status?: string) {
     const skip = (page - 1) * limit;
-    const where: any = search ? {
-      OR: [
+    const where: any = {};
+    if (search) {
+      where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { domain: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-      ]
-    } : {};
+      ];
+    }
+    if (status) where.status = status;
     const [data, total] = await Promise.all([
       this.prisma.tenant.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
       this.prisma.tenant.count({ where }),

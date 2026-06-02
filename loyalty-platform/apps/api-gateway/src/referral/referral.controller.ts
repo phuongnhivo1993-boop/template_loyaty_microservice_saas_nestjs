@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReferralService } from './referral.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateReferralLinkDto, ConvertReferralDto } from '../common/dto/common.dto';
 
 @ApiTags('Referrals')
 @ApiBearerAuth()
@@ -12,8 +13,8 @@ export class ReferralController {
 
   @Post('links')
   @ApiOperation({ summary: 'Create referral link' })
-  createLink(@Param() _: any, @Query('referrerId') referrerId: string, @Query('tenantId') tenantId: string) {
-    return this.referralService.createLink(referrerId, tenantId);
+  createLink(@Body() body: CreateReferralLinkDto) {
+    return this.referralService.createLink(body.referrerId, body.tenantId);
   }
 
   @Get()
@@ -35,7 +36,7 @@ export class ReferralController {
 
   @Post(':id/convert')
   @ApiOperation({ summary: 'Mark referral as converted and reward referrer' })
-  convert(@Param('id') id: string, @Body() body: { refereeId: string }) {
+  convert(@Param('id') id: string, @Body() body: ConvertReferralDto) {
     return this.referralService.convertReferral(id, body.refereeId);
   }
 }
