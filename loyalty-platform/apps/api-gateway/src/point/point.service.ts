@@ -128,6 +128,8 @@ export class PointService {
     const newAvailable = member.availablePoints + amount;
     if (newAvailable < 0) throw new BadRequestException('Insufficient points');
 
+    const newTotal = member.totalPoints + (amount >= 0 ? amount : 0);
+
     const [transaction] = await this.prisma.$transaction([
       this.prisma.pointTransaction.create({
         data: {
@@ -146,6 +148,7 @@ export class PointService {
         },
       }),
     ]);
+    if (amount > 0) await this.maybeUpgradeTier(memberId, member.tenantId, newTotal);
     return transaction;
   }
 }

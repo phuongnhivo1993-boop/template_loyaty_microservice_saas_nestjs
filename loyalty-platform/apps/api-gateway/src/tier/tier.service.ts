@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class TierService {
+  private readonly logger = new Logger(TierService.name);
+
   constructor(private prisma: PrismaService) {}
 
   create(data: { name: string; minPoints?: number; maxPoints?: number; benefits?: string; color?: string; tenantId: string }) {
@@ -50,5 +53,60 @@ export class TierService {
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.tier.delete({ where: { id } });
+  }
+
+  async assignTierToMember(memberId: string): Promise<void> {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'desc' } } } } },
+    });
+    if (!member || !member.tenant) return;
+
+    const tiers = member.tenant.tiers;
+    if (tiers.length === 0) return;
+
+    const matchingTier = tiers.find(
+      t => member.totalPoints >= t.minPoints && member.totalPoints <= t.maxPoints,
+    );
+
+    if (matchingTier && member.tierId !== matchingTier.id) {
+      await this.prisma.member.update({
+        where: { id: memberId },
+        data: { tierId: matchingTier.id },
+      });
+      this.logger.log(`Member ${memberId} upgraded/downgraded to tier ${matchingTier.name}`);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async autoAssignTiers(): Promise<void> {
+    this.logger.log('Running auto tier assignment...');
+    const tenants = await this.prisma.tenant.findMany({
+      where: { status: 'ACTIVE' },
+      include: { tiers: { orderBy: { minPoints: 'desc' } } },
+    });
+
+    let updated = 0;
+    for (const tenant of tenants) {
+      if (tenant.tiers.length === 0) continue;
+
+      const members = await this.prisma.member.findMany({
+        where: { tenantId: tenant.id, status: 'ACTIVE' },
+      });
+
+      for (const member of members) {
+        const matchingTier = tenant.tiers.find(
+          t => member.totalPoints >= t.minPoints && member.totalPoints <= t.maxPoints,
+        );
+        if (matchingTier && member.tierId !== matchingTier.id) {
+          await this.prisma.member.update({
+            where: { id: member.id },
+            data: { tierId: matchingTier.id },
+          });
+          updated++;
+        }
+      }
+    }
+    this.logger.log(`Auto tier assignment complete. ${updated} members updated.`);
   }
 }

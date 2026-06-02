@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import PageHeader from '@/components/PageHeader';
 import { useToast } from '@/components/Toast';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 
 export default function BroadcastPage() {
   const router = useRouter();
@@ -59,12 +60,12 @@ export default function BroadcastPage() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content">Loading...</main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Broadcast Notification"
           subtitle="Send a notification to all active members"
@@ -72,49 +73,49 @@ export default function BroadcastPage() {
 
         <div style={{ maxWidth: '600px' }}>
           <form onSubmit={handleBroadcast}>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Template *</label>
-              <select value={form.templateId} onChange={e => setForm({ ...form, templateId: e.target.value })} required
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                <option value="">Select template...</option>
-                {templates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.type})</option>)}
-              </select>
-            </div>
+            <FormSelect
+              label="Template"
+              value={form.templateId}
+              onChange={v => setForm({ ...form, templateId: v })}
+              required
+              placeholder="Select template..."
+              options={templates.map((t: any) => ({ value: t.id, label: `${t.name} (${t.type})` }))}
+            />
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Channel *</label>
-              <select value={form.channel} onChange={e => setForm({ ...form, channel: e.target.value })}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                <option value="EMAIL">Email</option>
-                <option value="SMS">SMS</option>
-                <option value="PUSH">Push</option>
-              </select>
-            </div>
+            <FormSelect
+              label="Channel"
+              value={form.channel}
+              onChange={v => setForm({ ...form, channel: v })}
+              required
+              options={[
+                { value: 'EMAIL', label: 'Email' },
+                { value: 'SMS', label: 'SMS' },
+                { value: 'PUSH', label: 'Push' },
+              ]}
+            />
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Tenant ID *</label>
-              <input value={form.tenantId} onChange={e => setForm({ ...form, tenantId: e.target.value })} required placeholder="Enter tenant ID"
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px' }} />
-            </div>
+            <FormInput
+              label="Tenant ID"
+              value={form.tenantId}
+              onChange={v => setForm({ ...form, tenantId: v })}
+              required
+              placeholder="Enter tenant ID"
+            />
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Variables (JSON)</label>
-              <textarea value={form.variables} onChange={e => setForm({ ...form, variables: e.target.value })} rows={4}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' }} />
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>e.g. {"{\"name\":\"string\",\"points\":\"100\"}"}</span>
-            </div>
+            <FormTextarea
+              label="Variables (JSON)"
+              value={form.variables}
+              onChange={v => setForm({ ...form, variables: v })}
+              rows={4}
+            />
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>e.g. {"{\"name\":\"string\",\"points\":\"100\"}"}</span>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '24px' }}>
-              <button type="submit" style={{
-                padding: '12px 32px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px',
-                cursor: 'pointer', fontWeight: 600, fontSize: '15px', opacity: sending ? 0.6 : 1,
-              }} disabled={sending}>
-                {sending ? 'Sending...' : 'Send to All Members'}
-              </button>
-              <button type="button" onClick={() => router.back()} style={{
-                padding: '12px 24px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px',
-              }}>Cancel</button>
-            </div>
+            <FormActions
+              onCancel={() => router.back()}
+              loading={sending}
+              submitLabel="Send to All Members"
+              cancelLabel="Cancel"
+            />
           </form>
 
           {result && (

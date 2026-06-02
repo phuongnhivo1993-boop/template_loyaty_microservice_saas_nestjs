@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface BadgeForm {
   name: string; description: string; iconUrl: string; criteria: string;
@@ -106,37 +108,37 @@ export default function BadgesPage() {
   };
 
   const columns = [
-    { key: 'name', label: 'Name', render: (c: any) => <span style={{ fontWeight: 500 }}>{c.name}</span> },
+    { key: 'name', label: 'Name', render: (c: any) => <span className="font-medium">{c.name}</span> },
     { key: 'icon', label: 'Icon', render: (c: any) => c.iconUrl ? <img src={c.iconUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '6px' }} /> : <span style={{ color: '#94a3b8' }}>-</span> },
-    { key: 'description', label: 'Description', render: (c: any) => <span style={{ color: '#64748b', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>{c.description || '-'}</span> },
-    { key: 'criteria', label: 'Criteria', render: (c: any) => <span style={{ color: '#64748b', fontSize: '12px', fontFamily: 'monospace', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>{typeof c.criteria === 'object' ? JSON.stringify(c.criteria) : c.criteria || '{}'}</span> },
+    { key: 'description', label: 'Description', render: (c: any) => <span className="text-muted" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>{c.description || '-'}</span> },
+    { key: 'criteria', label: 'Criteria', render: (c: any) => <span className="text-muted" style={{ fontSize: '12px', fontFamily: 'monospace', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>{typeof c.criteria === 'object' ? JSON.stringify(c.criteria) : c.criteria || '{}'}</span> },
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
-        <button onClick={() => router.push(`/badges/${c.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
-        <button onClick={() => openEdit(c)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/badges/${c.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Badges"
           subtitle="Manage achievement badges"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Badge</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Badge</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="toolbar">
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          {total > 0 && <span style={{ color: '#64748b', fontSize: '14px' }}>{total} results</span>}
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+            className="search-input" />
+          {total > 0 && <span className="text-muted" style={{ fontSize: '14px' }}>{total} results</span>}
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={badges} emptyMessage="No badges found" />
@@ -144,34 +146,11 @@ export default function BadgesPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Badge' : 'New Badge'} onClose={() => setShowModal(false)} width={520}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Icon URL</label>
-              <input value={form.iconUrl} onChange={e => setForm({ ...form, iconUrl: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Criteria (JSON)</label>
-              <textarea value={form.criteria} onChange={e => setForm({ ...form, criteria: e.target.value })} rows={5}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', resize: 'vertical', fontFamily: 'monospace' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
+            <FormInput label="Icon URL" value={form.iconUrl} onChange={v => setForm({ ...form, iconUrl: v })} />
+            <FormTextarea label="Criteria (JSON)" value={form.criteria} onChange={v => setForm({ ...form, criteria: v })} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="badges" entityLabel="badges" onImportComplete={load} />

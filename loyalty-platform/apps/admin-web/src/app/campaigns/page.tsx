@@ -10,6 +10,8 @@ import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface CampaignForm {
   name: string; description: string; startDate: string; endDate: string; budget: string; status: string;
@@ -83,7 +85,7 @@ export default function CampaignsPage() {
     try {
       const body = { ...form, budget: form.budget ? Number(form.budget) : undefined };
       const url = editing ? `/api/campaigns/${editing.id}` : '/api/campaigns';
-      const method = editing ? 'PATCH' : 'POST';
+      const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
       if (!res.ok) { showToast('Operation failed', 'error'); return; }
       showToast(editing ? 'Campaign updated successfully' : 'Campaign created successfully', 'success');
@@ -107,50 +109,45 @@ export default function CampaignsPage() {
 
   const columns = [
     { key: 'name', label: 'Name', render: (c: any) => <span style={{ fontWeight: 500 }}>{c.name}</span> },
-    { key: 'startDate', label: 'Start', render: (c: any) => <span style={{ color: '#64748b' }}>{new Date(c.startDate).toLocaleDateString()}</span> },
-    { key: 'endDate', label: 'End', render: (c: any) => <span style={{ color: '#64748b' }}>{new Date(c.endDate).toLocaleDateString()}</span> },
+    { key: 'startDate', label: 'Start', render: (c: any) => <span className="text-muted">{new Date(c.startDate).toLocaleDateString()}</span> },
+    { key: 'endDate', label: 'End', render: (c: any) => <span className="text-muted">{new Date(c.endDate).toLocaleDateString()}</span> },
     { key: 'budget', label: 'Budget', render: (c: any) => c.budget ? `${c.budget.toLocaleString()} VND` : '-' },
     { key: 'status', label: 'Status', render: (c: any) => (
-      <span style={{
-        padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-        background: c.status === 'ACTIVE' ? '#dcfce7' : c.status === 'COMPLETED' ? '#e0e7ff' : '#fef2f2',
-        color: c.status === 'ACTIVE' ? '#16a34a' : c.status === 'COMPLETED' ? '#4f46e5' : '#dc2626',
-      }}>{c.status || 'DRAFT'}</span>
+      <span className={`status-badge ${(c.status || 'DRAFT').toLowerCase()}`}>{c.status || 'DRAFT'}</span>
     )},
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
-        <button onClick={() => router.push(`/campaigns/${c.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button>
-        <button onClick={() => openEdit(c)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(c.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/campaigns/${c.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(c)} className="btn-secondary btn-sm">Edit</button>
+        <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={6} cols={6} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Campaigns"
           subtitle="Manage marketing campaigns"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Campaign</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Campaign</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-            <option value="ALL">ALL</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-            <option value="EXPIRED">EXPIRED</option>
+        <div className="toolbar">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="filter-select">
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="PAUSED">Paused</option>
+            <option value="ENDED">Ended</option>
+            <option value="DRAFT">Draft</option>
           </select>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
+          <input type="text" placeholder="Search campaigns..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
@@ -171,51 +168,20 @@ export default function CampaignsPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Campaign' : 'New Campaign'} onClose={() => setShowModal(false)} width={520}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
+            <div className="grid-2">
+              <FormInput label="Start Date" type="date" value={form.startDate} onChange={v => setForm({ ...form, startDate: v })} required />
+              <FormInput label="End Date" type="date" value={form.endDate} onChange={v => setForm({ ...form, endDate: v })} required />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Start Date</label>
-                <input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} required
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>End Date</label>
-                <input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} required
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Budget (VND)</label>
-              <input type="number" value={form.budget} onChange={e => setForm({ ...form, budget: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Status</label>
-              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="DRAFT">Draft</option>
-                <option value="ACTIVE">Active</option>
-                <option value="PAUSED">Paused</option>
-                <option value="COMPLETED">Completed</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Budget (VND)" type="number" value={form.budget} onChange={v => setForm({ ...form, budget: v })} />
+            <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })} options={[
+              { value: 'DRAFT', label: 'Draft' },
+              { value: 'ACTIVE', label: 'Active' },
+              { value: 'PAUSED', label: 'Paused' },
+              { value: 'COMPLETED', label: 'Completed' },
+            ]} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="campaigns" entityLabel="campaigns" onImportComplete={load} />

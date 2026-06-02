@@ -19,16 +19,13 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
       .finally(() => setLoading(false));
   }, [params.id, router]);
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.push('/tenants')} style={{
-          background: 'none', border: 'none', color: '#2563eb',
-          cursor: 'pointer', fontSize: '14px', marginBottom: '16px',
-        }}>← Back to Tenants</button>
+      <main className="main-content">
+        <button onClick={() => router.push('/tenants')} className="btn-secondary">← Back to Tenants</button>
 
         {tenant ? (
           <>
@@ -37,8 +34,7 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
                 <h1 style={{ fontSize: '28px', fontWeight: 700 }}>{tenant.name}</h1>
                 <p style={{ color: '#64748b', marginTop: '4px' }}>{tenant.domain}</p>
               </div>
-              <span style={{
-                padding: '6px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: 600,
+              <span className="status-badge" style={{
                 background: tenant.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2',
                 color: tenant.status === 'ACTIVE' ? '#16a34a' : '#dc2626',
               }}>{tenant.status}</span>

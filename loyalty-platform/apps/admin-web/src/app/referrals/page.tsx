@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -82,14 +83,14 @@ export default function ReferralsPage() {
   };
 
   const columns = [
-    { key: 'code', label: 'Code', render: (r: any) => <span style={{ fontWeight: 500, fontFamily: 'monospace' }}>{r.code}</span> },
-    { key: 'referrer', label: 'Referrer', render: (r: any) => <span style={{ color: '#64748b' }}>{r.referrer?.fullName || r.referrer?.email || r.referrerId || '-'}</span> },
-    { key: 'referee', label: 'Referee', render: (r: any) => <span style={{ color: '#64748b' }}>{r.referee?.fullName || r.referee?.email || r.refereeId || '-'}</span> },
-    { key: 'status', label: 'Status', render: (r: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: r.status === 'CONVERTED' ? '#dcfce7' : r.status === 'PENDING' ? '#fef9c3' : '#f1f5f9', color: r.status === 'CONVERTED' ? '#16a34a' : r.status === 'PENDING' ? '#a16207' : '#64748b' }}>{r.status}</span> },
-    { key: 'createdAt', label: 'Created', render: (r: any) => <span style={{ color: '#64748b', fontSize: '13px' }}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-'}</span> },
+    { key: 'code', label: 'Code', render: (r: any) => <span className="font-medium" style={{ fontFamily: 'monospace' }}>{r.code}</span> },
+    { key: 'referrer', label: 'Referrer', render: (r: any) => <span className="text-muted">{r.referrer?.fullName || r.referrer?.email || r.referrerId || '-'}</span> },
+    { key: 'referee', label: 'Referee', render: (r: any) => <span className="text-muted">{r.referee?.fullName || r.referee?.email || r.refereeId || '-'}</span> },
+    { key: 'status', label: 'Status', render: (r: any) => <span className="status-badge" style={{ background: r.status === 'CONVERTED' ? '#dcfce7' : r.status === 'PENDING' ? '#fef9c3' : '#f1f5f9', color: r.status === 'CONVERTED' ? '#16a34a' : r.status === 'PENDING' ? '#a16207' : '#64748b' }}>{r.status}</span> },
+    { key: 'createdAt', label: 'Created', render: (r: any) => <span className="text-muted">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-'}</span> },
     { key: 'actions', label: 'Actions', render: (r: any) => (
       <>
-        <button onClick={() => router.push(`/referrals/${r.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
+        <button onClick={() => router.push(`/referrals/${r.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         {r.status !== 'CONVERTED' ? (
         <button onClick={() => handleConvert(r.id)} disabled={converting === r.id}
           style={{ padding: '6px 14px', border: '1px solid #86efac', borderRadius: '6px', background: '#f0fdf4', color: '#16a34a', cursor: converting === r.id ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 500 }}>
@@ -100,7 +101,7 @@ export default function ReferralsPage() {
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   const statCards = stats ? [
     { label: 'Total Referrals', value: stats.totalReferrals ?? stats.total ?? 0 },
@@ -110,9 +111,9 @@ export default function ReferralsPage() {
   ] : [];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader title="Referrals" subtitle="Monitor and manage member referrals" />
 
         {statCards.length > 0 && (
@@ -129,19 +130,19 @@ export default function ReferralsPage() {
           </div>
         )}
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="toolbar">
           <input type="text" placeholder="Search..." value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+            className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
           <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            className="filter-select">
             <option value="">All Status</option>
             <option value="PENDING">Pending</option>
             <option value="CONVERTED">Converted</option>
           </select>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={referrals} emptyMessage="No referrals found" />

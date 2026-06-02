@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface RewardForm {
   name: string; description: string; type: string; pointsRequired: string; quantity: string; imageUrl: string;
@@ -78,7 +80,7 @@ export default function RewardsPage() {
     try {
       const body = { ...form, pointsRequired: Number(form.pointsRequired), quantity: form.quantity ? Number(form.quantity) : undefined };
       const url = editing ? `/api/rewards/${editing.id}` : '/api/rewards';
-      const method = editing ? 'PATCH' : 'POST';
+      const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
       if (!res.ok) { showToast('Operation failed', 'error'); return; }
       showToast(editing ? 'Reward updated successfully' : 'Reward created successfully', 'success');
@@ -100,47 +102,43 @@ export default function RewardsPage() {
   };
 
   const columns = [
-    { key: 'name', label: 'Name', render: (r: any) => <span style={{ fontWeight: 500 }}>{r.name}</span> },
-    { key: 'type', label: 'Type', render: (r: any) => (
-      <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: '#f1f5f9', color: '#475569' }}>{r.type}</span>
-    )},
+    { key: 'name', label: 'Name', render: (r: any) => <span className="font-medium">{r.name}</span> },
+    { key: 'type', label: 'Type', render: (r: any) => <span className="status-badge">{r.type}</span> },
     { key: 'pointsRequired', label: 'Points Required', render: (r: any) => <span style={{ fontWeight: 600, color: '#2563eb' }}>{r.pointsRequired?.toLocaleString()} pts</span> },
     { key: 'quantity', label: 'Stock', render: (r: any) => <span style={{ color: r.quantity > 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>{r.quantity}</span> },
     { key: 'actions', label: 'Actions', render: (r: any) => (
       <>
-        <button onClick={() => router.push(`/rewards/${r.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button>
-        <button onClick={() => openEdit(r)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(r.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/rewards/${r.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(r)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(r.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Rewards"
           subtitle="Manage redeemable rewards"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Reward</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Reward</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+        <div className="toolbar">
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="filter-select">
             <option value="ALL">All Types</option>
             <option value="PHYSICAL">Physical</option>
             <option value="DIGITAL">Digital</option>
             <option value="GIFT_CARD">Gift Card</option>
             <option value="DISCOUNT">Discount</option>
           </select>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <input type="text" placeholder="Search rewards..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={rewards} emptyMessage="No rewards found" />
@@ -148,51 +146,20 @@ export default function RewardsPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Reward' : 'New Reward'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
+            <FormSelect label="Type" value={form.type} onChange={v => setForm({ ...form, type: v })} options={[
+              { value: 'PHYSICAL', label: 'Physical' },
+              { value: 'DIGITAL', label: 'Digital' },
+              { value: 'GIFT_CARD', label: 'Gift Card' },
+              { value: 'DISCOUNT', label: 'Discount' },
+            ]} />
+            <div className="grid-2">
+              <FormInput label="Points Required" type="number" value={form.pointsRequired} onChange={v => setForm({ ...form, pointsRequired: v })} required />
+              <FormInput label="Stock Quantity" type="number" value={form.quantity} onChange={v => setForm({ ...form, quantity: v })} />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Type</label>
-              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="PHYSICAL">Physical</option>
-                <option value="DIGITAL">Digital</option>
-                <option value="GIFT_CARD">Gift Card</option>
-                <option value="DISCOUNT">Discount</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Points Required</label>
-                <input type="number" value={form.pointsRequired} onChange={e => setForm({ ...form, pointsRequired: e.target.value })} required
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Stock Quantity</label>
-                <input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Image URL</label>
-              <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Image URL" value={form.imageUrl} onChange={v => setForm({ ...form, imageUrl: v })} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="rewards" entityLabel="rewards" onImportComplete={load} />

@@ -39,23 +39,23 @@ export default function VoucherDetailPage() {
     return { label: 'Active', color: '#16a34a', bg: '#f0fdf4' };
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!voucher) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Voucher not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!voucher) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Voucher not found</p></main></div>;
 
   const status = getStatus();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'monospace' }}>{voucher.code}</h1>
             <p style={{ color: '#64748b' }}>Voucher ID: {voucher.id}</p>
           </div>
-          <span style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, background: status.bg, color: status.color }}>{status.label}</span>
+          <span className="status-badge" style={{ background: status.bg, color: status.color }}>{status.label}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>

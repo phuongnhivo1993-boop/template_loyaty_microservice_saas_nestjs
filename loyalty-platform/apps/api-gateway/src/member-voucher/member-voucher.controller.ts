@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@n
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberVoucherService } from './member-voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Member Vouchers')
 @ApiBearerAuth()
@@ -11,6 +12,7 @@ export class MemberVoucherController {
   constructor(private memberVoucherService: MemberVoucherService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Assign voucher to member' })
   assign(@Body() body: { memberId: string; voucherId: string }) {
     return this.memberVoucherService.assign(body.memberId, body.voucherId);
@@ -29,12 +31,14 @@ export class MemberVoucherController {
   }
 
   @Delete(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete member-voucher assignment' })
   remove(@Param('id') id: string) {
     return this.memberVoucherService.remove(id);
   }
 
   @Post(':id/redeem')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem a member voucher' })
   redeem(@Param('id') id: string) {
     return this.memberVoucherService.redeem(id);

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PromotionService } from './promotion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreatePromotionDto, UpdatePromotionDto, PromotionQueryDto } from './dto/create-promotion.dto';
 
 @ApiTags('Promotions')
 @ApiBearerAuth()
@@ -14,21 +15,14 @@ export class PromotionController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a promotion rule' })
-  create(@Body() body: { name: string; description?: string; priority?: number; conditions?: any; actions?: any; tenantId: string }) {
+  create(@Body() body: CreatePromotionDto) {
     return this.promotionService.create(body);
   }
 
   @Get()
   @ApiOperation({ summary: 'List promotion rules (with pagination & sort)' })
-  findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.promotionService.findAll(tenantId, page, limit, search, sort, status);
+  findAll(@Query() query: PromotionQueryDto) {
+    return this.promotionService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort, query.status);
   }
 
   @Get(':id')
@@ -40,7 +34,7 @@ export class PromotionController {
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update promotion rule' })
-  update(@Param('id') id: string, @Body() body: { name?: string; description?: string; priority?: number; status?: string; conditions?: any; actions?: any }) {
+  update(@Param('id') id: string, @Body() body: UpdatePromotionDto) {
     return this.promotionService.update(id, body);
   }
 

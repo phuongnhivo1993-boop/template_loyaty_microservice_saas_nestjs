@@ -30,14 +30,14 @@ export default function NotificationDetailPage() {
     load();
   }, [id]);
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!notification) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Notification template not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!notification) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Notification template not found</p></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px' }}>{notification.name}</h1>
         <p style={{ color: '#64748b', marginBottom: '24px' }}>Template ID: {notification.id}</p>

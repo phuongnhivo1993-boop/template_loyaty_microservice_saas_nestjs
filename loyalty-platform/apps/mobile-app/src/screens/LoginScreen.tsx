@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { useNavigation } from '@react-navigation/native';
 import { auth, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
-import { auth } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {

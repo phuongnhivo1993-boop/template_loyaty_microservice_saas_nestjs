@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditLogService } from './audit-log.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
@@ -11,12 +12,14 @@ export class AuditLogController {
   constructor(private auditLogService: AuditLogService) {}
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Get audit log by ID' })
   findOne(@Param('id') id: string) {
     return this.auditLogService.findOne(id);
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'List audit logs (paginated & filterable)' })
   findAll(
     @Query('page') page?: number,

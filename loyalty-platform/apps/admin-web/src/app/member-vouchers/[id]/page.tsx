@@ -30,16 +30,16 @@ export default function MemberVoucherDetailPage() {
     load();
   }, [id]);
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!mv) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Member voucher not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!mv) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Member voucher not found</p></main></div>;
 
   const isRedeemed = mv.redeemed;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px' }}>
           {mv.voucher?.code || 'Member Voucher'}

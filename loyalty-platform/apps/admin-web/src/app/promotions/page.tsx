@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface PromotionForm {
   name: string; description: string; priority: string; conditions: string; actions: string; status: string;
@@ -86,7 +88,7 @@ export default function PromotionsPage() {
         conditions: JSON.parse(form.conditions), actions: JSON.parse(form.actions), status: form.status,
       };
       const url = editing ? `/api/promotions/${editing.id}` : '/api/promotions';
-      const method = editing ? 'PATCH' : 'POST';
+      const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
       if (!res.ok) { showToast('Operation failed', 'error'); return; }
       showToast(editing ? 'Promotion rule updated successfully' : 'Promotion rule created successfully', 'success');
@@ -107,47 +109,43 @@ export default function PromotionsPage() {
     const a = document.createElement('a'); a.href = url; a.download = 'promotions.csv'; a.click(); URL.revokeObjectURL(url);
   };
 
-  const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace' as const };
-
   const columns = [
-    { key: 'name', label: 'Name', render: (p: any) => <span style={{ fontWeight: 500 }}>{p.name}</span> },
-    { key: 'priority', label: 'Priority', render: (p: any) => <span style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: '#f1f5f9', color: '#475569' }}>{p.priority || 0}</span> },
-    { key: 'conditions', label: 'Conditions', render: (p: any) => <span style={{ color: '#64748b', fontFamily: 'monospace', fontSize: '13px' }}>{p.conditions ? JSON.stringify(p.conditions).slice(0, 35) + '...' : '-'}</span> },
-    { key: 'actions', label: 'Actions', render: (p: any) => <span style={{ color: '#64748b', fontFamily: 'monospace', fontSize: '13px' }}>{p.actions ? JSON.stringify(p.actions).slice(0, 35) + '...' : '-'}</span> },
-    { key: 'status', label: 'Status', render: (p: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: p.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2', color: p.status === 'ACTIVE' ? '#16a34a' : '#dc2626' }}>{p.status || 'DRAFT'}</span> },
+    { key: 'name', label: 'Name', render: (p: any) => <span className="font-medium">{p.name}</span> },
+    { key: 'priority', label: 'Priority', render: (p: any) => <span className="status-badge">{p.priority || 0}</span> },
+    { key: 'conditions', label: 'Conditions', render: (p: any) => <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: '13px' }}>{p.conditions ? JSON.stringify(p.conditions).slice(0, 35) + '...' : '-'}</span> },
+    { key: 'actions', label: 'Actions', render: (p: any) => <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: '13px' }}>{p.actions ? JSON.stringify(p.actions).slice(0, 35) + '...' : '-'}</span> },
+    { key: 'status', label: 'Status', render: (p: any) => <span className={`status-badge ${(p.status || 'DRAFT').toLowerCase()}`}>{p.status || 'DRAFT'}</span> },
     { key: 'actionsBtn', label: 'Actions', render: (p: any) => (
       <>
-        <button onClick={() => router.push(`/promotions/${p.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
-        <button onClick={() => openEdit(p)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(p.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/promotions/${p.id}`)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(p)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(p.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={6} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Promotions"
           subtitle="IF-THEN promotion rules engine"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Rule</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Rule</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+        <div className="toolbar">
+          <input type="text" placeholder="Search promotions..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
+          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} className="filter-select">
             <option value="">All Status</option>
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
           </select>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={promotions} emptyMessage="No promotion rules found" />
@@ -155,50 +153,19 @@ export default function PromotionsPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Rule' : 'New Rule'} onClose={() => setShowModal(false)} width={560}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
+            <div className="grid-2">
+              <FormInput label="Priority" type="number" value={form.priority} onChange={v => setForm({ ...form, priority: v })} />
+              <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })} options={[
+                { value: 'DRAFT', label: 'Draft' },
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+              ]} />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Priority</label>
-                <input type="number" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Status</label>
-                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                  <option value="DRAFT">Draft</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
-              </div>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Conditions (JSON)</label>
-              <textarea value={form.conditions} onChange={e => setForm({ ...form, conditions: e.target.value })} rows={4}
-                style={{ ...inputStyle, resize: 'vertical' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Actions (JSON)</label>
-              <textarea value={form.actions} onChange={e => setForm({ ...form, actions: e.target.value })} rows={4}
-                style={{ ...inputStyle, resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormTextarea label="Conditions (JSON)" value={form.conditions} onChange={v => setForm({ ...form, conditions: v })} />
+            <FormTextarea label="Actions (JSON)" value={form.actions} onChange={v => setForm({ ...form, actions: v })} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="promotions" entityLabel="promotions" onImportComplete={load} />

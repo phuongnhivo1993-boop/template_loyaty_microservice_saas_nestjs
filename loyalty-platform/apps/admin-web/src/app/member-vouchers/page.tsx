@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface AssignForm { memberId: string; voucherId: string; }
 
@@ -83,42 +85,41 @@ export default function MemberVouchersPage() {
   };
 
   const columns = [
-    { key: 'member', label: 'Member', render: (a: any) => <span style={{ fontWeight: 500 }}>{a.member?.fullName || a.memberId?.slice(0, 12) || '-'}</span> },
+    { key: 'member', label: 'Member', render: (a: any) => <span className="font-medium">{a.member?.fullName || a.memberId?.slice(0, 12) || '-'}</span> },
     { key: 'voucher', label: 'Voucher', render: (a: any) => <span style={{ fontFamily: 'monospace', color: '#7c3aed' }}>{a.voucher?.code || a.voucherId?.slice(0, 12) || '-'}</span> },
     { key: 'redeemed', label: 'Redeemed', render: (a: any) => (
-      <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: a.redeemed ? '#dcfce7' : '#f1f5f9', color: a.redeemed ? '#16a34a' : '#64748b' }}>{a.redeemed ? 'Yes' : 'No'}</span>
+      <span className={`status-badge ${a.redeemed ? 'status-badge--success' : 'status-badge--default'}`}>{a.redeemed ? 'Yes' : 'No'}</span>
     )},
-    { key: 'redeemedAt', label: 'Redeemed At', render: (a: any) => <span style={{ color: '#64748b', fontSize: '13px' }}>{a.redeemedAt ? new Date(a.redeemedAt).toLocaleString() : '-'}</span> },
-    { key: 'createdAt', label: 'Assigned', render: (a: any) => <span style={{ color: '#64748b', fontSize: '13px' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '-'}</span> },
+    { key: 'redeemedAt', label: 'Redeemed At', render: (a: any) => <span className="text-muted">{a.redeemedAt ? new Date(a.redeemedAt).toLocaleString() : '-'}</span> },
+    { key: 'createdAt', label: 'Assigned', render: (a: any) => <span className="text-muted">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '-'}</span> },
     { key: 'actions', label: 'Actions', render: (a: any) => (
       <>
-        <button onClick={() => router.push(`/member-vouchers/${a.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
+        <button onClick={() => router.push(`/member-vouchers/${a.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         {!a.redeemed && (
-          <button onClick={() => handleUnassign(a.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Unassign</button>
+          <button onClick={() => handleUnassign(a.id)} className="btn-danger btn-sm">Unassign</button>
         )}
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Member Vouchers"
           subtitle="Assign and manage vouchers for members"
-          actions={<button onClick={() => setShowModal(true)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ Assign Voucher</button>}
+          actions={<button onClick={() => setShowModal(true)} className="btn-primary">+ Assign Voucher</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="toolbar">
           <input type="text" placeholder="Search by member name or email..." value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={assignments} emptyMessage="No member voucher assignments found" />
@@ -128,22 +129,9 @@ export default function MemberVouchersPage() {
 
         <Modal open={showModal} title="Assign Voucher" onClose={() => setShowModal(false)}>
           <form onSubmit={handleAssign}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Member ID</label>
-              <input value={form.memberId} onChange={e => setForm({ ...form, memberId: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Voucher ID</label>
-              <input value={form.voucherId} onChange={e => setForm({ ...form, voucherId: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Assign</button>
-            </div>
+            <FormInput label="Member ID" value={form.memberId} onChange={v => setForm({ ...form, memberId: v })} required />
+            <FormInput label="Voucher ID" value={form.voucherId} onChange={v => setForm({ ...form, voucherId: v })} required />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel="Assign" />
           </form>
         </Modal>
       </main>

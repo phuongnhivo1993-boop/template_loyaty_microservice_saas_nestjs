@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface VoucherForm {
   code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
@@ -82,7 +84,7 @@ export default function VouchersPage() {
     try {
       const body = { ...form, value: Number(form.value), maxUsage: form.maxUsage ? Number(form.maxUsage) : undefined };
       const url = editing ? `/api/vouchers/${editing.id}` : '/api/vouchers';
-      const method = editing ? 'PATCH' : 'POST';
+      const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
       if (!res.ok) { showToast('Operation failed', 'error'); return; }
       showToast(editing ? 'Voucher updated successfully' : 'Voucher created successfully', 'success');
@@ -106,44 +108,42 @@ export default function VouchersPage() {
 
   const columns = [
     { key: 'code', label: 'Code', render: (v: any) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{v.code}</span> },
-    { key: 'type', label: 'Type', render: (v: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: '#f1f5f9', color: '#475569' }}>{v.type}</span> },
-    { key: 'value', label: 'Value', render: (v: any) => <span style={{ fontWeight: 600 }}>{v.value.toLocaleString()}</span> },
-    { key: 'used', label: 'Used', render: (v: any) => v.usedCount > 0 ? <span style={{ color: '#dc2626', fontWeight: 600 }}>{v.usedCount}/{v.maxUsage || '∞'}</span> : <span style={{ color: '#94a3b8' }}>0/{v.maxUsage || '∞'}</span> },
-    { key: 'expiresAt', label: 'Expires', render: (v: any) => <span style={{ color: '#64748b' }}>{v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'No expiry'}</span> },
+    { key: 'type', label: 'Type', render: (v: any) => <span className="status-badge">{v.type}</span> },
+    { key: 'value', label: 'Value', render: (v: any) => <span className="font-medium">{v.value.toLocaleString()}</span> },
+    { key: 'used', label: 'Used', render: (v: any) => v.usedCount > 0 ? <span style={{ color: '#dc2626', fontWeight: 600 }}>{v.usedCount}/{v.maxUsage || '∞'}</span> : <span className="text-muted">0/{v.maxUsage || '∞'}</span> },
+    { key: 'expiresAt', label: 'Expires', render: (v: any) => <span className="text-muted">{v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'No expiry'}</span> },
     { key: 'actions', label: 'Actions', render: (v: any) => (
       <>
-        <button onClick={() => router.push(`/vouchers/${v.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button>
-        <button onClick={() => openEdit(v)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(v.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/vouchers/${v.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(v)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(v.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={6} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Vouchers"
           subtitle="Manage discount and gift vouchers"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Voucher</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Voucher</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-            <option value="ALL">ALL</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="EXPIRED">EXPIRED</option>
-            <option value="REDEEMED">REDEEMED</option>
+        <div className="toolbar">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="filter-select">
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="REDEEMED">Redeemed</option>
           </select>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <input type="text" placeholder="Search vouchers..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={vouchers} emptyMessage="No vouchers found" />
@@ -151,48 +151,15 @@ export default function VouchersPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Voucher' : 'New Voucher'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Code</label>
-              <input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace' }} />
+            <FormInput label="Code" value={form.code} onChange={v => setForm({ ...form, code: v })} required />
+            <FormSelect label="Type" value={form.type} onChange={v => setForm({ ...form, type: v })} options={TYPES.map(t => ({ value: t, label: t }))} />
+            <div className="grid-2">
+              <FormInput label="Value" type="number" value={form.value} onChange={v => setForm({ ...form, value: v })} required />
+              <FormInput label="Max Usage" type="number" value={form.maxUsage} onChange={v => setForm({ ...form, maxUsage: v })} />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Type</label>
-              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Value</label>
-                <input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} required
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-              <div style={{ flex: 1, marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Max Usage</label>
-                <input type="number" value={form.maxUsage} onChange={e => setForm({ ...form, maxUsage: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Expires At</label>
-              <input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Expires At" type="date" value={form.expiresAt} onChange={v => setForm({ ...form, expiresAt: v })} />
+            <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="vouchers" entityLabel="vouchers" onImportComplete={load} />

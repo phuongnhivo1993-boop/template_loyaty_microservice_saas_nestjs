@@ -6,6 +6,8 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import Modal from '@/components/Modal';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { FormInput, FormActions } from '@/components/FormField';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -67,12 +69,12 @@ export default function SettingsPage() {
     } catch { showToast('Network error', 'error'); }
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader title="Settings" subtitle="Platform configuration and profile" />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
@@ -99,8 +101,7 @@ export default function SettingsPage() {
           <div>
             <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Security</h2>
-              <button onClick={() => setShowPasswordModal(true)}
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '14px' }}>Change Password</button>
+              <button onClick={() => setShowPasswordModal(true)} className="btn-primary">Change Password</button>
             </div>
 
             <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -119,46 +120,17 @@ export default function SettingsPage() {
 
         <Modal open={showPasswordModal} title="Change Password" onClose={() => setShowPasswordModal(false)}>
           <form onSubmit={handlePasswordChange}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Current Password</label>
-              <input type="password" value={passwordForm.currentPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>New Password</label>
-              <input type="password" value={passwordForm.newPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} required minLength={6}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Confirm New Password</label>
-              <input type="password" value={passwordForm.confirmPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowPasswordModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Update Password</button>
-            </div>
+            <FormInput label="Current Password" type="password" value={passwordForm.currentPassword} onChange={v => setPasswordForm({ ...passwordForm, currentPassword: v })} required />
+            <FormInput label="New Password" type="password" value={passwordForm.newPassword} onChange={v => setPasswordForm({ ...passwordForm, newPassword: v })} required minLength={6} />
+            <FormInput label="Confirm New Password" type="password" value={passwordForm.confirmPassword} onChange={v => setPasswordForm({ ...passwordForm, confirmPassword: v })} required />
+            <FormActions onCancel={() => setShowPasswordModal(false)} loading={false} submitLabel="Update Password" />
           </form>
         </Modal>
 
         <Modal open={showProfileModal} title="Edit Profile" onClose={() => setShowProfileModal(false)}>
           <form onSubmit={handleProfileUpdate}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Full Name</label>
-              <input value={profileForm.fullName} onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowProfileModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save</button>
-            </div>
+            <FormInput label="Full Name" value={profileForm.fullName} onChange={v => setProfileForm({ ...profileForm, fullName: v })} required />
+            <FormActions onCancel={() => setShowProfileModal(false)} loading={false} submitLabel="Save" />
           </form>
         </Modal>
       </main>

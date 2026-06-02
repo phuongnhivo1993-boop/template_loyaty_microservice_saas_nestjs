@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GamificationService } from './gamification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateBadgeDto, UpdateBadgeDto, BadgeQueryDto, CreateMissionDto, UpdateMissionDto, MissionQueryDto } from './dto/create-gamification.dto';
 
 @ApiTags('Gamification')
 @ApiBearerAuth()
@@ -14,20 +15,14 @@ export class GamificationController {
   @Post('badges')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a badge' })
-  createBadge(@Body() body: { name: string; description?: string; iconUrl?: string; criteria?: any; tenantId: string }) {
+  createBadge(@Body() body: CreateBadgeDto) {
     return this.gamificationService.createBadge(body);
   }
 
   @Get('badges')
   @ApiOperation({ summary: 'List badges (with pagination & sort)' })
-  findAllBadges(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.gamificationService.findAllBadges(tenantId, page, limit, search, sort);
+  findAllBadges(@Query() query: BadgeQueryDto) {
+    return this.gamificationService.findAllBadges(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get('badges/:id')
@@ -39,7 +34,7 @@ export class GamificationController {
   @Put('badges/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update badge' })
-  updateBadge(@Param('id') id: string, @Body() body: { name?: string; description?: string; iconUrl?: string; criteria?: any }) {
+  updateBadge(@Param('id') id: string, @Body() body: UpdateBadgeDto) {
     return this.gamificationService.updateBadge(id, body);
   }
 
@@ -53,20 +48,14 @@ export class GamificationController {
   @Post('missions')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a mission' })
-  createMission(@Body() body: { name: string; description?: string; pointsReward?: number; criteria?: any; startDate?: string; endDate?: string; tenantId: string }) {
+  createMission(@Body() body: CreateMissionDto) {
     return this.gamificationService.createMission(body);
   }
 
   @Get('missions')
   @ApiOperation({ summary: 'List missions (with pagination & sort)' })
-  findAllMissions(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.gamificationService.findAllMissions(tenantId, page, limit, search, sort);
+  findAllMissions(@Query() query: MissionQueryDto) {
+    return this.gamificationService.findAllMissions(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get('missions/:id')
@@ -78,7 +67,7 @@ export class GamificationController {
   @Put('missions/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update mission' })
-  updateMission(@Param('id') id: string, @Body() body: { name?: string; description?: string; pointsReward?: number; criteria?: any }) {
+  updateMission(@Param('id') id: string, @Body() body: UpdateMissionDto) {
     return this.gamificationService.updateMission(id, body);
   }
 

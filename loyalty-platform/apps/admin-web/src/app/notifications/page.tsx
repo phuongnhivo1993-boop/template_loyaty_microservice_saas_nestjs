@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface TemplateForm { name: string; type: string; subject: string; content: string; variables: string; }
 
@@ -149,48 +151,42 @@ export default function NotificationsPage() {
   };
 
   const templateColumns = [
-    { key: 'name', label: 'Name', render: (t: any) => <span style={{ fontWeight: 500 }}>{t.name}</span> },
-    { key: 'type', label: 'Type', render: (t: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: '#f1f5f9', color: '#475569' }}>{t.type}</span> },
-    { key: 'subject', label: 'Subject', render: (t: any) => <span style={{ color: '#64748b' }}>{t.subject || '-'}</span> },
+    { key: 'name', label: 'Name', render: (t: any) => <span className="font-medium">{t.name}</span> },
+    { key: 'type', label: 'Type', render: (t: any) => <span className="status-badge">{t.type}</span> },
+    { key: 'subject', label: 'Subject', render: (t: any) => <span className="text-muted">{t.subject || '-'}</span> },
     { key: 'actions', label: 'Actions', render: (t: any) => (
       <>
-        <button onClick={() => router.push(`/notifications/${t.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>View</button>
-        <button onClick={() => openEdit(t)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(t.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/notifications/${t.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(t)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(t.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
   const logColumns = [
     { key: 'recipient', label: 'Recipient' },
-    { key: 'channel', label: 'Channel', render: (l: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: '#f1f5f9', color: '#475569' }}>{l.channel}</span> },
-    { key: 'subject', label: 'Subject', render: (l: any) => <span style={{ color: '#64748b' }}>{l.subject || '-'}</span> },
+    { key: 'channel', label: 'Channel', render: (l: any) => <span className="status-badge">{l.channel}</span> },
+    { key: 'subject', label: 'Subject', render: (l: any) => <span className="text-muted">{l.subject || '-'}</span> },
     { key: 'status', label: 'Status', render: (l: any) => (
-      <span style={{
-        padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-        background: l.status === 'SENT' ? '#dcfce7' : l.status === 'FAILED' ? '#fef2f2' : '#fef9c3',
-        color: l.status === 'SENT' ? '#16a34a' : l.status === 'FAILED' ? '#dc2626' : '#ca8a04',
-      }}>{l.status}</span>
+      <span className={`status-badge ${l.status === 'SENT' ? 'status-badge--success' : l.status === 'FAILED' ? 'status-badge--danger' : 'status-badge--warning'}`}>{l.status}</span>
     )},
-    { key: 'sentAt', label: 'Sent At', render: (l: any) => <span style={{ color: '#64748b' }}>{l.sentAt ? new Date(l.sentAt).toLocaleString() : '-'}</span> },
-    { key: 'actions', label: '', render: (l: any) => <button onClick={() => router.push(`/notifications/logs/${l.id}`)} style={{ padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button> },
+    { key: 'sentAt', label: 'Sent At', render: (l: any) => <span className="text-muted">{l.sentAt ? new Date(l.sentAt).toLocaleString() : '-'}</span> },
+    { key: 'actions', label: '', render: (l: any) => <button onClick={() => router.push(`/notifications/logs/${l.id}`)} className="btn-primary btn-sm">View</button> },
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Notifications"
           subtitle="Manage templates and view delivery logs"
           actions={tab === 'templates' ? (
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowSendModal(true)}
-                style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>Send Now</button>
-              <button onClick={openCreate}
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Template</button>
+              <button onClick={() => setShowSendModal(true)} className="btn-primary">Send Now</button>
+              <button onClick={openCreate} className="btn-primary">+ New Template</button>
             </div>
           ) : undefined}
         />
@@ -202,10 +198,9 @@ export default function NotificationsPage() {
             style={{ padding: '8px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', background: tab === 'logs' ? 'white' : 'transparent', color: tab === 'logs' ? '#2563eb' : '#64748b', boxShadow: tab === 'logs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>Delivery Logs</button>
         </div>
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="toolbar">
           {tab === 'templates' && (
-            <select value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }}
-              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <select value={filterType} onChange={e => { setFilterType(e.target.value); setPage(1); }} className="filter-select">
               <option value="">All Types</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
@@ -213,8 +208,7 @@ export default function NotificationsPage() {
             </select>
           )}
           {tab === 'logs' && (
-            <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }} className="filter-select">
               <option value="">All Status</option>
               <option value="SENT">Sent</option>
               <option value="PENDING">Pending</option>
@@ -222,13 +216,12 @@ export default function NotificationsPage() {
             </select>
           )}
           <input type="text" placeholder={tab === 'templates' ? 'Search templates...' : 'Search logs...'}
-            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          {total > 0 && <span style={{ color: '#64748b', fontSize: '14px' }}>{total} results</span>}
+            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          {total > 0 && <span className="text-muted">{total} results</span>}
           {tab === 'templates' && (
-            <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import</button>
+            <button onClick={() => setShowImport(true)} className="btn-secondary">Import</button>
           )}
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         {tab === 'templates' ? (
@@ -245,44 +238,13 @@ export default function NotificationsPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Template' : 'New Template'} onClose={() => setShowModal(false)} width={540}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Name</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Type</label>
-              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="EMAIL">Email</option>
-                <option value="SMS">SMS</option>
-                <option value="PUSH">Push</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Subject</label>
-              <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Content (HTML / plain text)</label>
-              <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={5}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Variables (JSON)</label>
-              <textarea value={form.variables} onChange={e => setForm({ ...form, variables: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' }} />
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>e.g. {"{\"name\":\"string\",\"points\":\"number\"}"}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormSelect label="Type" value={form.type} onChange={v => setForm({ ...form, type: v })} options={[{ value: 'EMAIL', label: 'Email' }, { value: 'SMS', label: 'SMS' }, { value: 'PUSH', label: 'Push' }]} />
+            <FormInput label="Subject" value={form.subject} onChange={v => setForm({ ...form, subject: v })} />
+            <FormTextarea label="Content (HTML / plain text)" value={form.content} onChange={v => setForm({ ...form, content: v })} rows={5} />
+            <FormTextarea label="Variables (JSON)" value={form.variables} onChange={v => setForm({ ...form, variables: v })} rows={3} />
+            <span className="text-muted" style={{ fontSize: '11px' }}>e.g. {"{\"name\":\"string\",\"points\":\"number\"}"}</span>
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
 
@@ -290,39 +252,11 @@ export default function NotificationsPage() {
 
         <Modal open={showSendModal} title="Send Notification" onClose={() => setShowSendModal(false)}>
           <form onSubmit={handleSend}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Template</label>
-              <select value={sendForm.templateId} onChange={e => setSendForm({ ...sendForm, templateId: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="">Select template...</option>
-                {templates.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Recipient</label>
-              <input value={sendForm.recipient} onChange={e => setSendForm({ ...sendForm, recipient: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Channel</label>
-              <select value={sendForm.channel} onChange={e => setSendForm({ ...sendForm, channel: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="EMAIL">Email</option>
-                <option value="SMS">SMS</option>
-                <option value="PUSH">Push</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Variables (JSON)</label>
-              <textarea value={sendForm.variables} onChange={e => setSendForm({ ...sendForm, variables: e.target.value })} rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowSendModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Send</button>
-            </div>
+            <FormSelect label="Template" value={sendForm.templateId} onChange={v => setSendForm({ ...sendForm, templateId: v })} required placeholder="Select template..." options={templates.map((t: any) => ({ value: t.id, label: t.name }))} />
+            <FormInput label="Recipient" value={sendForm.recipient} onChange={v => setSendForm({ ...sendForm, recipient: v })} required />
+            <FormSelect label="Channel" value={sendForm.channel} onChange={v => setSendForm({ ...sendForm, channel: v })} options={[{ value: 'EMAIL', label: 'Email' }, { value: 'SMS', label: 'SMS' }, { value: 'PUSH', label: 'Push' }]} />
+            <FormTextarea label="Variables (JSON)" value={sendForm.variables} onChange={v => setSendForm({ ...sendForm, variables: v })} rows={3} />
+            <FormActions onCancel={() => setShowSendModal(false)} loading={false} submitLabel="Send" cancelLabel="Cancel" />
           </form>
         </Modal>
       </main>

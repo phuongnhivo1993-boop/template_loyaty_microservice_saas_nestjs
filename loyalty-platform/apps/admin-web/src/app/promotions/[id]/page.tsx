@@ -37,21 +37,21 @@ export default function PromotionDetailPage() {
   };
   const s = statusColors[promotion?.status] || { color: '#475569', bg: '#f1f5f9' };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!promotion) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Promotion not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!promotion) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Promotion not found</p></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 700 }}>{promotion.name}</h1>
             <p style={{ color: '#64748b' }}>{promotion.description || 'No description'}</p>
           </div>
-          <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, background: s.bg, color: s.color }}>{promotion.status}</span>
+          <span className="status-badge" style={{ background: s.bg, color: s.color }}>{promotion.status}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>

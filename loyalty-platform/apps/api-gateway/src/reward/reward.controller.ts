@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardService } from './reward.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateRewardDto, UpdateRewardDto, RedeemRewardDto, RewardQueryDto } from './dto/create-reward.dto';
 
 @ApiTags('Rewards')
 @ApiBearerAuth()
@@ -14,20 +15,14 @@ export class RewardController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a reward' })
-  create(@Body() body: { name: string; description?: string; type: string; pointsRequired: number; quantity: number; imageUrl?: string; tenantId: string }) {
+  create(@Body() body: CreateRewardDto) {
     return this.rewardService.create(body);
   }
 
   @Get()
   @ApiOperation({ summary: 'List rewards (with pagination & sort)' })
-  findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.rewardService.findAll(tenantId, page, limit, search, sort);
+  findAll(@Query() query: RewardQueryDto) {
+    return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
@@ -39,14 +34,14 @@ export class RewardController {
   @Post(':id/redeem')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem reward with member points' })
-  redeem(@Param('id') id: string, @Body() body: { memberId: string; quantity?: number }) {
+  redeem(@Param('id') id: string, @Body() body: RedeemRewardDto) {
     return this.rewardService.redeem(id, body.memberId, body.quantity);
   }
 
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update reward' })
-  update(@Param('id') id: string, @Body() body: { name?: string; description?: string; pointsRequired?: number; quantity?: number }) {
+  update(@Param('id') id: string, @Body() body: UpdateRewardDto) {
     return this.rewardService.update(id, body);
   }
 

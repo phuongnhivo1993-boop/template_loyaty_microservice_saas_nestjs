@@ -35,22 +35,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-    }}>
-      <div style={{
-        background: 'white',
-        padding: '40px',
-        borderRadius: '12px',
-        width: '400px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-      }}>
+    <div>
+      <div className="card" style={{ padding: '40px', maxWidth: '420px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>
+          <h1 className="card-title" style={{ textAlign: 'center', fontSize: '28px' }}>
             Loyalty Platform
           </h1>
           <p style={{ color: '#64748b', marginTop: '8px' }}>Admin Dashboard</p>
@@ -74,21 +62,15 @@ export default function LoginPage() {
             <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
               Email
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-              }}
-            />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+                className="search-input"
+                style={{ maxWidth: 'none', padding: '12px 16px', fontSize: '15px' }}
+              />
           </div>
 
           <div style={{ marginBottom: '24px' }}>
@@ -96,35 +78,20 @@ export default function LoginPage() {
               Password
             </label>
             <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-              }}
-            />
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="search-input"
+                style={{ maxWidth: 'none', padding: '12px 16px', fontSize: '15px' }}
+              />
           </div>
 
           <button
             type="submit"
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            className="btn-primary"
+            style={{ width: '100%', padding: '12px' }}
           >
             Sign In
           </button>

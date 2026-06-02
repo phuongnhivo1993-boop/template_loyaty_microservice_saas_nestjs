@@ -36,16 +36,16 @@ export default function AuditLogDetailPage() {
     DELETE: { bg: '#fef2f2', color: '#dc2626' },
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!log) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Audit log not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!log) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Audit log not found</p></main></div>;
 
   const ac = actionColors[log.action] || { bg: '#f1f5f9', color: '#64748b' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px' }}>
           Audit Log Detail

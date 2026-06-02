@@ -10,6 +10,8 @@ import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; status: string;
@@ -22,6 +24,7 @@ export default function MembersPage() {
   const { showToast } = useToast();
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<MemberForm>(emptyForm);
@@ -75,6 +78,7 @@ export default function MembersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const url = editing ? `/api/members/${editing.id}` : '/api/members';
       const method = editing ? 'PUT' : 'POST';
@@ -84,6 +88,7 @@ export default function MembersPage() {
       setShowModal(false);
       load();
     } catch { showToast('Network error', 'error'); }
+    setSubmitting(false);
   };
 
   const exportCsv = async () => {
@@ -102,19 +107,34 @@ export default function MembersPage() {
   const columns = [
     { key: 'fullName', label: 'Name', render: (m: any) => <a href={`/members/${m.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{m.fullName}</a> },
     { key: 'email', label: 'Email', render: (m: any) => <span style={{ color: '#64748b' }}>{m.email}</span> },
-    { key: 'tier', label: 'Tier', render: (m: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: m.tier?.color ? m.tier.color + '22' : '#f1f5f9', color: m.tier?.color || '#64748b' }}>{m.tier?.name || 'N/A'}</span> },
+    { key: 'tier', label: 'Tier', render: (m: any) => (
+      <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: m.tier?.color ? m.tier.color + '22' : '#f1f5f9', color: m.tier?.color || '#64748b' }}>{m.tier?.name || 'N/A'}</span>
+    )},
     { key: 'availablePoints', label: 'Points', render: (m: any) => <span style={{ fontWeight: 600 }}>{m.availablePoints?.toLocaleString()}</span> },
-    { key: 'status', label: 'Status', render: (m: any) => <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: m.status === 'ACTIVE' ? '#dcfce7' : '#fef2f2', color: m.status === 'ACTIVE' ? '#16a34a' : '#dc2626' }}>{m.status}</span> },
+    { key: 'status', label: 'Status', render: (m: any) => {
+      const colors: Record<string, string> = { ACTIVE: '#16a34a', INACTIVE: '#94a3b8', LOCKED: '#dc2626' };
+      const bg: Record<string, string> = { ACTIVE: '#dcfce7', INACTIVE: '#f1f5f9', LOCKED: '#fef2f2' };
+      return <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: bg[m.status] || '#f1f5f9', color: colors[m.status] || '#64748b' }}>{m.status}</span>;
+    }},
     { key: 'kycVerified', label: 'KYC', render: (m: any) => m.kycVerified ? '✅ Verified' : '❌ Pending' },
     { key: 'actions', label: 'Actions', render: (m: any) => (
       <>
-        <button onClick={() => openEdit(m)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(m.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => openEdit(m)} className="btn-secondary btn-sm">Edit</button>
+        <button onClick={() => handleDelete(m.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
+        <Sidebar />
+        <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+          <TableSkeleton rows={6} cols={6} />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -123,20 +143,18 @@ export default function MembersPage() {
         <PageHeader
           title="Members"
           subtitle="Manage loyalty program members"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New Member</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New Member</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }} className="filter-select">
             <option value="">ALL TIERS</option>
             {tierOptions.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+          <input type="text" placeholder="Search name, email, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <span style={{ color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
@@ -157,32 +175,16 @@ export default function MembersPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Member' : 'New Member'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            {(['fullName', 'email', 'phone'] as const).map(f => (
-              <div key={f} style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>
-                  {f === 'fullName' ? 'Full Name' : f.charAt(0).toUpperCase() + f.slice(1)}
-                </label>
-                <input value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} required={f !== 'phone'}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-              </div>
-            ))}
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Status</label>
-              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-                <option value="LOCKED">Locked</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Full Name" value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} required />
+            <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" />
+            <FormInput label="Phone" value={form.phone} onChange={v => setForm({ ...form, phone: v })} type="tel" />
+            <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })}
+              options={[
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'LOCKED', label: 'Locked' },
+              ]} />
+            <FormActions onCancel={() => setShowModal(false)} loading={submitting} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="members" entityLabel="members" onImportComplete={load} />

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VoucherService } from './voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateVoucherDto, UpdateVoucherDto, ValidateVoucherDto, VoucherQueryDto } from './dto/create-voucher.dto';
 
 @ApiTags('Vouchers')
 @ApiBearerAuth()
@@ -14,20 +15,14 @@ export class VoucherController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a voucher' })
-  create(@Body() body: { code: string; type: string; value: number; maxUsage?: number; expiresAt?: string; tenantId: string }) {
+  create(@Body() body: CreateVoucherDto) {
     return this.voucherService.create(body);
   }
 
   @Get()
   @ApiOperation({ summary: 'List vouchers (with pagination & sort)' })
-  findAll(
-    @Query('tenantId') tenantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.voucherService.findAll(tenantId, page, limit, search, sort);
+  findAll(@Query() query: VoucherQueryDto) {
+    return this.voucherService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
@@ -38,7 +33,7 @@ export class VoucherController {
 
   @Post('validate')
   @ApiOperation({ summary: 'Validate a voucher code' })
-  validate(@Body() body: { code: string }) {
+  validate(@Body() body: ValidateVoucherDto) {
     return this.voucherService.validate(body.code);
   }
 
@@ -52,7 +47,7 @@ export class VoucherController {
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update voucher' })
-  update(@Param('id') id: string, @Body() body: { value?: number; maxUsage?: number; expiresAt?: string }) {
+  update(@Param('id') id: string, @Body() body: UpdateVoucherDto) {
     return this.voucherService.update(id, body);
   }
 

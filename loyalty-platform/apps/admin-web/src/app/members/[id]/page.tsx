@@ -48,14 +48,14 @@ export default function MemberDetailPage() {
     } catch { showToast('Network error', 'error'); }
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!member) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Member not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!member) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Member not found</p></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
           <div>
@@ -63,12 +63,11 @@ export default function MemberDetailPage() {
             <p style={{ color: '#64748b' }}>{member.email}</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={handleToggleStatus} style={{
-              padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontWeight: 500,
+            <button onClick={handleToggleStatus} className="btn-secondary" style={{
               color: member.status === 'ACTIVE' ? '#dc2626' : '#16a34a',
             }}>{member.status === 'ACTIVE' ? '🔒 Lock' : '🔓 Unlock'}</button>
             {!member.kycVerified && (
-              <button onClick={handleKyc} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}>✅ Verify KYC</button>
+              <button onClick={handleKyc} className="btn-primary">✅ Verify KYC</button>
             )}
           </div>
         </div>
@@ -107,7 +106,7 @@ export default function MemberDetailPage() {
                   <tr key={tx.id} style={{ borderTop: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{new Date(tx.createdAt).toLocaleDateString()}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                      <span className="status-badge" style={{
                         background: tx.type === 'EARN' ? '#dcfce7' : tx.type === 'BURN' ? '#fef2f2' : '#eff6ff',
                         color: tx.type === 'EARN' ? '#16a34a' : tx.type === 'BURN' ? '#dc2626' : '#2563eb',
                       }}>{tx.type}</span>

@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
+import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 interface UserForm {
   email: string; fullName: string; phone: string; role: string;
@@ -101,44 +103,44 @@ export default function UsersPage() {
   };
 
   const columns = [
-    { key: 'email', label: 'Email', render: (u: any) => <span style={{ fontWeight: 500 }}>{u.email}</span> },
-    { key: 'fullName', label: 'Full Name', render: (u: any) => <span style={{ color: '#64748b' }}>{u.fullName}</span> },
-    { key: 'phone', label: 'Phone', render: (u: any) => <span style={{ color: '#64748b' }}>{u.phone}</span> },
+    { key: 'email', label: 'Email', render: (u: any) => <span className="font-medium">{u.email}</span> },
+    { key: 'fullName', label: 'Full Name', render: (u: any) => <span className="text-muted">{u.fullName}</span> },
+    { key: 'phone', label: 'Phone', render: (u: any) => <span className="text-muted">{u.phone}</span> },
     { key: 'role', label: 'Role', render: (u: any) => (
-      <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: u.role === 'HOST' ? '#e0e7ff' : u.role === 'ADMIN' ? '#dcfce7' : u.role === 'STAFF' ? '#fef9c3' : '#f1f5f9', color: u.role === 'HOST' ? '#4338ca' : u.role === 'ADMIN' ? '#16a34a' : u.role === 'STAFF' ? '#a16207' : '#64748b' }}>{u.role}</span>
+      <span className={`status-badge ${u.role === 'HOST' ? 'host' : u.role === 'ADMIN' ? 'active' : u.role === 'STAFF' ? 'staff' : ''}`}>{u.role}</span>
     )},
     { key: 'actions', label: 'Actions', render: (u: any) => (
       <>
-        <button onClick={() => router.push(`/users/${u.id}`)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #2563eb', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>View</button>
-        <button onClick={() => openEdit(u)} style={{ marginRight: '8px', padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-        <button onClick={() => handleDelete(u.id)} style={{ padding: '6px 14px', border: '1px solid #fca5a5', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+        <button onClick={() => router.push(`/users/${u.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
+        <button onClick={() => openEdit(u)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        <button onClick={() => handleDelete(u.id)} className="btn-danger btn-sm">Delete</button>
       </>
     )},
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Users"
           subtitle="Manage system users"
-          actions={<button onClick={openCreate} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer' }}>+ New User</button>}
+          actions={<button onClick={openCreate} className="btn-primary">+ New User</button>}
         />
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="toolbar">
           <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+            className="filter-select">
             <option value="ALL">All Roles</option>
             {roles.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', flex: 1, maxWidth: '360px' }} />
-          <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
-          <button onClick={() => setShowImport(true)} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Import CSV</button>
-          <button onClick={exportCsv} style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Export CSV</button>
+            className="search-input" />
+          <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
+          <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
+          <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
         <DataTable columns={columns} data={users} emptyMessage="No users found" />
@@ -146,36 +148,11 @@ export default function UsersPage() {
 
         <Modal open={showModal} title={editing ? 'Edit User' : 'New User'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Email</label>
-              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Full Name</label>
-              <input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} required
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Phone</label>
-              <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '13px' }}>Role</label>
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}>
-                {roles.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button type="button" onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit"
-                style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {editing ? 'Save' : 'Create'}
-              </button>
-            </div>
+            <FormInput label="Email" value={form.email} onChange={e => setForm({ ...form, email: e })} required type="email" />
+            <FormInput label="Full Name" value={form.fullName} onChange={e => setForm({ ...form, fullName: e })} required />
+            <FormInput label="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e })} />
+            <FormSelect label="Role" value={form.role} onChange={e => setForm({ ...form, role: e })} options={roles.map(r => ({ value: r, label: r }))} />
+            <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="users" entityLabel="users" onImportComplete={load} />

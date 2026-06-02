@@ -4,6 +4,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { UploadService } from './upload.service';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
@@ -17,6 +18,7 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @Post()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @UseInterceptors(FileInterceptor('file', {
     limits: { fileSize: MAX_SIZE },
     fileFilter: (_req, file, cb) => {

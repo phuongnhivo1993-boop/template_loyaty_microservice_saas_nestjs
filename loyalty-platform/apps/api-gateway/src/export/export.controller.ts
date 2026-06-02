@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, Res, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { ExportService } from '../common/services/export.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Response } from 'express';
@@ -92,6 +93,7 @@ export class ExportController {
   ) {}
 
   @Get(':entity')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Export data as CSV' })
   async exportCsv(
     @Res() res: Response,

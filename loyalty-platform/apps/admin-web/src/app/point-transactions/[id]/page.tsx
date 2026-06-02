@@ -37,16 +37,16 @@ export default function PointTransactionDetailPage() {
     EXPIRE: { bg: '#fef9c3', color: '#a16207' },
   };
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!txn) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Transaction not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!txn) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Transaction not found</p></main></div>;
 
   const tc = typeColors[txn.type] || { bg: '#f1f5f9', color: '#64748b' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
-        <button onClick={() => router.back()} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', marginBottom: '20px', fontSize: '14px' }}>← Back</button>
+      <main className="main-content">
+        <button onClick={() => router.back()} className="btn-secondary">← Back</button>
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px' }}>
           <span style={{ color: tc.color }}>{txn.type}</span> Transaction

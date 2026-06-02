@@ -27,8 +27,8 @@ export default function NotificationLogDetailPage() {
     })();
   }, [params.id]);
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
-  if (!log) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Notification log not found</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (!log) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Notification log not found</p></main></div>;
 
   const statusColor: Record<string, { bg: string; color: string }> = {
     SENT: { bg: '#dcfce7', color: '#16a34a' },
@@ -38,15 +38,15 @@ export default function NotificationLogDetailPage() {
   const sc = statusColor[log.status] || { bg: '#f1f5f9', color: '#64748b' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px', background: '#f8fafc' }}>
+      <main className="main-content" style={{ background: '#f8fafc' }}>
         <PageHeader title="Notification Log Detail" subtitle={`Log #${log.id?.slice(0, 8)}`} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Status</div>
-            <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, background: sc.bg, color: sc.color }}>{log.status}</span>
+            <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{log.status}</span>
           </div>
           <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Channel</div>
@@ -93,7 +93,7 @@ export default function NotificationLogDetailPage() {
         )}
 
         <div style={{ marginTop: '24px' }}>
-          <button onClick={() => router.back()} style={{ padding: '10px 24px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>← Back</button>
+          <button onClick={() => router.back()} className="btn-secondary">← Back</button>
         </div>
       </main>
     </div>

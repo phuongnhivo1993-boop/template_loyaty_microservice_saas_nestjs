@@ -50,53 +50,65 @@ export default function DashboardPage() {
   const statusColors: Record<string, string> = { ACTIVE: '#16a34a', INACTIVE: '#94a3b8', LOCKED: '#dc2626', PENDING_KYC: '#f59e0b' };
 
   const statCards = [
-    { label: 'Total Members', value: String(stats.members || '--'), icon: '👥' },
-    { label: 'Active Tenants', value: String(stats.tenants || '--'), icon: '🏢' },
-    { label: 'Campaigns Running', value: String(stats.activeCampaigns || '--'), icon: '📢' },
-    { label: 'Total Rewards', value: String(stats.rewards || '--'), icon: '🎁' },
-    { label: 'Vouchers', value: String(stats.vouchers || '--'), icon: '🎟️' },
-    { label: 'Active Vouchers', value: String(stats.activeVouchers || '--'), icon: '✅' },
-    { label: 'Total Points', value: (stats.totalPoints || 0).toLocaleString(), icon: '⭐' },
-    { label: 'KYC Rate', value: `${stats.kycRate || 0}%`, icon: '🪪' },
-    { label: 'Promotions', value: String(stats.promotions || '--'), icon: '⚡' },
-    { label: 'Badges', value: String(stats.badges || '--'), icon: '🏅' },
-    { label: 'Missions', value: String(stats.missions || '--'), icon: '🎯' },
-    { label: 'Referrals', value: String(stats.referrals || '--'), icon: '🔗' },
+    { label: 'Total Members', value: String(stats.members || '--'), color: '#3b82f6', icon: '👥' },
+    { label: 'Active Tenants', value: String(stats.tenants || '--'), color: '#10b981', icon: '🏢' },
+    { label: 'Campaigns Running', value: String(stats.activeCampaigns || '--'), color: '#f59e0b', icon: '📢' },
+    { label: 'Total Points', value: (stats.totalPoints || 0).toLocaleString(), color: '#8b5cf6', icon: '⭐' },
+    { label: 'Vouchers', value: String(stats.vouchers || '--'), color: '#ec4899', icon: '🎟️' },
+    { label: 'Active Vouchers', value: String(stats.activeVouchers || '--'), color: '#06b6d4', icon: '✅' },
+    { label: 'KYC Rate', value: `${stats.kycRate || 0}%`, color: '#f97316', icon: '🪪' },
+    { label: 'Referrals', value: String(stats.referrals || '--'), color: '#6366f1', icon: '🔗' },
   ];
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh' }}><Sidebar /><main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>Loading...</main></div>;
+  if (loading) {
+    return (
+      <div className="page-layout">
+        <Sidebar />
+        <main className="main-content">
+          <PageHeader title="Dashboard" subtitle="Welcome to Loyalty Platform Admin" />
+          <div className="stats-grid">
+            {[1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} className="skeleton-card" />
+            ))}
+          </div>
+          <div className="grid-2" style={{ marginTop: '24px' }}>
+            <div className="skeleton-card" style={{ height: '200px' }} />
+            <div className="skeleton-card" style={{ height: '200px' }} />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader title="Dashboard" subtitle="Welcome to Loyalty Platform Admin" />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+        <div className="stats-grid">
           {statCards.map((stat) => (
-            <div key={stat.label} style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ fontSize: '28px' }}>{stat.icon}</div>
-              <div>
-                <p style={{ color: '#64748b', fontSize: '13px' }}>{stat.label}</p>
-                <p style={{ fontSize: '24px', fontWeight: 700, marginTop: '2px' }}>{stat.value}</p>
-              </div>
+            <div key={stat.label} className="stat-card" style={{ borderTop: `3px solid ${stat.color}` }}>
+              <div className="stat-card-icon">{stat.icon}</div>
+              <div className="stat-card-value" style={{ color: stat.color }}>{stat.value}</div>
+              <div className="stat-card-label">{stat.label}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="charts-grid">
           {pointsTrend.length > 0 && (
-            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Points Trend (14 days)</h2>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px' }}>
+            <div className="card">
+              <h2 className="card-title">Points Trend (14 days)</h2>
+              <div className="chart-bars">
                 {pointsTrend.map((p: any, i: number) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                    <div style={{ width: '100%', height: `${Math.max(4, (p.earned || 0) / maxTrend * 100)}px`, background: '#3b82f6', borderRadius: '4px 4px 0 0', minHeight: '4px' }} />
-                    <div style={{ width: '100%', height: `${Math.max(2, (p.burned || 0) / maxTrend * 60)}px`, background: '#ef4444', borderRadius: '4px 4px 0 0', minHeight: '2px' }} />
+                  <div key={i} className="chart-bar-group">
+                    <div className="chart-bar" style={{ height: `${Math.max(4, (p.earned || 0) / maxTrend * 100)}px`, background: '#3b82f6' }} />
+                    <div className="chart-bar" style={{ height: `${Math.max(2, (p.burned || 0) / maxTrend * 60)}px`, background: '#ef4444' }} />
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+              <div className="chart-legend">
                 <span><span style={{ color: '#3b82f6' }}>■</span> Earned</span>
                 <span><span style={{ color: '#ef4444' }}>■</span> Burned</span>
               </div>
@@ -104,71 +116,69 @@ export default function DashboardPage() {
           )}
 
           {memberGrowth.length > 0 && (
-            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Member Growth (14 days)</h2>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px' }}>
+            <div className="card">
+              <h2 className="card-title">Member Growth (14 days)</h2>
+              <div className="chart-bars">
                 {memberGrowth.map((g: any, i: number) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: '100%', height: `${Math.max(4, (g.totalMembers || 0) / maxGrowth * 100)}px`, background: '#10b981', borderRadius: '4px 4px 0 0', minHeight: '4px' }} />
+                  <div key={i} className="chart-bar-group">
+                    <div className="chart-bar" style={{ height: `${Math.max(4, (g.totalMembers || 0) / maxGrowth * 100)}px`, background: '#10b981' }} />
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}><span style={{ color: '#10b981' }}>■</span> Total Members</div>
+              <div className="chart-legend"><span style={{ color: '#10b981' }}>■</span> Total Members</div>
             </div>
           )}
         </div>
 
         {stats.membersByStatus && Object.keys(stats.membersByStatus).length > 0 && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Member Status Distribution</h2>
-            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+          <div className="card" style={{ marginTop: '24px' }}>
+            <h2 className="card-title">Member Status Distribution</h2>
+            <div className="status-distribution">
               {Object.entries(stats.membersByStatus).map(([status, count]) => (
-                <div key={status} style={{ padding: '16px', borderRadius: '8px', background: (statusColors[status] || '#f1f5f9') + '18', border: `1px solid ${statusColors[status] || '#e2e8f0'}`, minWidth: '120px' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: statusColors[status] || '#475569' }}>{String(count)}</div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{status}</div>
+                <div key={status} className="status-box" style={{ borderColor: statusColors[status] || '#e2e8f0', background: (statusColors[status] || '#f1f5f9') + '18' }}>
+                  <div className="status-count" style={{ color: statusColors[status] || '#475569' }}>{String(count)}</div>
+                  <div className="status-label">{status}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="charts-grid" style={{ marginTop: '24px' }}>
           {topMembers.length > 0 && (
-            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Top Members</h2>
-              <div>
-                {topMembers.slice(0, 5).map((m: any, i: number) => (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 600, color: '#64748b' }}>{i + 1}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500, fontSize: '14px' }}>{m.fullName}</div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>{m.email}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, color: '#2563eb', fontSize: '16px' }}>{m.totalPoints?.toLocaleString()}</div>
-                      {m.tier && <div style={{ fontSize: '11px', color: m.tier.color || '#64748b' }}>{m.tier.name}</div>}
-                    </div>
+            <div className="card">
+              <h2 className="card-title">Top Members</h2>
+              {topMembers.slice(0, 5).map((m: any, i: number) => (
+                <div key={m.id} className="top-member-row">
+                  <div className="top-member-rank">{i + 1}</div>
+                  <div className="top-member-info">
+                    <div className="font-medium">{m.fullName}</div>
+                    <div className="text-muted" style={{ fontSize: '12px' }}>{m.email}</div>
                   </div>
-                ))}
-              </div>
+                  <div className="top-member-points">
+                    <div style={{ fontWeight: 700, color: '#2563eb', fontSize: '16px' }}>{m.totalPoints?.toLocaleString()}</div>
+                    {m.tier && <div style={{ fontSize: '11px', color: m.tier.color || '#64748b' }}>{m.tier.name}</div>}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {voucherStats && (
-            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Voucher Usage</h2>
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-                  <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: `conic-gradient(#3b82f6 0% ${voucherStats.usageRate || 0}%, #f1f5f9 ${voucherStats.usageRate || 0}% 100%)` }} />
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', borderRadius: '50%', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+            <div className="card">
+              <h2 className="card-title">Voucher Usage</h2>
+              <div className="voucher-stats-container">
+                <div className="donut-chart">
+                  <div className="donut-ring" style={{ background: `conic-gradient(#3b82f6 0deg ${(voucherStats.usageRate || 0) * 3.6}deg, #f1f5f9 ${(voucherStats.usageRate || 0) * 3.6}deg 360deg)` }} />
+                  <div className="donut-center">
                     <span style={{ fontSize: '20px', fontWeight: 700, color: '#2563eb' }}>{voucherStats.usageRate || 0}%</span>
                     <span style={{ fontSize: '11px', color: '#94a3b8' }}>used</span>
                   </div>
                 </div>
-                <div>
-                  <div style={{ marginBottom: '12px' }}><div style={{ fontSize: '13px', color: '#64748b' }}>Total</div><div style={{ fontSize: '22px', fontWeight: 700 }}>{voucherStats.total || 0}</div></div>
-                  <div style={{ marginBottom: '12px' }}><div style={{ fontSize: '13px', color: '#64748b' }}>Used</div><div style={{ fontSize: '22px', fontWeight: 700, color: '#dc2626' }}>{voucherStats.used || 0}</div></div>
-                  <div><div style={{ fontSize: '13px', color: '#64748b' }}>Remaining</div><div style={{ fontSize: '22px', fontWeight: 700, color: '#16a34a' }}>{voucherStats.remaining || 0}</div></div>
+                <div className="voucher-numbers">
+                  <div><span className="text-muted">Total</span><span className="font-medium" style={{ fontSize: '22px' }}>{voucherStats.total || 0}</span></div>
+                  <div><span className="text-muted">Used</span><span style={{ fontSize: '22px', fontWeight: 700, color: '#dc2626' }}>{voucherStats.used || 0}</span></div>
+                  <div><span className="text-muted">Remaining</span><span style={{ fontSize: '22px', fontWeight: 700, color: '#16a34a' }}>{voucherStats.remaining || 0}</span></div>
                 </div>
               </div>
             </div>
@@ -176,22 +186,22 @@ export default function DashboardPage() {
         </div>
 
         {tiers.length > 0 && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Members by Tier</h2>
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div className="card" style={{ marginTop: '24px' }}>
+            <h2 className="card-title">Members by Tier</h2>
+            <div className="status-distribution">
               {tiers.map((t: any) => (
-                <div key={t.name} style={{ padding: '16px', borderRadius: '8px', background: t.color ? t.color + '18' : '#f8fafc', border: `1px solid ${t.color || '#e2e8f0'}`, minWidth: '140px' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: t.color || '#475569' }}>{t.memberCount}</div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{t.name}</div>
+                <div key={t.name} className="status-box" style={{ borderColor: t.color || '#e2e8f0', background: t.color ? t.color + '18' : '#f8fafc' }}>
+                  <div className="status-count" style={{ color: t.color || '#475569' }}>{t.memberCount}</div>
+                  <div className="status-label">{t.name}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Quick Actions</h2>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="card" style={{ marginTop: '24px' }}>
+          <h2 className="card-title">Quick Actions</h2>
+          <div className="quick-actions">
             {[
               { label: 'Manage Tenants', href: '/tenants', color: '#3b82f6' },
               { label: 'View Members', href: '/members', color: '#10b981' },
@@ -202,7 +212,7 @@ export default function DashboardPage() {
               { label: 'Notifications', href: '/notifications', color: '#f97316' },
               { label: 'Audit Log', href: '/audit-log', color: '#6366f1' },
             ].map((action) => (
-              <button key={action.label} onClick={() => router.push(action.href)} style={{ padding: '10px 20px', background: action.color, color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer', fontSize: '14px' }}>
+              <button key={action.label} onClick={() => router.push(action.href)} className="quick-action-btn" style={{ background: action.color }}>
                 {action.label}
               </button>
             ))}

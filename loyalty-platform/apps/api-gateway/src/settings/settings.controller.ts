@@ -2,6 +2,7 @@ import { Controller, Get, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Settings')
 @ApiBearerAuth()
@@ -17,6 +18,7 @@ export class SettingsController {
   }
 
   @Put('tenant/:tenantId')
+  @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update tenant settings' })
   updateTenantSettings(
     @Param('tenantId') tenantId: string,
@@ -32,6 +34,7 @@ export class SettingsController {
   }
 
   @Put('platform')
+  @Roles('HOST')
   @ApiOperation({ summary: 'Update platform-wide settings' })
   updatePlatformSettings(@Body() body: Record<string, any>) {
     return this.settingsService.updatePlatformSettings(body);

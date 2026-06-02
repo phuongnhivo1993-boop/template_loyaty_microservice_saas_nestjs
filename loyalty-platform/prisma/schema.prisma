@@ -315,6 +315,20 @@ model Mission {
   @@map("missions")
 }
 
+model Settings {
+  id        String   @id @default(uuid())
+  scope     String   // "platform" or "tenant"
+  scopeId   String   @default("_platform") // tenantId if scope=tenant, "_platform" if scope=platform
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([scope, scopeId, key])
+  @@index([scope, scopeId])
+  @@map("settings")
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   entityType String

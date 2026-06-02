@@ -1,94 +1,102 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface TenantSettings {
-  id: string;
-  tenantId: string;
-  theme: Record<string, any>;
-  emailConfig: Record<string, any>;
-  smsConfig: Record<string, any>;
-  loyaltyConfig: Record<string, any>;
-  updatedAt: Date;
-}
-
-interface PlatformSettings {
-  id: string;
-  maintenanceMode: boolean;
-  defaultLanguage: string;
-  currencies: string[];
-  maxTenants: number;
-  features: Record<string, boolean>;
-}
-
-const DEFAULT_TENANT_SETTINGS = {
-  theme: { primaryColor: '#2563eb', logoUrl: null, brandName: null },
-  emailConfig: { senderName: 'Loyalty Platform', senderEmail: null },
-  smsConfig: { enabled: false, provider: null },
-  loyaltyConfig: { defaultPointsPerCurrency: 1, pointExpiryDays: 365, minRedeemPoints: 100 },
-};
-
-const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
-  id: 'platform',
-  maintenanceMode: false,
-  defaultLanguage: 'vi',
-  currencies: ['VND', 'USD'],
-  maxTenants: 100,
-  features: {
-    referrals: true,
-    gamification: true,
-    notifications: true,
-    analytics: true,
-    importExport: true,
-  },
-};
-
 @Injectable()
 export class SettingsService {
-  private platformSettings: PlatformSettings = { ...DEFAULT_PLATFORM_SETTINGS };
-  private tenantSettingsCache = new Map<string, TenantSettings>();
-
   constructor(private prisma: PrismaService) {}
 
-  async getTenantSettings(tenantId: string): Promise<TenantSettings> {
+  async getTenantSettings(tenantId: string): Promise<Record<string, any>> {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException('Tenant not found');
 
-    if (this.tenantSettingsCache.has(tenantId)) {
-      return this.tenantSettingsCache.get(tenantId)!;
+    const rows = await this.prisma.settings.findMany({
+      where: { scope: 'tenant', scopeId: tenantId },
+    });
+
+    const settings: Record<string, any> = {};
+    for (const row of rows) {
+      settings[row.key] = row.value;
     }
 
     return {
-      id: tenantId,
-      tenantId,
-      ...DEFAULT_TENANT_SETTINGS,
-      updatedAt: tenant.updatedAt,
+      theme: settings.theme ?? { primaryColor: '#2563eb', logoUrl: null, brandName: null },
+      emailConfig: settings.emailConfig ?? { senderName: 'Loyalty Platform', senderEmail: null },
+      smsConfig: settings.smsConfig ?? { enabled: false, provider: null },
+      loyaltyConfig: settings.loyaltyConfig ?? { defaultPointsPerCurrency: 1, pointExpiryDays: 365, minRedeemPoints: 100 },
     };
   }
 
-  async updateTenantSettings(tenantId: string, data: Record<string, any>): Promise<TenantSettings> {
+  async updateTenantSettings(tenantId: string, data: Record<string, any>): Promise<Record<string, any>> {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException('Tenant not found');
 
-    const current = await this.getTenantSettings(tenantId);
-    const updated = {
-      ...current,
-      ...data,
-      updatedAt: new Date(),
-    };
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'object' && value !== null) {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          const fullKey = `${key}.${subKey}`;
+          await this.prisma.settings.upsert({
+            where: { scope_scopeId_key: { scope: 'tenant', scopeId: tenantId, key: fullKey } },
+            update: { value: subValue as any },
+            create: { scope: 'tenant', scopeId: tenantId, key: fullKey, value: subValue as any },
+          });
+        }
+      } else {
+        await this.prisma.settings.upsert({
+          where: { scope_scopeId_key: { scope: 'tenant', scopeId: tenantId, key } },
+          update: { value: value as any },
+          create: { scope: 'tenant', scopeId: tenantId, key, value: value as any },
+        });
+      }
+    }
 
-    this.tenantSettingsCache.set(tenantId, updated);
-    return updated;
+    return this.getTenantSettings(tenantId);
   }
 
-  async getPlatformSettings(): Promise<PlatformSettings> {
-    return { ...this.platformSettings };
+  async getPlatformSettings(): Promise<Record<string, any>> {
+    const rows = await this.prisma.settings.findMany({
+      where: { scope: 'platform', scopeId: '_platform' },
+    });
+
+    const settings: Record<string, any> = { id: 'platform' };
+    for (const row of rows) {
+      settings[row.key] = row.value;
+    }
+
+    return {
+      maintenanceMode: settings.maintenanceMode ?? false,
+      defaultLanguage: settings.defaultLanguage ?? 'vi',
+      currencies: settings.currencies ?? ['VND', 'USD'],
+      maxTenants: settings.maxTenants ?? 100,
+      features: settings.features ?? {
+        referrals: true,
+        gamification: true,
+        notifications: true,
+        analytics: true,
+        importExport: true,
+      },
+    };
   }
 
-  async updatePlatformSettings(data: Record<string, any>): Promise<PlatformSettings> {
-    this.platformSettings = {
-      ...this.platformSettings,
-      ...data,
-    };
-    return { ...this.platformSettings };
+  async updatePlatformSettings(data: Record<string, any>): Promise<Record<string, any>> {
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'object' && value !== null) {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          const fullKey = `${key}.${subKey}`;
+          await this.prisma.settings.upsert({
+            where: { scope_scopeId_key: { scope: 'platform', scopeId: '_platform', key: fullKey } },
+            update: { value: subValue as any },
+            create: { scope: 'platform', scopeId: '_platform', key: fullKey, value: subValue as any },
+          });
+        }
+      } else {
+        await this.prisma.settings.upsert({
+          where: { scope_scopeId_key: { scope: 'platform', scopeId: '_platform', key } },
+          update: { value: value as any },
+          create: { scope: 'platform', scopeId: '_platform', key, value: value as any },
+        });
+      }
+    }
+
+    return this.getPlatformSettings();
   }
 }
