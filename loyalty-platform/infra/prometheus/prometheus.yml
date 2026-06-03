@@ -75,9 +75,29 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:3012"]
 
-  - job_name: "postgres"
+  - job_name: "postgres-api-gateway"
     static_configs:
       - targets: ["host.docker.internal:5432"]
+
+  - job_name: "postgres-membership"
+    static_configs:
+      - targets: ["host.docker.internal:5433"]
+
+  - job_name: "postgres-campaign"
+    static_configs:
+      - targets: ["host.docker.internal:5434"]
+
+  - job_name: "postgres-notification"
+    static_configs:
+      - targets: ["host.docker.internal:5435"]
+
+  - job_name: "postgres-analytics"
+    static_configs:
+      - targets: ["host.docker.internal:5436"]
+
+  - job_name: "postgres-gamification"
+    static_configs:
+      - targets: ["host.docker.internal:5437"]
 
   - job_name: "redis"
     static_configs:

@@ -11,7 +11,7 @@ name: loyalty-platform
 
 services:
   # ===========================================================================
-  # POSTGRESQL - Primary Database (single instance, 12 databases)
+  # POSTGRESQL - API Gateway (primary)
   # ===========================================================================
   postgres:
     image: postgres:16-alpine
@@ -28,6 +28,111 @@ services:
       - ./.docker/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_api_gateway"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # POSTGRESQL - Membership & Loyalty Services
+  # ===========================================================================
+  postgres-membership:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres-membership
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_membership
+    volumes:
+      - postgres_membership_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_membership"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # POSTGRESQL - Campaign & Reward Services
+  # ===========================================================================
+  postgres-campaign:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres-campaign
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_campaign
+    volumes:
+      - postgres_campaign_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_campaign"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # POSTGRESQL - Notification Service
+  # ===========================================================================
+  postgres-notification:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres-notification
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_notification
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_notification"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # POSTGRESQL - Analytics & Customer360 Services
+  # ===========================================================================
+  postgres-analytics:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres-analytics
+    restart: unless-stopped
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_analytics
+    volumes:
+      - postgres_analytics_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # POSTGRESQL - Gamification, Promotion & Referral Services
+  # ===========================================================================
+  postgres-gamification:
+    image: postgres:16-alpine
+    container_name: loyalty-postgres-gamification
+    restart: unless-stopped
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty_secret
+      POSTGRES_DB: loyalty_gamification
+    volumes:
+      - postgres_gamification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_gamification"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -213,6 +318,11 @@ services:
 
 volumes:
   postgres_data:
+  postgres_membership_data:
+  postgres_campaign_data:
+  postgres_notification_data:
+  postgres_analytics_data:
+  postgres_gamification_data:
   redis_data:
   minio_data:
   clickhouse_data:
