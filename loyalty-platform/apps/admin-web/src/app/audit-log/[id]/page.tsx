@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 
 export default function AuditLogDetailPage() {
@@ -36,7 +37,7 @@ export default function AuditLogDetailPage() {
     DELETE: { bg: '#fef2f2', color: '#dc2626' },
   };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!log) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Audit log not found</p></main></div>;
 
   const ac = actionColors[log.action] || { bg: '#f1f5f9', color: '#64748b' };

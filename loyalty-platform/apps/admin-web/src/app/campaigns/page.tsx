@@ -12,6 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf } from '@/lib/api';
 
 interface CampaignForm {
   name: string; description: string; startDate: string; endDate: string; budget: string; status: string;
@@ -35,28 +36,29 @@ export default function CampaignsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const [performances, setPerformances] = useState<Record<string, any>>({});
 
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (statusFilter !== 'ALL') params.set('status', statusFilter);
-      const res = await fetch(`/api/campaigns?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setCampaigns(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const result = await getCampaigns({ page, limit, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined });
+      setCampaigns(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
+      const perfs: Record<string, any> = {};
+      const ids = result.data.map((c: any) => c.id);
+      await Promise.all(ids.map(async (id: string) => {
+        try {
+          perfs[id] = await getCampaignPerf(id);
+        } catch {}
+      }));
+      setPerformances(perfs);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
   }, [search, page, statusFilter]);
 
@@ -73,8 +75,7 @@ export default function CampaignsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this campaign?')) return;
     try {
-      const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete campaign', 'error'); return; }
+      await deleteCampaign(id);
       showToast('Campaign deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -84,23 +85,21 @@ export default function CampaignsPage() {
     e.preventDefault();
     try {
       const body = { ...form, budget: form.budget ? Number(form.budget) : undefined };
-      const url = editing ? `/api/campaigns/${editing.id}` : '/api/campaigns';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
-      showToast(editing ? 'Campaign updated successfully' : 'Campaign created successfully', 'success');
+      if (editing) {
+        await updateCampaign(editing.id, body);
+        showToast('Campaign updated successfully', 'success');
+      } else {
+        await createCampaign(body);
+        showToast('Campaign created successfully', 'success');
+      }
       setShowModal(false);
       load();
     } catch { showToast('Network error', 'error'); }
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    if (statusFilter !== 'ALL') params.set('status', statusFilter);
-    const res = await fetch(`/api/campaigns?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const result = await getCampaigns({ page: 1, limit: 10000, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined });
+    const data = result.data;
     const cols = ['name', 'startDate', 'endDate', 'budget', 'status'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
@@ -112,6 +111,17 @@ export default function CampaignsPage() {
     { key: 'startDate', label: 'Start', render: (c: any) => <span className="text-muted">{new Date(c.startDate).toLocaleDateString()}</span> },
     { key: 'endDate', label: 'End', render: (c: any) => <span className="text-muted">{new Date(c.endDate).toLocaleDateString()}</span> },
     { key: 'budget', label: 'Budget', render: (c: any) => c.budget ? `${c.budget.toLocaleString()} VND` : '-' },
+    { key: 'performance', label: 'Performance', render: (c: any) => {
+      const p = performances[c.id];
+      if (!p) return <span className="text-muted" style={{ fontSize: '12px' }}>—</span>;
+      return (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {p.pointsDistributed > 0 && <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, background: '#fef3c7', color: '#d97706' }}>🪙 {p.pointsDistributed.toLocaleString()}</span>}
+          {p.membersEnrolled > 0 && <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, background: '#dcfce7', color: '#16a34a' }}>👤 {p.membersEnrolled.toLocaleString()}</span>}
+          {p.vouchersRedeemed > 0 && <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, background: '#eff6ff', color: '#2563eb' }}>🎟️ {p.vouchersRedeemed.toLocaleString()}</span>}
+        </div>
+      );
+    }},
     { key: 'status', label: 'Status', render: (c: any) => (
       <span className={`status-badge ${(c.status || 'DRAFT').toLowerCase()}`}>{c.status || 'DRAFT'}</span>
     )},
@@ -153,7 +163,7 @@ export default function CampaignsPage() {
         <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
           onDelete={async () => {
             if (!confirm(`Delete ${selectedIds.length} campaigns?`)) return;
-            for (const id of selectedIds) await fetch(`/api/campaigns/${id}`, { method: 'DELETE', headers });
+            for (const id of selectedIds) try { await deleteCampaign(id); } catch {}
             showToast(`Deleted ${selectedIds.length} campaigns`, 'success');
             setSelectedIds([]); load();
           }}

@@ -9,6 +9,7 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getAuditLogs } from '@/lib/api';
 
 export default function AuditLogPage() {
   const router = useRouter();
@@ -24,35 +25,31 @@ export default function AuditLogPage() {
   const [filterAction, setFilterAction] = useState('');
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}` };
-
   const load = async () => {
-    if (!token) return;
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (search) params.set('search', search);
-    if (filterEntity) params.set('entityType', filterEntity);
-    if (filterAction) params.set('action', filterAction);
-    const r = await fetch(`/api/audit-logs?${params}`, { headers });
-    const res = await r.json();
-    setLogs(Array.isArray(res) ? res : res.data || []);
-    setTotalPages(res.totalPages || 1);
-    setTotal(res.total || 0);
+    try {
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      if (filterEntity) params.entityType = filterEntity;
+      if (filterAction) params.action = filterAction;
+      const result = await getAuditLogs(params);
+      setLogs(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
+    } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     load();
   }, [search, page, filterEntity, filterAction]);
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const r = await fetch(`/api/audit-logs?${params}`, { headers });
-    const res = await r.json();
-    const data = Array.isArray(res) ? res : res.data || [];
+    const params: Record<string, any> = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    const result = await getAuditLogs(params);
+    const data = result.data;
     const cols = ['createdAt', 'entityType', 'action', 'userEmail', 'entityId', 'ipAddress'];
     const header = cols.join(',');
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));

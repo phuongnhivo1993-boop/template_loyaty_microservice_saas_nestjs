@@ -140,10 +140,17 @@ export type RootStackParamList = {
   Referrals: undefined;
   Badges: undefined;
   Vouchers: undefined;
+  VoucherDetail: { voucher: MemberVoucher };
   Missions: undefined;
   Password: undefined;
   Profile: undefined;
   ResetPassword: undefined;
   Notifications: undefined;
   Checkin: undefined;
+  PointsHistory: undefined;
+  TransactionDetail: { transaction: PointTransaction };
+  MembershipCard: undefined;
+  TierProgress: undefined;
+  KYCUpload: undefined;
+  Settings: undefined;
 };

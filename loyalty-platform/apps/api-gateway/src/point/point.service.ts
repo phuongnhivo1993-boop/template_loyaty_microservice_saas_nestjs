@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationTriggerService } from '../common/services/notification-trigger.service';
 
 @Injectable()
 export class PointService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationTrigger: NotificationTriggerService,
+  ) {}
 
   async getWallet(memberId: string) {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
@@ -45,7 +49,14 @@ export class PointService {
       }),
     ]);
 
+    const oldTierId = member.tierId;
     await this.maybeUpgradeTier(memberId, member.tenantId, newTotal);
+    const updatedMember = await this.prisma.member.findUnique({ where: { id: memberId }, include: { tier: true } });
+    if (updatedMember?.tierId && updatedMember.tierId !== oldTierId && updatedMember.tier) {
+      const oldTierName = member.tier?.name || 'Unknown';
+      this.notificationTrigger.sendTierChanged(memberId, oldTierName, updatedMember.tier.name);
+    }
+    this.notificationTrigger.sendPointsEarned(memberId, finalAmount, reason);
     return transaction;
   }
 
@@ -56,10 +67,13 @@ export class PointService {
       take: 1,
     });
     if (tiers.length > 0) {
-      await this.prisma.member.update({
-        where: { id: memberId },
-        data: { tierId: tiers[0].id },
-      });
+      const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+      if (member && member.tierId !== tiers[0].id) {
+        await this.prisma.member.update({
+          where: { id: memberId },
+          data: { tierId: tiers[0].id },
+        });
+      }
     }
   }
 

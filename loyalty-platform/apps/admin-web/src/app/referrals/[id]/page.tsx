@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
+import { getReferral } from '@/lib/api';
 
 export default function ReferralDetailPage() {
   const { id } = useParams();
@@ -12,22 +14,10 @@ export default function ReferralDetailPage() {
   const [referral, setReferral] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/referrals/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const data = result.data ?? result;
-      setReferral(data);
-    } catch { showToast('Failed to load referral', 'error'); }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
-    load();
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    setLoading(true);
+    getReferral(id as string).then(setReferral).catch(() => showToast('Failed to load referral', 'error')).finally(() => setLoading(false));
   }, [id]);
 
   const statusColors: Record<string, { color: string; bg: string }> = {
@@ -37,7 +27,7 @@ export default function ReferralDetailPage() {
   };
   const s = statusColors[referral?.status] || { color: '#64748b', bg: '#f1f5f9' };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!referral) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Referral not found</p></main></div>;
 
   return (

@@ -6,11 +6,13 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
+import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api } from '@/lib/api';
 
 interface VoucherForm {
   code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
@@ -35,29 +37,26 @@ export default function VouchersPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchForm, setBatchForm] = useState({ prefix: '', count: '10', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '' });
   const [batchResult, setBatchResult] = useState<string[] | null>(null);
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (statusFilter !== 'ALL') params.set('status', statusFilter);
-      const res = await fetch(`/api/vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setVouchers(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      if (statusFilter !== 'ALL') params.status = statusFilter;
+      const result = await getVouchers(params);
+      setVouchers(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page, statusFilter]);
@@ -75,24 +74,20 @@ export default function VouchersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this voucher?')) return;
     try {
-      const res = await fetch(`/api/vouchers/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete voucher', 'error'); return; }
+      await deleteVoucher(id);
       showToast('Voucher deleted successfully', 'success');
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to delete voucher', 'error'); }
   };
 
   const handleBatchGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/vouchers/batch-generate', {
-        method: 'POST', headers,
-        body: JSON.stringify({ ...batchForm, count: Number(batchForm.count), value: Number(batchForm.value), maxUsage: batchForm.maxUsage ? Number(batchForm.maxUsage) : undefined, tenantId: localStorage.getItem('tenantId') }),
+      const result: any = await api.post('/vouchers/batch-generate', {
+        ...batchForm, count: Number(batchForm.count), value: Number(batchForm.value), maxUsage: batchForm.maxUsage ? Number(batchForm.maxUsage) : undefined, tenantId: localStorage.getItem('tenantId'),
       });
-      const result = await res.json();
-      const data = result.data ?? result;
-      setBatchResult(data.codes || []);
-      showToast(`Generated ${data.generated || 0} vouchers`, 'success');
+      setBatchResult(result.codes || []);
+      showToast(`Generated ${result.generated || 0} vouchers`, 'success');
       load();
     } catch { showToast('Batch generation failed', 'error'); }
   };
@@ -101,23 +96,23 @@ export default function VouchersPage() {
     e.preventDefault();
     try {
       const body = { ...form, value: Number(form.value), maxUsage: form.maxUsage ? Number(form.maxUsage) : undefined };
-      const url = editing ? `/api/vouchers/${editing.id}` : '/api/vouchers';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updateVoucher(editing.id, body);
+      } else {
+        await createVoucher(body);
+      }
       showToast(editing ? 'Voucher updated successfully' : 'Voucher created successfully', 'success');
       setShowModal(false);
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Operation failed', 'error'); }
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    if (statusFilter !== 'ALL') params.set('status', statusFilter);
-    const res = await fetch(`/api/vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: any = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    if (statusFilter !== 'ALL') params.status = statusFilter;
+    const result = await getVouchers(params);
+    const data = result.data;
     const cols = ['code', 'type', 'value', 'usedCount', 'maxUsage', 'expiresAt', 'description'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
@@ -165,7 +160,20 @@ export default function VouchersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={vouchers} emptyMessage="No vouchers found" />
+        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
+          onDelete={async () => {
+            if (!confirm(`Delete ${selectedIds.length} vouchers?`)) return;
+            for (const id of selectedIds) await deleteVoucher(id);
+            showToast(`Deleted ${selectedIds.length} vouchers`, 'success');
+            setSelectedIds([]); load();
+          }}
+          onExport={() => {
+            const cols = ['code', 'type', 'value', 'usedCount', 'maxUsage'];
+            const rows = vouchers.filter(v => selectedIds.includes(v.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+            const a = document.createElement('a'); a.href = url; a.download = 'selected-vouchers.csv'; a.click(); URL.revokeObjectURL(url);
+          }} />
+        <DataTable columns={columns} data={vouchers} emptyMessage="No vouchers found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Voucher' : 'New Voucher'} onClose={() => setShowModal(false)}>

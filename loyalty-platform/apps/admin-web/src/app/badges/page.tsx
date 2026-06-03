@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getBadges, createBadge, updateBadge, deleteBadge } from '@/lib/api';
 
 interface BadgeForm {
   name: string; description: string; iconUrl: string; criteria: string;
@@ -33,25 +34,19 @@ export default function BadgesPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      const res = await fetch(`/api/badges?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setBadges(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const result = await getBadges({ page, limit, search: search || undefined });
+      setBadges(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page]);
@@ -69,8 +64,7 @@ export default function BadgesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this badge?')) return;
     try {
-      const res = await fetch(`/api/badges/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete badge', 'error'); return; }
+      await deleteBadge(id);
       showToast('Badge deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -82,10 +76,11 @@ export default function BadgesPage() {
     try { criteria = JSON.parse(form.criteria); } catch { criteria = form.criteria; }
     try {
       const body = { ...form, criteria };
-      const url = editing ? `/api/badges/${editing.id}` : '/api/badges';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updateBadge(editing.id, body);
+      } else {
+        await createBadge(body);
+      }
       showToast(editing ? 'Badge updated successfully' : 'Badge created successfully', 'success');
       setShowModal(false);
       load();
@@ -93,11 +88,8 @@ export default function BadgesPage() {
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/badges?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const result = await getBadges({ page: 1, limit: 10000, search: search || undefined });
+    const data = result.data;
     const cols = ['name', 'description', 'iconUrl', 'criteria'];
     const header = cols.join(',');
     const rows = data.map((item: any) => cols.map((col: string) => { const v = typeof item[col] === 'object' ? JSON.stringify(item[col]) : (item[col]?.toString() || ''); return v.includes(',') ? `"${v}"` : v; }).join(','));

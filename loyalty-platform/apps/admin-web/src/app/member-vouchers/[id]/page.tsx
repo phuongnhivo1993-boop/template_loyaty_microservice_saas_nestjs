@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 
 export default function MemberVoucherDetailPage() {
@@ -30,7 +31,7 @@ export default function MemberVoucherDetailPage() {
     load();
   }, [id]);
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!mv) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Member voucher not found</p></main></div>;
 
   const isRedeemed = mv.redeemed;

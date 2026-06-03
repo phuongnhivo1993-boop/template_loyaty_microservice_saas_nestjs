@@ -77,7 +77,7 @@ export default function SettingsPage() {
       <main className="main-content">
         <PageHeader title="Settings" subtitle="Platform configuration and profile" />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className="grid-2" style={{ gap: '24px' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Profile</h2>

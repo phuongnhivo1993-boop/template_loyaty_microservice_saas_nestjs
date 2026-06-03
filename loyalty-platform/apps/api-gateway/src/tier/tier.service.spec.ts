@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TierService } from './tier.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationTriggerService } from '../common/services/notification-trigger.service';
 import { NotFoundException } from '@nestjs/common';
+
+const mockNotificationTrigger = { sendWelcome: jest.fn(), sendPointsEarned: jest.fn(), sendTierChanged: jest.fn() };
 
 describe('TierService', () => {
   let service: TierService;
@@ -17,12 +20,18 @@ describe('TierService', () => {
         delete: jest.fn(),
         count: jest.fn(),
       },
+      notificationTemplate: { findFirst: jest.fn() },
+      notificationLog: { create: jest.fn(), createMany: jest.fn() },
+      member: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn(), count: jest.fn() },
+      tenant: { findFirst: jest.fn(), findMany: jest.fn() },
+      pointTransaction: { findMany: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TierService,
         { provide: PrismaService, useValue: prisma },
+        { provide: NotificationTriggerService, useValue: mockNotificationTrigger },
       ],
     }).compile();
 

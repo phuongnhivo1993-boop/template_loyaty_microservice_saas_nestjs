@@ -9,6 +9,7 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getPointTransactions } from '@/lib/api';
 
 const typeColors: Record<string, { bg: string; color: string }> = {
   EARN: { bg: '#dcfce7', color: '#16a34a' },
@@ -29,37 +30,31 @@ export default function PointTransactionsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (typeFilter !== 'ALL') params.set('type', typeFilter);
-      const res = await fetch(`/api/points/transactions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setTransactions(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      if (typeFilter !== 'ALL') params.type = typeFilter;
+      const result = await getPointTransactions(params);
+      setTransactions(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     load();
   }, [search, page, typeFilter]);
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    if (typeFilter !== 'ALL') params.set('type', typeFilter);
-    const res = await fetch(`/api/points/transactions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: Record<string, any> = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    if (typeFilter !== 'ALL') params.type = typeFilter;
+    const result = await getPointTransactions(params);
+    const data = result.data;
     const cols = ['type', 'amount', 'balance', 'reason', 'reference', 'createdAt'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

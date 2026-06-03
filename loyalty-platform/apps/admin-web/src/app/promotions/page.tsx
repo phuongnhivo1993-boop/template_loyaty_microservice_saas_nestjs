@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/api';
 
 interface PromotionForm {
   name: string; description: string; priority: string; conditions: string; actions: string; status: string;
@@ -34,26 +35,22 @@ export default function PromotionsPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (filterStatus) params.set('status', filterStatus);
-      const res = await fetch(`/api/promotions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setPromotions(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      if (filterStatus) params.status = filterStatus;
+      const result = await getPromotions(params);
+      setPromotions(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page, filterStatus]);
@@ -73,11 +70,10 @@ export default function PromotionsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this promotion rule?')) return;
     try {
-      const res = await fetch(`/api/promotions/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete promotion rule', 'error'); return; }
+      await deletePromotion(id);
       showToast('Promotion rule deleted successfully', 'success');
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to delete promotion rule', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,10 +83,11 @@ export default function PromotionsPage() {
         name: form.name, description: form.description, priority: Number(form.priority),
         conditions: JSON.parse(form.conditions), actions: JSON.parse(form.actions), status: form.status,
       };
-      const url = editing ? `/api/promotions/${editing.id}` : '/api/promotions';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updatePromotion(editing.id, body);
+      } else {
+        await createPromotion(body);
+      }
       showToast(editing ? 'Promotion rule updated successfully' : 'Promotion rule created successfully', 'success');
       setShowModal(false);
       load();
@@ -98,11 +95,10 @@ export default function PromotionsPage() {
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/promotions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: any = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    const result = await getPromotions(params);
+    const data = result.data;
     const cols = ['name', 'priority', 'status'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

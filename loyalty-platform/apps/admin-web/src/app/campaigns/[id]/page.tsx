@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
+import { getCampaign, getCampaignPerf } from '@/lib/api';
 
 export default function CampaignDetailPage() {
   const { id } = useParams();
@@ -14,33 +16,12 @@ export default function CampaignDetailPage() {
   const [performance, setPerformance] = useState<any>(null);
   const [perfLoading, setPerfLoading] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/campaigns/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setCampaign(result.data ?? result);
-    } catch { showToast('Failed to load campaign', 'error'); }
-    setLoading(false);
-  };
-
-  const loadPerformance = async () => {
-    setPerfLoading(true);
-    try {
-      const res = await fetch(`/api/campaigns/${id}/performance`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setPerformance(result.data ?? result);
-    } catch {}
-    setPerfLoading(false);
-  };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
-    load();
-    loadPerformance();
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    setLoading(true);
+    getCampaign(id as string).then(setCampaign).catch(() => showToast('Failed to load campaign', 'error')).finally(() => setLoading(false));
+    setPerfLoading(true);
+    getCampaignPerf(id as string).then(setPerformance).catch(() => {}).finally(() => setPerfLoading(false));
   }, [id]);
 
   const statusColors: Record<string, { color: string; bg: string }> = {
@@ -52,7 +33,7 @@ export default function CampaignDetailPage() {
 
   const statusStyle = statusColors[campaign?.status] || { color: '#475569', bg: '#f1f5f9' };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!campaign) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Campaign not found</p></main></div>;
 
   return (
@@ -69,7 +50,7 @@ export default function CampaignDetailPage() {
           <span className="status-badge" style={{ background: statusStyle.bg, color: statusStyle.color }}>{campaign.status}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <div className="grid-4" style={{ gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Budget', value: campaign.budget != null ? `${Number(campaign.budget).toLocaleString()} VND` : 'N/A', color: '#2563eb', bg: '#eff6ff' },
             { label: 'Start Date', value: new Date(campaign.startDate).toLocaleDateString('vi-VN'), color: '#7c3aed', bg: '#f5f3ff' },
@@ -88,7 +69,7 @@ export default function CampaignDetailPage() {
         ) : performance ? (
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>📈 Campaign Performance</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div className="grid-5" style={{ gap: '16px', marginBottom: '24px' }}>
               {[
                 { label: 'Points Distributed', value: performance.pointsDistributed?.toLocaleString(), color: '#2563eb', bg: '#eff6ff' },
                 { label: 'Earn Transactions', value: performance.earnedTransactions?.toLocaleString(), color: '#7c3aed', bg: '#f5f3ff' },
@@ -120,7 +101,7 @@ export default function CampaignDetailPage() {
                 { label: 'Created At', value: new Date(campaign.createdAt).toLocaleString('vi-VN') },
               ].map((row, i) => (
                 <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#475569', width: '180px' }}>{row.label}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px', color: '#475569', width: '160px' }}>{row.label}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#334155' }}>{row.value}</td>
                 </tr>
               ))}

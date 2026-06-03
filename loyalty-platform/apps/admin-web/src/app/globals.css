@@ -165,7 +165,31 @@ body {
   .sidebar-toggle { display: block; }
   .sidebar-overlay { display: block; }
   .main-content { margin-left: 0; padding: 16px; padding-top: 60px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
   .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-5 { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: 14px; }
+  .stat-card-value { font-size: 20px; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar input, .toolbar select, .toolbar button { width: 100%; }
+  .filter-select, .search-input { width: 100%; }
+  .today-metrics { flex-direction: column; }
+  .today-metrics > div { flex: none; }
+  .data-table { overflow-x: auto; }
+  .data-table table { min-width: 600px; }
+  .detail-table td:first-child { width: 120px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+  .grid-5 { grid-template-columns: 1fr; }
+  .detail-table td:first-child { width: 100px; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .page-header h1 { font-size: 22px; }
 }
 
 /* Toolbar */
@@ -188,6 +212,33 @@ body {
 
 /* Grid */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+.grid-5 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 16px; }
+
+/* Detail stat card */
+.detail-stat {
+  background: #f8fafc; padding: 20px; border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.detail-stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500; }
+.detail-stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
+
+/* Detail table wrapper */
+.detail-table-wrap { overflow-x: auto; margin-top: 16px; }
+.detail-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+}
+.detail-table td {
+  padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
+}
+.detail-table td:first-child {
+  font-weight: 600; color: #64748b; white-space: nowrap;
+  width: 160px;
+}
+.detail-table td:last-child { color: #1e293b; }
+
+@page { size: auto; margin: 0; }
 
 /* Additional Status Variants */
 .status-draft { background: #f1f5f9; color: #64748b; }

@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getMissions, createMission, updateMission, deleteMission } from '@/lib/api';
 
 interface MissionForm {
   name: string; description: string; pointsReward: string; criteria: string; startDate: string; endDate: string;
@@ -33,25 +34,21 @@ export default function MissionsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setMissions(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      const result = await getMissions(params);
+      setMissions(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page]);
@@ -72,11 +69,10 @@ export default function MissionsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this mission?')) return;
     try {
-      const res = await fetch(`/api/missions/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete mission', 'error'); return; }
+      await deleteMission(id);
       showToast('Mission deleted successfully', 'success');
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to delete mission', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,22 +81,22 @@ export default function MissionsPage() {
     try { criteria = JSON.parse(form.criteria); } catch { criteria = form.criteria; }
     try {
       const body = { ...form, pointsReward: form.pointsReward ? Number(form.pointsReward) : 0, criteria };
-      const url = editing ? `/api/missions/${editing.id}` : '/api/missions';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updateMission(editing.id, body);
+      } else {
+        await createMission(body);
+      }
       showToast(editing ? 'Mission updated successfully' : 'Mission created successfully', 'success');
       setShowModal(false);
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Operation failed', 'error'); }
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/missions?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: any = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    const result = await getMissions(params);
+    const data = result.data;
     const cols = ['name', 'pointsReward', 'startDate', 'endDate', 'criteria'];
     const header = cols.join(',');
     const rows = data.map((item: any) => cols.map((col: string) => { const v = typeof item[col] === 'object' ? JSON.stringify(item[col]) : (item[col]?.toString() || ''); return v.includes(',') ? `"${v}"` : v; }).join(','));

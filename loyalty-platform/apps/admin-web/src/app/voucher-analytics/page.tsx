@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 import PageHeader from '@/components/PageHeader';
 
 export default function VoucherAnalyticsPage() {
@@ -20,7 +21,7 @@ export default function VoucherAnalyticsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={5} cols={5} /></main></div>;
 
   const maxTrend = data?.dailyTrend?.length ? Math.max(...data.dailyTrend.map((d: any) => d.count), 1) : 1;
   const maxPopular = data?.popular?.length ? Math.max(...data.popular.map((d: any) => d.count), 1) : 1;

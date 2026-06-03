@@ -10,6 +10,7 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getEarningRules, createEarningRule, updateEarningRule, deleteEarningRule, calculateEarningRule } from '@/lib/api';
 
 interface RuleForm {
   name: string; description: string; pointsPerUnit: string; minAmount: string; maxAmount: string; category: string;
@@ -35,36 +36,29 @@ export default function EarningRulesPage() {
   const [calcAmount, setCalcAmount] = useState('100000');
   const [calcResult, setCalcResult] = useState<any>(null);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (categoryFilter) params.set('category', categoryFilter);
-      const res = await fetch(`/api/earning-rules?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setRules(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      if (categoryFilter) params.category = categoryFilter;
+      const result = await getEarningRules(params);
+      setRules(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     load();
   }, [search, page, categoryFilter]);
 
   const handleCalculate = async () => {
-    const tenantId = localStorage.getItem('tenantId') || '';
     try {
-      const res = await fetch(`/api/earning-rules/calculate?tenantId=${tenantId}&amount=${calcAmount}${categoryFilter ? '&category=' + categoryFilter : ''}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setCalcResult(result.data ?? result);
+      const result = await calculateEarningRule({ tenantId: localStorage.getItem('tenantId') || '', amount: calcAmount, category: categoryFilter || undefined });
+      setCalcResult(result);
     } catch { showToast('Calculation failed', 'error'); }
   };
 
@@ -74,25 +68,26 @@ export default function EarningRulesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this earning rule?')) return;
     try {
-      const res = await fetch(`/api/earning-rules/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete', 'error'); return; }
+      await deleteEarningRule(id);
       showToast('Rule deleted successfully', 'success');
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to delete', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const body = { ...form, pointsPerUnit: Number(form.pointsPerUnit), minAmount: form.minAmount ? Number(form.minAmount) : undefined, maxAmount: form.maxAmount ? Number(form.maxAmount) : undefined, tenantId: localStorage.getItem('tenantId') };
-      const url = editing ? `/api/earning-rules/${editing.id}` : '/api/earning-rules';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
-      showToast(editing ? 'Rule updated' : 'Rule created', 'success');
+      if (editing) {
+        await updateEarningRule(editing.id, body);
+        showToast('Rule updated', 'success');
+      } else {
+        await createEarningRule(body);
+        showToast('Rule created', 'success');
+      }
       setShowModal(false);
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Operation failed', 'error'); }
   };
 
   const columns = [

@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getTenants, createTenant, updateTenant, deleteTenant } from '@/lib/api';
 
 interface TenantForm {
   name: string; domain: string; email: string; status: string; description: string;
@@ -34,27 +35,19 @@ export default function TenantsPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (filterStatus) params.set('status', filterStatus);
-      const res = await fetch(`/api/tenants?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setTenants(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const result = await getTenants({ page, limit, search: search || undefined, status: filterStatus || undefined });
+      setTenants(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page, filterStatus]);
@@ -65,8 +58,7 @@ export default function TenantsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this tenant?')) return;
     try {
-      const res = await fetch(`/api/tenants/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete tenant', 'error'); return; }
+      await deleteTenant(id);
       showToast('Tenant deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -75,10 +67,11 @@ export default function TenantsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editing ? `/api/tenants/${editing.id}` : '/api/tenants';
-      const method = editing ? 'PATCH' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updateTenant(editing.id, form);
+      } else {
+        await createTenant(form);
+      }
       showToast(editing ? 'Tenant updated successfully' : 'Tenant created successfully', 'success');
       setShowModal(false);
       load();
@@ -86,11 +79,8 @@ export default function TenantsPage() {
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/tenants?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const result = await getTenants({ page: 1, limit: 10000, search: search || undefined });
+    const data = result.data;
     const cols = ['name', 'domain', 'email', 'status', 'description'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

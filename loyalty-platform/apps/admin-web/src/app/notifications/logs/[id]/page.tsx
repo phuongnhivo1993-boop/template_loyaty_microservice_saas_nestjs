@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import PageHeader from '@/components/PageHeader';
 
 export default function NotificationLogDetailPage() {
@@ -27,7 +28,7 @@ export default function NotificationLogDetailPage() {
     })();
   }, [params.id]);
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!log) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Notification log not found</p></main></div>;
 
   const statusColor: Record<string, { bg: string; color: string }> = {

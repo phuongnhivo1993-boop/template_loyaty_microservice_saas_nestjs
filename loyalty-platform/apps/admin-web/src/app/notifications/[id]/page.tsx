@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
+import { api } from '@/lib/api';
 
 export default function NotificationDetailPage() {
   const { id } = useParams();
@@ -12,25 +14,13 @@ export default function NotificationDetailPage() {
   const [notification, setNotification] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/notifications/templates/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const data = result.data ?? result;
-      setNotification(data);
-    } catch { showToast('Failed to load notification template', 'error'); }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
-    load();
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    setLoading(true);
+    api.get(`/notifications/templates/${id}`).then(setNotification).catch(() => showToast('Failed to load notification template', 'error')).finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!notification) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Notification template not found</p></main></div>;
 
   return (

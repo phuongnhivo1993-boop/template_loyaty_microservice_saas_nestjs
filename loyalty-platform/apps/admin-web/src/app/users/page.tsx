@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getUsers, createUser, updateUser, deleteUser } from '@/lib/api';
 
 interface UserForm {
   email: string; fullName: string; phone: string; role: string;
@@ -36,26 +37,19 @@ export default function UsersPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (roleFilter !== 'ALL') params.set('role', roleFilter);
-      const res = await fetch(`/api/users?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setUsers(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const result = await getUsers({ page, limit, search: search || undefined, role: roleFilter !== 'ALL' ? roleFilter : undefined });
+      setUsers(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
   }, [search, page, roleFilter]);
@@ -70,8 +64,7 @@ export default function UsersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this user?')) return;
     try {
-      const res = await fetch(`/api/users/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete user', 'error'); return; }
+      await deleteUser(id);
       showToast('User deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -80,10 +73,11 @@ export default function UsersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editing ? `/api/users/${editing.id}` : '/api/users';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
+      if (editing) {
+        await updateUser(editing.id, form);
+      } else {
+        await createUser(form);
+      }
       showToast(editing ? 'User updated successfully' : 'User created successfully', 'success');
       setShowModal(false);
       load();
@@ -91,11 +85,8 @@ export default function UsersPage() {
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/users?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const result = await getUsers({ page: 1, limit: 10000, search: search || undefined });
+    const data = result.data;
     const cols = ['email', 'fullName', 'phone', 'role'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

@@ -9,6 +9,7 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getReferrals, convertReferral, getReferralStats, api } from '@/lib/api';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -25,33 +26,29 @@ export default function ReferralsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (filterStatus) params.set('status', filterStatus);
-      const res = await fetch(`/api/referrals?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setReferrals(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      if (filterStatus) params.status = filterStatus;
+      const result = await getReferrals(params);
+      setReferrals(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   const loadStats = async () => {
     try {
-      const res = await fetch('/api/referrals/stats', { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setStats(await res.json());
+      const result = await api.get('/referrals/stats');
+      setStats(result);
     } catch {}
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.push('/login'); return; }
     load();
     loadStats();
@@ -61,21 +58,19 @@ export default function ReferralsPage() {
     if (!confirm('Convert this referral?')) return;
     setConverting(id);
     try {
-      const res = await fetch(`/api/referrals/${id}/convert`, { method: 'POST', headers });
-      if (!res.ok) { showToast('Failed to convert referral', 'error'); setConverting(null); return; }
+      await convertReferral(id, {});
       showToast('Referral converted successfully', 'success');
       load();
       loadStats();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to convert referral', 'error'); }
     setConverting(null);
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    const res = await fetch(`/api/referrals?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: any = { page: 1, limit: 10000 };
+    if (search) params.search = search;
+    const result = await getReferrals(params);
+    const data = result.data;
     const cols = ['code', 'status', 'createdAt'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

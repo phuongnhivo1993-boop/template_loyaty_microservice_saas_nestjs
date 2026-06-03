@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
+
+const mockCacheService = { get: jest.fn(), set: jest.fn(), del: jest.fn(), delPattern: jest.fn() };
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -50,7 +53,11 @@ describe('DashboardService', () => {
     prisma = createMockPrisma();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DashboardService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        DashboardService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: CacheService, useValue: mockCacheService },
+      ],
     }).compile();
 
     service = module.get<DashboardService>(DashboardService);
@@ -87,7 +94,7 @@ describe('DashboardService', () => {
       },
     });
     const mod = await Test.createTestingModule({
-      providers: [DashboardService, { provide: PrismaService, useValue: prisma }],
+      providers: [DashboardService, { provide: PrismaService, useValue: prisma }, { provide: CacheService, useValue: mockCacheService }],
     }).compile();
     const svc = mod.get<DashboardService>(DashboardService);
 
@@ -109,7 +116,7 @@ describe('DashboardService', () => {
       },
     });
     const mod = await Test.createTestingModule({
-      providers: [DashboardService, { provide: PrismaService, useValue: prisma }],
+      providers: [DashboardService, { provide: PrismaService, useValue: prisma }, { provide: CacheService, useValue: mockCacheService }],
     }).compile();
     const svc = mod.get<DashboardService>(DashboardService);
 

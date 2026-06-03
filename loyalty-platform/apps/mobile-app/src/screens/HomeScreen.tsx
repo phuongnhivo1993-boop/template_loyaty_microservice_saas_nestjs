@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members, analytics } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
 
@@ -33,13 +34,24 @@ export default function HomeScreen() {
       .finally(() => setLoading(false));
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      members.getProfile().then((r) => setProfile(r.data)),
+      members.getWallet().then((r) => setWallet(r.data)),
+      analytics.leaderboard(5).then((r) => setLeaderboard(Array.isArray(r.data) ? r.data : r.data?.data || [])),
+    ]).catch(() => setError('Failed to load data'));
+    setRefreshing(false);
+  }, []);
+
   useEffect(() => { load(); }, []);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, {profile?.fullName || 'Member'}</Text>
         <View style={{ flexDirection: 'row', gap: 16 }}>
@@ -65,6 +77,10 @@ export default function HomeScreen() {
           { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
           { label: 'Badges', icon: '🏅', screen: 'Badges' },
           { label: 'Missions', icon: '🎯', screen: 'Missions' },
+          { label: 'Membership', icon: '💳', screen: 'MembershipCard' },
+          { label: 'Tiers', icon: '📊', screen: 'TierProgress' },
+          { label: 'KYC', icon: '✅', screen: 'KYCUpload' },
+          { label: 'Settings', icon: '⚙️', screen: 'Settings' },
           { label: 'Profile', icon: '👤', screen: 'Profile' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>
@@ -92,6 +108,7 @@ export default function HomeScreen() {
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -107,7 +124,7 @@ const styles = StyleSheet.create({
   pointsValue: { fontSize: 36, fontWeight: '800', color: 'white', marginVertical: 4 },
   tier: { fontSize: 14, color: '#bfdbfe', fontWeight: '600' },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, gap: 12 },
-  menuItem: { width: '47%', backgroundColor: 'white', borderRadius: 12, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  menuItem: { width: '30%', backgroundColor: 'white', borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   menuIcon: { fontSize: 32 },
   menuLabel: { fontSize: 14, fontWeight: '600', color: '#1e293b', marginTop: 8 },
   section: { padding: 20 },

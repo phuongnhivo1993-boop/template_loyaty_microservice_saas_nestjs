@@ -12,6 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getMembers, createMember, updateMember, deleteMember, getTiers } from '@/lib/api';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; birthday: string; status: string;
@@ -38,31 +39,25 @@ export default function MembersPage() {
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tagFilter, setTagFilter] = useState('');
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [tagAction, setTagAction] = useState<'add' | 'remove'>('add');
+  const [tagInput, setTagInput] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      if (tierFilter) params.set('tierId', tierFilter);
-      if (tagFilter) params.set('tags', tagFilter);
-      const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setMembers(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const result = await getMembers({ page, limit, search: search || undefined, tierId: tierFilter || undefined, tags: tagFilter || undefined });
+      setMembers(result.data);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
-    fetch('/api/tiers', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(res => { const p = res.data ?? res; setTierOptions(Array.isArray(p) ? p : []); }).catch(() => {});
+    getTiers().then(result => { setTierOptions(result.data); }).catch(() => {});
   }, [search, page, tierFilter, tagFilter]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
@@ -71,8 +66,7 @@ export default function MembersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this member? This action cannot be undone.')) return;
     try {
-      const res = await fetch(`/api/members/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete member', 'error'); return; }
+      await deleteMember(id);
       showToast('Member deleted successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -82,11 +76,13 @@ export default function MembersPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const url = editing ? `/api/members/${editing.id}` : '/api/members';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
-      showToast(editing ? 'Member updated successfully' : 'Member created successfully', 'success');
+      if (editing) {
+        await updateMember(editing.id, form);
+        showToast('Member updated successfully', 'success');
+      } else {
+        await createMember(form);
+        showToast('Member created successfully', 'success');
+      }
       setShowModal(false);
       load();
     } catch { showToast('Network error', 'error'); }
@@ -94,12 +90,8 @@ export default function MembersPage() {
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
-    if (tierFilter) params.set('tierId', tierFilter);
-    const res = await fetch(`/api/members?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const result = await getMembers({ page: 1, limit: 10000, search: search || undefined, tierId: tierFilter || undefined });
+    const data = result.data;
     const cols = ['fullName', 'email', 'availablePoints', 'status'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
@@ -119,6 +111,9 @@ export default function MembersPage() {
       return <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: bg[m.status] || '#f1f5f9', color: colors[m.status] || '#64748b' }}>{m.status}</span>;
     }},
     { key: 'kycVerified', label: 'KYC', render: (m: any) => m.kycVerified ? '✅ Verified' : '❌ Pending' },
+    { key: 'tags', label: 'Tags', render: (m: any) => m.tags?.length > 0 ? m.tags.slice(0, 3).map((t: string) => (
+      <span key={t} style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, background: '#eff6ff', color: '#2563eb', marginRight: '4px', marginBottom: '2px' }}>{t}</span>
+    )) : <span className="text-muted" style={{ fontSize: '12px' }}>—</span> },
     { key: 'actions', label: 'Actions', render: (m: any) => (
       <>
         <button onClick={() => openEdit(m)} className="btn-secondary btn-sm">Edit</button>
@@ -129,9 +124,9 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <div className="page-layout">
         <Sidebar />
-        <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+        <main className="main-content">
           <TableSkeleton rows={6} cols={6} />
         </main>
       </div>
@@ -139,9 +134,9 @@ export default function MembersPage() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="page-layout">
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px', marginLeft: '260px' }}>
+      <main className="main-content">
         <PageHeader
           title="Members"
           subtitle="Manage loyalty program members"
@@ -169,7 +164,7 @@ export default function MembersPage() {
         <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
           onDelete={async () => {
             if (!confirm(`Delete ${selectedIds.length} members?`)) return;
-            for (const id of selectedIds) await fetch(`/api/members/${id}`, { method: 'DELETE', headers });
+            for (const id of selectedIds) try { await deleteMember(id); } catch {}
             showToast(`Deleted ${selectedIds.length} members`, 'success');
             setSelectedIds([]); load();
           }}
@@ -178,7 +173,11 @@ export default function MembersPage() {
             const rows = members.filter(m => selectedIds.includes(m.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
             const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
             const a = document.createElement('a'); a.href = url; a.download = 'selected-members.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+          }}
+          customActions={[
+            { label: 'Add Tags', onClick: () => { setTagAction('add'); setTagInput(''); setShowTagModal(true); } },
+            { label: 'Remove Tags', onClick: () => { setTagAction('remove'); setTagInput(''); setShowTagModal(true); } },
+          ]} />
         <DataTable columns={columns} data={members} emptyMessage="No members found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
@@ -198,6 +197,36 @@ export default function MembersPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="members" entityLabel="members" onImportComplete={load} />
+
+        <Modal open={showTagModal} title={`${tagAction === 'add' ? 'Add' : 'Remove'} Tags (${selectedIds.length} members)`} onClose={() => setShowTagModal(false)} width={420}>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Tags (comma-separated)</label>
+            <input type="text" className="search-input" placeholder="e.g. VIP, PREMIUM" value={tagInput} onChange={e => setTagInput(e.target.value)} style={{ maxWidth: 'none', padding: '10px 14px', fontSize: '14px' }} />
+            <p style={{ color: '#64748b', fontSize: '12px', marginTop: '6px' }}>
+              {tagAction === 'add' ? 'These tags will be added to all selected members' : 'These tags will be removed from all selected members'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button onClick={() => setShowTagModal(false)} className="btn-secondary">Cancel</button>
+            <button onClick={async () => {
+              const tags = tagInput.split(',').map(t => t.trim()).filter(Boolean);
+              if (tags.length === 0) return;
+              let updated = 0;
+              for (const id of selectedIds) {
+                const m = members.find(m => m.id === id);
+                if (!m) continue;
+                const newTags = tagAction === 'add'
+                  ? Array.from(new Set([...(m.tags || []), ...tags]))
+                  : (m.tags || []).filter((t: string) => !tags.includes(t));
+                try { await updateMember(id, { tags: newTags }); updated++; } catch {}
+              }
+              showToast(`Updated tags for ${updated} members`, 'success');
+              setShowTagModal(false);
+              setSelectedIds([]);
+              load();
+            }} className="btn-primary">{tagAction === 'add' ? 'Add Tags' : 'Remove Tags'}</button>
+          </div>
+        </Modal>
       </main>
     </div>
   );

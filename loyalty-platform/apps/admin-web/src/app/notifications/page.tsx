@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getNotificationTemplates, getNotificationLogs, createTemplate, updateTemplate, deleteTemplate, sendNotification } from '@/lib/api';
 
 interface TemplateForm { name: string; type: string; subject: string; content: string; variables: string; }
 
@@ -37,39 +38,36 @@ export default function NotificationsPage() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const loadTemplates = async () => {
-    if (!token) return;
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (search) params.set('search', search);
-    if (filterType) params.set('type', filterType);
-    const r = await fetch(`/api/notifications/templates?${params}`, { headers });
-    const res = await r.json();
-    setTemplates(Array.isArray(res) ? res : res.data || []);
-    setTotalPages(res.totalPages || 1);
-    setTotal(res.total || 0);
+    try {
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      if (filterType) params.type = filterType;
+      const result = await getNotificationTemplates(params);
+      setTemplates(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
+    } catch {}
     setLoading(false);
   };
 
   const loadLogs = async () => {
-    if (!token) return;
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (search) params.set('search', search);
-    if (filterStatus) params.set('status', filterStatus);
-    const r = await fetch(`/api/notifications/logs?${params}`, { headers });
-    const res = await r.json();
-    setLogs(Array.isArray(res) ? res : res.data || []);
-    setTotalPages(res.totalPages || 1);
-    setTotal(res.total || 0);
+    try {
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      if (filterStatus) params.status = filterStatus;
+      const result = await getNotificationLogs(params);
+      setLogs(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
+    } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     if (tab === 'templates') loadTemplates();
     else loadLogs();
   }, [tab, search, page, filterType, filterStatus]);
@@ -84,11 +82,10 @@ export default function NotificationsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this template?')) return;
     try {
-      const res = await fetch(`/api/notifications/templates/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to delete template', 'error'); return; }
+      await deleteTemplate(id);
       showToast('Template deleted successfully', 'success');
       loadTemplates();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to delete template', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,14 +94,16 @@ export default function NotificationsPage() {
     try { variables = JSON.parse(form.variables); } catch { showToast('Invalid JSON in Variables', 'error'); return; }
     try {
       const body = { ...form, variables };
-      const url = editing ? `/api/notifications/templates/${editing.id}` : '/api/notifications/templates';
-      const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (!res.ok) { showToast('Operation failed', 'error'); return; }
-      showToast(editing ? 'Template updated successfully' : 'Template created successfully', 'success');
+      if (editing) {
+        await updateTemplate(editing.id, body);
+        showToast('Template updated successfully', 'success');
+      } else {
+        await createTemplate(body);
+        showToast('Template created successfully', 'success');
+      }
       setShowModal(false);
       loadTemplates();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Operation failed', 'error'); }
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -112,23 +111,21 @@ export default function NotificationsPage() {
     let variables: any = {};
     try { variables = JSON.parse(sendForm.variables); } catch { showToast('Invalid JSON in Variables', 'error'); return; }
     try {
-      const res = await fetch('/api/notifications/send', { method: 'POST', headers, body: JSON.stringify({ ...sendForm, variables }) });
-      if (!res.ok) { showToast('Failed to send notification', 'error'); return; }
+      await sendNotification({ ...sendForm, variables });
       showToast('Notification sent successfully', 'success');
       setShowSendModal(false);
       setTab('logs');
       setPage(1);
       loadLogs();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to send notification', 'error'); }
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    if (search) params.set('search', search);
+    const params: Record<string, any> = { page: 1, limit: 10000 };
+    if (search) params.search = search;
     if (tab === 'templates') {
-      const r = await fetch(`/api/notifications/templates?${params}`, { headers });
-      const res = await r.json();
-      const data = Array.isArray(res) ? res : res.data || [];
+      const result = await getNotificationTemplates(params);
+      const data = result.data;
       const cols = ['name', 'type', 'subject', 'content'];
       const header = cols.join(',');
       const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
@@ -137,9 +134,8 @@ export default function NotificationsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'notification-templates.csv'; a.click(); URL.revokeObjectURL(url);
     } else {
-      const r = await fetch(`/api/notifications/logs?${params}`, { headers });
-      const res = await r.json();
-      const data = Array.isArray(res) ? res : res.data || [];
+      const result = await getNotificationLogs(params);
+      const data = result.data;
       const cols = ['recipient', 'channel', 'subject', 'status', 'sentAt'];
       const header = cols.join(',');
       const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));

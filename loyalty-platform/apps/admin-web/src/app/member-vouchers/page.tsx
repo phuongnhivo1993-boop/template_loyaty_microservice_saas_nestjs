@@ -11,6 +11,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import { getMemberVouchers, assignVoucher, deleteMemberVoucher } from '@/lib/api';
 
 interface AssignForm { memberId: string; voucherId: string; }
 
@@ -28,56 +29,48 @@ export default function MemberVouchersPage() {
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState<AssignForm>({ memberId: '', voucherId: '' });
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (search) params.set('search', search);
-      const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const payload = result.data ?? result;
-      setAssignments(Array.isArray(payload) ? payload : []);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setTotal(result.pagination?.totalItems || 0);
+      const params: Record<string, any> = { page, limit };
+      if (search) params.search = search;
+      const result = await getMemberVouchers(params);
+      setAssignments(result.data);
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
     } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     load();
   }, [search, page]);
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/member-vouchers', { method: 'POST', headers, body: JSON.stringify(form) });
-      if (!res.ok) { showToast('Failed to assign voucher', 'error'); return; }
+      await assignVoucher(form);
       showToast('Voucher assigned successfully', 'success');
       setShowModal(false);
       setForm({ memberId: '', voucherId: '' });
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to assign voucher', 'error'); }
   };
 
   const handleUnassign = async (id: string) => {
     if (!confirm('Remove this voucher assignment?')) return;
     try {
-      const res = await fetch(`/api/member-vouchers/${id}`, { method: 'DELETE', headers });
-      if (!res.ok) { showToast('Failed to remove assignment', 'error'); return; }
+      await deleteMemberVoucher(id);
       showToast('Assignment removed', 'success');
       load();
-    } catch { showToast('Network error', 'error'); }
+    } catch { showToast('Failed to remove assignment', 'error'); }
   };
 
   const exportCsv = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '10000' });
-    const res = await fetch(`/api/member-vouchers?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-    const result = await res.json();
-    const data = result.data ?? result;
+    const params: Record<string, any> = { page: 1, limit: 10000 };
+    const result = await getMemberVouchers(params);
+    const data = result.data;
     const cols = ['memberId', 'voucherId', 'redeemed', 'redeemedAt', 'createdAt'];
     const rows = data.map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
     const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));

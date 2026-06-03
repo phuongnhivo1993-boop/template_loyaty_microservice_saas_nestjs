@@ -75,7 +75,7 @@ export const updateTenant = (id: string, data: any) =>
 export const deleteTenant = (id: string) =>
   fetchAPI(`/tenants/${id}`, { method: 'DELETE' }).then(unwrapResponse);
 
-const api = {
+export const api = {
   get: (path: string) => fetchAPI(path).then(unwrapResponse),
   getList: (path: string, params?: ListParams) => fetchList(path, params),
   create: (path: string, data: any) =>
@@ -185,6 +185,38 @@ export const getMemberVoucher = (id: string) => api.get(`/member-vouchers/${id}`
 export const assignVoucher = (data: any) => api.create('/member-vouchers', data);
 export const redeemMemberVoucher = (id: string, data: any) => api.post(`/member-vouchers/${id}/redeem`, data);
 export const deleteMemberVoucher = (id: string) => api.delete(`/member-vouchers/${id}`);
+
+// Earning Rules
+export const getEarningRules = (params?: ListParams) => api.getList('/earning-rules', params);
+export const getEarningRule = (id: string) => api.get(`/earning-rules/${id}`);
+export const createEarningRule = (data: any) => api.create('/earning-rules', data);
+export const updateEarningRule = (id: string, data: any) => api.update(`/earning-rules/${id}`, data);
+export const deleteEarningRule = (id: string) => api.delete(`/earning-rules/${id}`);
+export const calculateEarningRule = (data: any) => api.post('/earning-rules/calculate', data);
+
+// Point Transactions
+export const getPointTransactions = (params?: ListParams) => api.getList('/points/transactions', params);
+export const getPointTransaction = (id: string) => api.get(`/points/transactions/${id}`);
+
+// Campaign Performance
+export const getCampaignPerf = (id: string) => api.get(`/campaigns/${id}/performance`);
+
+// Member Extras
+export const toggleMemberStatus = (id: string) => api.post(`/members/${id}/toggle-status`);
+export const kycVerifyMember = (id: string) => api.post(`/members/${id}/kyc`);
+export const getTierSuggestion = (id: string) => api.get(`/members/${id}/tier-suggestion`);
+export const getMemberActivity = (id: string) => api.get(`/members/${id}/activity`);
+
+// Redemption Queue
+export const getRedemptions = (params?: ListParams) => api.getList('/rewards/redemptions', params);
+export const approveRedemption = (id: string) => api.post(`/rewards/${id}/approve`);
+export const rejectRedemption = (id: string) => api.post(`/rewards/${id}/reject`);
+
+// Check-in Analytics
+export const getCheckinAnalytics = (params?: ListParams) => api.getList('/checkin/analytics', params);
+
+// Voucher Analytics
+export const getVoucherAnalytics = (params?: ListParams) => api.getList('/analytics/voucher-stats', params);
 
 // Dashboard
 export const getDashboard = () => api.get('/analytics/dashboard');

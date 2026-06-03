@@ -1,9 +1,13 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async getPointsTrend(days: number, tenantId?: string) {
     try {
@@ -50,36 +54,51 @@ export class AnalyticsService {
   }
 
   async getCampaignPerformance(tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:campaigns:${tenantId}` : 'analytics:campaigns:global';
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const where = tenantId ? { tenantId } : {};
       const campaigns = await this.prisma.campaign.findMany({ where });
       const total = campaigns.length;
       const active = campaigns.filter(c => c.status === 'ACTIVE').length;
       const completed = campaigns.filter(c => c.status === 'ENDED').length;
-      return { total, active, completed, draft: total - active - completed };
+      const result = { total, active, completed, draft: total - active - completed };
+      this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load campaign performance');
     }
   }
 
   async getTopMembers(limit: number, tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:topmembers:${tenantId}:${limit}` : `analytics:topmembers:global:${limit}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const where = tenantId ? { tenantId } : {};
-      return this.prisma.member.findMany({
+      const result = await this.prisma.member.findMany({
         where, orderBy: { totalPoints: 'desc' }, take: limit,
         include: { tier: { select: { name: true, color: true } } },
       });
+      this.cache.set(cacheKey, result, 120);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load top members');
     }
   }
 
   async getVoucherStats(tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:vouchers:${tenantId}` : 'analytics:vouchers:global';
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const where = tenantId ? { tenantId } : {};
       const total = await this.prisma.voucher.count({ where });
       const used = await this.prisma.voucher.count({ where: { ...where, usedCount: { gt: 0 } } });
-      return { total, used, remaining: total - used, usageRate: total > 0 ? ((used / total) * 100).toFixed(1) : '0' };
+      const result = { total, used, remaining: total - used, usageRate: total > 0 ? ((used / total) * 100).toFixed(1) : '0' };
+      this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load voucher stats');
     }
@@ -116,6 +135,9 @@ export class AnalyticsService {
   }
 
   async getLeaderboard(tenantId?: string, limit = 20) {
+    const cacheKey = tenantId ? `analytics:leaderboard:${tenantId}:${limit}` : `analytics:leaderboard:global:${limit}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const where = tenantId ? { tenantId } : {};
       if (tenantId) where.tenantId = tenantId;
@@ -125,7 +147,7 @@ export class AnalyticsService {
         take: limit,
         include: { tier: { select: { name: true, color: true } } },
       });
-      return members.map((m, i) => ({
+      const result = members.map((m, i) => ({
         rank: i + 1,
         id: m.id,
         fullName: m.fullName,
@@ -135,6 +157,8 @@ export class AnalyticsService {
         tier: m.tier?.name || 'Bronze',
         tierColor: m.tier?.color || '#94a3b8',
       }));
+      this.cache.set(cacheKey, result, 120);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load leaderboard');
     }

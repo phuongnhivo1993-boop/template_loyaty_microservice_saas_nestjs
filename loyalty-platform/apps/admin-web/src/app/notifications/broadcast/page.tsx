@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 import PageHeader from '@/components/PageHeader';
 import { useToast } from '@/components/Toast';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import { getNotificationTemplates, api } from '@/lib/api';
 
 export default function BroadcastPage() {
   const router = useRouter();
@@ -16,18 +18,13 @@ export default function BroadcastPage() {
   const [form, setForm] = useState({ templateId: '', channel: 'EMAIL', variables: '{}', tenantId: '' });
   const [result, setResult] = useState<{ sent: number; total: number; message: string } | null>(null);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
     const loadTemplates = async () => {
-      const r = await fetch('/api/notifications/templates?limit=1000', { headers });
-      const res = await r.json();
-      const p = res.data ?? res; setTemplates(Array.isArray(p) ? p : []);
+      const result = await getNotificationTemplates({ limit: 1000 });
+      setTemplates(result.data);
       setLoading(false);
     };
-    // Try to get tenantId from user info
     const userInfo = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (userInfo) {
       try { const u = JSON.parse(userInfo); if (u.tenantId) setForm(f => ({ ...f, tenantId: u.tenantId })); } catch {}
@@ -43,24 +40,17 @@ export default function BroadcastPage() {
     setSending(true);
     setResult(null);
     try {
-      const res = await fetch('/api/notifications/broadcast', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ ...form, variables }),
-      });
-      if (!res.ok) { showToast('Failed to send broadcast', 'error'); return; }
-      const result = await res.json();
-      const data = result.data ?? result;
+      const data: any = await api.post('/notifications/broadcast', { ...form, variables });
       setResult(data);
       showToast(`Notification sent to ${data.sent} members`, 'success');
     } catch {
-      showToast('Network error', 'error');
+      showToast('Failed to send broadcast', 'error');
     } finally {
       setSending(false);
     }
   };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content">Loading...</main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><TableSkeleton rows={4} cols={3} /></main></div>;
 
   return (
     <div className="page-layout">

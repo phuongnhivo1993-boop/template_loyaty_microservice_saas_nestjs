@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 
 export default function PointTransactionDetailPage() {
@@ -37,7 +38,7 @@ export default function PointTransactionDetailPage() {
     EXPIRE: { bg: '#fef9c3', color: '#a16207' },
   };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!txn) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Transaction not found</p></main></div>;
 
   const tc = typeColors[txn.type] || { bg: '#f1f5f9', color: '#64748b' };

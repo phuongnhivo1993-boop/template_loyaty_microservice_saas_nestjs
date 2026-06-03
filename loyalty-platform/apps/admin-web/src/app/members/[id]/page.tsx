@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
+import { getMember, toggleMemberStatus, kycVerifyMember, getTierSuggestion, getMemberActivity } from '@/lib/api';
 
 export default function MemberDetailPage() {
   const { id } = useParams();
@@ -16,39 +18,33 @@ export default function MemberDetailPage() {
   const [activityLoading, setActivityLoading] = useState(false);
   const [tierSuggestion, setTierSuggestion] = useState<any>(null);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/members/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setMember(result.data ?? result);
+      const memberData = await getMember(id as string);
+      setMember(memberData);
     } catch { showToast('Failed to load member', 'error'); }
     setLoading(false);
   };
 
   const loadTierSuggestion = async () => {
     try {
-      const res = await fetch(`/api/members/${id}/tier-suggestion`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setTierSuggestion(result.data ?? result);
+      const data = await getTierSuggestion(id as string);
+      setTierSuggestion(data);
     } catch {}
   };
 
   const loadActivity = async () => {
     setActivityLoading(true);
     try {
-      const res = await fetch(`/api/members/${id}/activity`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      setActivity(result.data ?? result);
+      const data = await getMemberActivity(id as string);
+      setActivity(data);
     } catch { showToast('Failed to load activity', 'error'); }
     setActivityLoading(false);
   };
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
     loadTierSuggestion();
   }, [id]);
@@ -59,8 +55,7 @@ export default function MemberDetailPage() {
 
   const handleToggleStatus = async () => {
     try {
-      const res = await fetch(`/api/members/${id}/toggle-status`, { method: 'POST', headers });
-      if (!res.ok) { showToast('Failed to toggle status', 'error'); return; }
+      await toggleMemberStatus(id as string);
       showToast('Status updated', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
@@ -68,14 +63,13 @@ export default function MemberDetailPage() {
 
   const handleKyc = async () => {
     try {
-      const res = await fetch(`/api/members/${id}/kyc`, { method: 'POST', headers });
-      if (!res.ok) { showToast('KYC verification failed', 'error'); return; }
+      await kycVerifyMember(id as string);
       showToast('KYC verified successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
   };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!member) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Member not found</p></main></div>;
 
   const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('vi-VN') : '-';
@@ -134,7 +128,7 @@ export default function MemberDetailPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <div className="grid-4" style={{ gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Available Points', value: member.availablePoints?.toLocaleString(), color: '#2563eb', bg: '#eff6ff' },
             { label: 'Total Points', value: member.totalPoints?.toLocaleString(), color: '#7c3aed', bg: '#f5f3ff' },

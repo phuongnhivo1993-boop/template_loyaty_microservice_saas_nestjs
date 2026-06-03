@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
+import { getTenant } from '@/lib/api';
 
 export default function TenantDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -10,16 +12,14 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { router.push('/login'); return; }
-    fetch(`/api/tenants/${params.id}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    getTenant(params.id)
       .then(data => setTenant(data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [params.id, router]);
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
 
   return (
     <div className="page-layout">

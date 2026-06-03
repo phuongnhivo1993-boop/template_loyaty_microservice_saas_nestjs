@@ -1,11 +1,19 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async getStats(tenantId?: string) {
+    const cacheKey = tenantId ? `dashboard:stats:${tenantId}` : 'dashboard:stats:global';
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const tenantFilter = tenantId ? { tenantId } : {};
       const [
@@ -58,7 +66,7 @@ export class DashboardService {
         }),
       ]);
 
-      return {
+      const result = {
         tenants, members, activeCampaigns, rewards, vouchers,
         totalPoints: totalPoints._sum.totalPoints || 0,
         promotions, badges, missions, referrals,
@@ -73,6 +81,8 @@ export class DashboardService {
           redemptions: redeemedToday,
         },
       };
+      this.cache.set(cacheKey, result, 120);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load dashboard stats');
     }

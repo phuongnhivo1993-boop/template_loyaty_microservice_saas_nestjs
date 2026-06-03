@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
+import { getVoucher } from '@/lib/api';
 
 export default function VoucherDetailPage() {
   const { id } = useParams();
@@ -12,22 +14,10 @@ export default function VoucherDetailPage() {
   const [voucher, setVoucher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/vouchers/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      const result = await res.json();
-      const data = result.data ?? result;
-      setVoucher(data);
-    } catch { showToast('Failed to load voucher', 'error'); }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
-    load();
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    setLoading(true);
+    getVoucher(id as string).then(setVoucher).catch(() => showToast('Failed to load voucher', 'error')).finally(() => setLoading(false));
   }, [id]);
 
   const isExpired = voucher?.expiresAt ? new Date(voucher.expiresAt) < new Date() : false;
@@ -39,7 +29,7 @@ export default function VoucherDetailPage() {
     return { label: 'Active', color: '#16a34a', bg: '#f0fdf4' };
   };
 
-  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Loading...</p></main></div>;
+  if (loading) return <div className="page-layout"><Sidebar /><main className="main-content"><DetailSkeleton /></main></div>;
   if (!voucher) return <div className="page-layout"><Sidebar /><main className="main-content"><p>Voucher not found</p></main></div>;
 
   const status = getStatus();
@@ -58,7 +48,7 @@ export default function VoucherDetailPage() {
           <span className="status-badge" style={{ background: status.bg, color: status.color }}>{status.label}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <div className="grid-4" style={{ gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Type', value: voucher.type, color: '#2563eb', bg: '#eff6ff' },
             { label: 'Value', value: voucher.value?.toLocaleString(), color: '#7c3aed', bg: '#f5f3ff' },
@@ -89,7 +79,7 @@ export default function VoucherDetailPage() {
                 { label: 'Updated At', value: new Date(voucher.updatedAt).toLocaleString() },
               ].map((row, i) => (
                 <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '13px', color: '#64748b', width: '200px' }}>{row.label}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '13px', color: '#64748b' }}>{row.label}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{row.value}</td>
                 </tr>
               ))}

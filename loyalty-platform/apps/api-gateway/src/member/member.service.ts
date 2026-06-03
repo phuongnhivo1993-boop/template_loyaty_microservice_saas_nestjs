@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationTriggerService } from '../common/services/notification-trigger.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class MemberService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationTrigger: NotificationTriggerService,
+  ) {}
 
   async findTenantByDomain(domain: string) {
     return this.prisma.tenant.findFirst({ where: { domain } });
@@ -14,13 +18,15 @@ export class MemberService {
     const existing = await this.prisma.member.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('Email already exists');
     const { birthday, tags, ...rest } = data;
-    return this.prisma.member.create({
+    const member = await this.prisma.member.create({
       data: {
         ...rest,
         ...(birthday ? { birthday: new Date(birthday) } : {}),
         ...(tags ? { tags: { set: tags } } : {}),
       },
     });
+    this.notificationTrigger.sendWelcome(member);
+    return member;
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, tierId?: string, status?: string, sort?: string, tags?: string[]) {
@@ -61,9 +67,9 @@ export class MemberService {
   }
 
   async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tags?: string[]; tierId?: string; status?: string }) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     const { birthday, tags, ...rest } = data;
-    return this.prisma.member.update({
+    const updated = await this.prisma.member.update({
       where: { id },
       data: {
         ...rest,
@@ -71,6 +77,15 @@ export class MemberService {
         ...(tags !== undefined ? { tags: { set: tags } } : {}),
       } as any,
     });
+    if (data.tierId && data.tierId !== existing.tierId) {
+      const oldTier = existing.tier ? this.prisma.tier.findUnique({ where: { id: existing.tierId } }) : null;
+      const newTier = await this.prisma.tier.findUnique({ where: { id: data.tierId } });
+      if (newTier) {
+        const oldTierName = existing.tier?.name || 'Unknown';
+        this.notificationTrigger.sendTierChanged(id, oldTierName, newTier.name);
+      }
+    }
+    return updated;
   }
 
   async kycVerify(id: string) {

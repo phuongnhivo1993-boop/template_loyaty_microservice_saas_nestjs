@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import PageHeader from '@/components/PageHeader';
+import { getDashboard, getPointsTrend, getMemberGrowth, getTopMembers, api } from '@/lib/api';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,32 +17,23 @@ export default function DashboardPage() {
   const [voucherStats, setVoucherStats] = useState<any>(null);
   const [expiringPoints, setExpiringPoints] = useState<any[]>([]);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers = { Authorization: `Bearer ${token}` };
-
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('token')) { router.push('/login'); return; }
 
     Promise.all([
-      fetch('/api/dashboard', { headers }).then(r => r.json()),
-      fetch('/api/analytics/points-trend?days=14', { headers }).then(r => r.json()),
-      fetch('/api/analytics/member-growth?days=14', { headers }).then(r => r.json()),
-      fetch('/api/analytics/top-members?limit=5', { headers }).then(r => r.json()),
-      fetch('/api/analytics/voucher-stats', { headers }).then(r => r.json()),
-      fetch('/api/analytics/expiring-points', { headers }).then(r => r.json()),
+      getDashboard(),
+      getPointsTrend({ days: 14 }),
+      getMemberGrowth({ days: 14 }),
+      getTopMembers({ limit: 5 }),
+      api.get('/analytics/voucher-stats'),
+      api.get('/analytics/expiring-points'),
     ])
-      .then(([dashRes, trendRes, growthRes, topRes, vStatsRes, expiringRes]) => {
-        const data = dashRes.data ?? dashRes;
-        const trend = trendRes.data ?? trendRes;
-        const growth = growthRes.data ?? growthRes;
-        const top = topRes.data ?? topRes;
-        const vStats = vStatsRes.data ?? vStatsRes;
-        const expiring = expiringRes.data ?? expiringRes;
+      .then(([data, trend, growth, top, vStats, expiring]: any[]) => {
         setStats(data);
         if (data.tiers) setTiers(data.tiers);
-        if (Array.isArray(trend)) setPointsTrend(trend);
-        if (Array.isArray(growth)) setMemberGrowth(growth);
-        if (Array.isArray(top)) setTopMembers(top);
+        if (Array.isArray(trend.data)) setPointsTrend(trend.data);
+        if (Array.isArray(growth.data)) setMemberGrowth(growth.data);
+        if (Array.isArray(top.data)) setTopMembers(top.data);
         if (vStats) setVoucherStats(vStats);
         if (Array.isArray(expiring)) setExpiringPoints(expiring);
       })
@@ -101,7 +93,7 @@ export default function DashboardPage() {
         </div>
 
         {stats.today && (
-          <div className="today-metrics" style={{ display: 'flex', gap: '12px', margin: '16px 0' }}>
+          <div className="today-metrics" style={{ gap: '12px', margin: '16px 0' }}>
             {[
               { label: 'Earned Today', value: stats.today.earned?.toLocaleString(), color: '#16a34a', bg: '#f0fdf4' },
               { label: 'Burned Today', value: stats.today.burned?.toLocaleString(), color: '#dc2626', bg: '#fef2f2' },

@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationTriggerService } from '../common/services/notification-trigger.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class TierService {
   private readonly logger = new Logger(TierService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationTrigger: NotificationTriggerService,
+  ) {}
 
   create(data: { name: string; minPoints?: number; maxPoints?: number; pointsMultiplier?: number; benefits?: string; color?: string; tenantId: string }) {
     return this.prisma.tier.create({
@@ -59,7 +63,7 @@ export class TierService {
   async assignTierToMember(memberId: string): Promise<void> {
     const member = await this.prisma.member.findUnique({
       where: { id: memberId },
-      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'desc' } } } } },
+      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'desc' } } } }, tier: true },
     });
     if (!member || !member.tenant) return;
 
@@ -71,11 +75,13 @@ export class TierService {
     );
 
     if (matchingTier && member.tierId !== matchingTier.id) {
+      const oldTierName = member.tier?.name || 'Unknown';
       await this.prisma.member.update({
         where: { id: memberId },
         data: { tierId: matchingTier.id },
       });
       this.logger.log(`Member ${memberId} upgraded/downgraded to tier ${matchingTier.name}`);
+      this.notificationTrigger.sendTierChanged(memberId, oldTierName, matchingTier.name);
     }
   }
 

@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsService } from './analytics.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
+
+const mockCacheService = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn(), delPattern: jest.fn() };
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
@@ -26,6 +29,7 @@ describe('AnalyticsService', () => {
       providers: [
         AnalyticsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
