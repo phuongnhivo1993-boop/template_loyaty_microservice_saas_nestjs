@@ -3,34 +3,74 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-const menuItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Tenants', href: '/tenants', icon: '🏢' },
-  { label: 'Members', href: '/members', icon: '👥' },
-  { label: 'Campaigns', href: '/campaigns', icon: '📢' },
-  { label: 'Rewards', href: '/rewards', icon: '🎁' },
-  { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
-  { label: '  Voucher Analytics', href: '/voucher-analytics', icon: '📊' },
-  { label: 'Member Vouchers', href: '/member-vouchers', icon: '🎫' },
-  { label: 'Promotions', href: '/promotions', icon: '⚡' },
-  { label: '  Check-in Analytics', href: '/checkin-analytics', icon: '📅' },
-  { label: 'Notifications', href: '/notifications', icon: '🔔' },
-  { label: '  Broadcast', href: '/notifications/broadcast', icon: '📣' },
-  { label: 'Tiers', href: '/tiers', icon: '🥇' },
-  { label: 'Earning Rules', href: '/earning-rules', icon: '💰' },
-  { label: 'Users', href: '/users', icon: '👤' },
-  { label: 'Referrals', href: '/referrals', icon: '🔗' },
-  { label: 'Badges', href: '/badges', icon: '🏅' },
-  { label: 'Missions', href: '/missions', icon: '🎯' },
-  { label: 'Point Transactions', href: '/point-transactions', icon: '💳' },
-  { label: 'Stores', href: '/stores', icon: '🏪' },
-  { label: 'Cashback', href: '/cashback', icon: '💵' },
-  { label: 'Partner Brands', href: '/partner-brands', icon: '🤝' },
-  { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
-  { label: 'Gift Cards', href: '/gift-cards', icon: '💳' },
-  { label: 'Feedback', href: '/feedback', icon: '💬' },
-  { label: 'Audit Log', href: '/audit-log', icon: '📋' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
+const menuGroups = [
+  {
+    label: null,
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: '📊' },
+    ],
+  },
+  {
+    label: 'Hệ thống',
+    items: [
+      { label: 'Tenants', href: '/tenants', icon: '🏢' },
+      { label: 'Users', href: '/users', icon: '👤' },
+    ],
+  },
+  {
+    label: 'Thành viên',
+    items: [
+      { label: 'Members', href: '/members', icon: '👥' },
+      { label: 'Tiers', href: '/tiers', icon: '🥇' },
+      { label: 'Earning Rules', href: '/earning-rules', icon: '💰' },
+      { label: 'Point Transactions', href: '/point-transactions', icon: '💳' },
+      { label: 'Referrals', href: '/referrals', icon: '🔗' },
+    ],
+  },
+  {
+    label: 'Chiến dịch & Ưu đãi',
+    items: [
+      { label: 'Campaigns', href: '/campaigns', icon: '📢' },
+      { label: 'Rewards', href: '/rewards', icon: '🎁' },
+      { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
+      { label: 'Member Vouchers', href: '/member-vouchers', icon: '🎫' },
+      { label: 'Promotions', href: '/promotions', icon: '⚡' },
+    ],
+  },
+  {
+    label: 'Tương tác',
+    items: [
+      { label: 'Badges', href: '/badges', icon: '🏅' },
+      { label: 'Missions', href: '/missions', icon: '🎯' },
+      { label: 'Notifications', href: '/notifications', icon: '🔔' },
+      { label: 'Broadcast', href: '/notifications/broadcast', icon: '📣' },
+      { label: 'Feedback', href: '/feedback', icon: '💬' },
+    ],
+  },
+  {
+    label: 'Kinh doanh',
+    items: [
+      { label: 'Stores', href: '/stores', icon: '🏪' },
+      { label: 'Cashback', href: '/cashback', icon: '💵' },
+      { label: 'Gift Cards', href: '/gift-cards', icon: '💳' },
+      { label: 'Partner Brands', href: '/partner-brands', icon: '🤝' },
+    ],
+  },
+  {
+    label: 'Phân tích',
+    items: [
+      { label: 'Voucher Analytics', href: '/voucher-analytics', icon: '📊' },
+      { label: 'Check-in Analytics', href: '/checkin-analytics', icon: '📅' },
+    ],
+  },
+  {
+    label: 'Hệ thống',
+    items: [
+      { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
+      { label: 'Audit Log', href: '/audit-log', icon: '📋' },
+      { label: 'Settings', href: '/settings', icon: '⚙️' },
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -68,19 +108,24 @@ export default function Sidebar() {
         </div>
 
         <nav className="sidebar-nav">
-          {menuItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <button
-                key={item.href}
-                onClick={() => navigate(item.href)}
-                className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
-              >
-                <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                {item.label}
-              </button>
-            );
-          })}
+          {menuGroups.map((group) => (
+            <div key={group.label ?? 'main'}>
+              {group.label && <div className="sidebar-section-label">{group.label}</div>}
+              {group.items.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => navigate(item.href)}
+                    className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
+                  >
+                    <span style={{ fontSize: '18px' }}>{item.icon}</span>
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">

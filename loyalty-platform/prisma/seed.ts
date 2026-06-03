@@ -210,7 +210,7 @@ async function main() {
       where: { memberId: member.id, voucherId: voucherRec.id },
     });
     if (!existing) {
-      await prisma.memberVoucher.create({ data: { memberId: member.id, voucherId: voucherRec.id } });
+      await prisma.memberVoucher.create({ data: { memberId: member.id, voucherId: voucherRec.id, qrCode: `QR-${member.id.slice(0, 8)}-${voucherRec.id.slice(0, 8)}` } });
     }
     console.log('  ✓ Member voucher assigned');
   }
