@@ -160,9 +160,62 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
 
+  # ===========================================================================
+  # PROMETHEUS - Metrics Collection
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: loyalty-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+
+  # ===========================================================================
+  # GRAFANA - Dashboards & Visualization
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: loyalty-grafana
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+
+  # ===========================================================================
+  # JAEGER - Distributed Tracing
+  # ===========================================================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.58.0
+    container_name: loyalty-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+      - "4317:4317"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   clickhouse_data:
   elasticsearch_data:
+  prometheus_data:
+  grafana_data:

@@ -1,0 +1,82 @@
+{
+  "realm": "loyalty",
+  "displayName": "Loyalty Platform",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "SUPER_ADMIN", "description": "Platform super administrator" },
+      { "name": "TENANT_ADMIN", "description": "Tenant-level administrator" },
+      { "name": "AGENT", "description": "Customer support agent" },
+      { "name": "SALES", "description": "Sales staff" },
+      { "name": "MARKETING", "description": "Marketing staff" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "loyalty-admin",
+      "name": "Admin Web",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true
+    },
+    {
+      "clientId": "loyalty-portal",
+      "name": "Loyalty Portal",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3001/*"],
+      "webOrigins": ["http://localhost:3001"],
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true
+    },
+    {
+      "clientId": "loyalty-mobile",
+      "name": "Mobile App",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["*"],
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "loyalty-backend",
+      "name": "Backend Services",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "keycloak_secret"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@loyalty.vn",
+      "firstName": "Super",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["SUPER_ADMIN"],
+      "credentials": [{ "type": "password", "value": "Admin@123456", "temporary": false }]
+    },
+    {
+      "username": "tenant-admin",
+      "email": "tenant@example.com",
+      "firstName": "Tenant",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["TENANT_ADMIN"],
+      "credentials": [{ "type": "password", "value": "Tenant@123456", "temporary": false }]
+    }
+  ],
+  "defaultRoles": ["AGENT"],
+  "requiredCredentials": ["password"],
+  "resetPasswordAllowed": true,
+  "rememberMe": true
+}

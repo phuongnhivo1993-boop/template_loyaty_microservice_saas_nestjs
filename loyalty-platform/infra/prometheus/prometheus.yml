@@ -1,0 +1,97 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - "alerts/*.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "api-gateway"
+    metrics_path: "/api/v1/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3001"]
+
+  - job_name: "membership-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3002"]
+
+  - job_name: "loyalty-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3003"]
+
+  - job_name: "campaign-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3004"]
+
+  - job_name: "reward-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3005"]
+
+  - job_name: "referral-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3006"]
+
+  - job_name: "voucher-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3007"]
+
+  - job_name: "promotion-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3008"]
+
+  - job_name: "gamification-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3009"]
+
+  - job_name: "notification-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3010"]
+
+  - job_name: "analytics-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3011"]
+
+  - job_name: "customer360-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:3012"]
+
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["host.docker.internal:5432"]
+
+  - job_name: "redis"
+    static_configs:
+      - targets: ["host.docker.internal:6379"]
+
+  - job_name: "kafka"
+    static_configs:
+      - targets: ["host.docker.internal:9092"]
+
+  - job_name: "elasticsearch"
+    static_configs:
+      - targets: ["host.docker.internal:9200"]
+
+  - job_name: "node"
+    static_configs:
+      - targets:
+          - "host.docker.internal:9100"
