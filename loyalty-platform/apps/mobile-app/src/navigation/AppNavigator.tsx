@@ -22,6 +22,9 @@ import TransactionDetailScreen from '../screens/TransactionDetailScreen';
 import VoucherDetailScreen from '../screens/VoucherDetailScreen';
 import KYCUploadScreen from '../screens/KYCUploadScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import CashbackScreen from '../screens/CashbackScreen';
+import StoresScreen from '../screens/StoresScreen';
+import FeedbackScreen from '../screens/FeedbackScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -52,6 +55,9 @@ export default function AppNavigator() {
           <Stack.Screen name="TierProgress" component={TierProgressScreen} />
           <Stack.Screen name="KYCUpload" component={KYCUploadScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Cashback" component={CashbackScreen} />
+          <Stack.Screen name="Stores" component={StoresScreen} />
+          <Stack.Screen name="Feedback" component={FeedbackScreen} />
         </>
       ) : (
         <>

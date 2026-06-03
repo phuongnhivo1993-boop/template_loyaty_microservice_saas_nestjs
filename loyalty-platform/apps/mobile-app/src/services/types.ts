@@ -129,6 +129,52 @@ export interface AuthState {
   logout: () => void;
 }
 
+export interface CashbackBalance {
+  memberId: string;
+  balance: number;
+  currency: string;
+}
+
+export interface CashbackTransaction {
+  id: string;
+  memberId: string;
+  type: 'EARN' | 'BURN';
+  amount: number;
+  balance: number;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface GiftCard {
+  id: string;
+  name: string;
+  code: string;
+  balance: number;
+  currency: string;
+  expiresAt?: string;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  address: string;
+  phone?: string;
+  lat?: number;
+  lng?: number;
+  hours?: string;
+}
+
+export interface Feedback {
+  id: string;
+  memberId?: string;
+  memberName?: string;
+  entityType?: string;
+  entityId?: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
@@ -153,4 +199,7 @@ export type RootStackParamList = {
   TierProgress: undefined;
   KYCUpload: undefined;
   Settings: undefined;
+  Cashback: undefined;
+  Stores: undefined;
+  Feedback: undefined;
 };

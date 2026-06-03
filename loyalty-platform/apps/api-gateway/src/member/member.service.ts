@@ -77,7 +77,7 @@ export class MemberService {
         ...(tags !== undefined ? { tags: { set: tags } } : {}),
       } as any,
     });
-    if (data.tierId && data.tierId !== existing.tierId) {
+    if (data.tierId && existing.tierId && data.tierId !== existing.tierId) {
       const oldTier = existing.tier ? this.prisma.tier.findUnique({ where: { id: existing.tierId } }) : null;
       const newTier = await this.prisma.tier.findUnique({ where: { id: data.tierId } });
       if (newTier) {

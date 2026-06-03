@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
 import type { PointTransaction } from '../services/types';
@@ -50,6 +50,7 @@ export default function WalletScreen() {
   const totalBurned = wallet?.transactions?.filter(t => t.type === 'BURN').reduce((s, t) => s + Math.abs(t.amount), 0) || 0;
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>
@@ -98,6 +99,7 @@ export default function WalletScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

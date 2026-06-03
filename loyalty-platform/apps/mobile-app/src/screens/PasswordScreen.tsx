@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import Card from '../components/Card';
@@ -38,6 +38,7 @@ export default function PasswordScreen({ navigation }: any) {
   const noPassword = !profile?.password; // member registered via OAuth
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -72,6 +73,7 @@ export default function PasswordScreen({ navigation }: any) {
         </Card>
       </View>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

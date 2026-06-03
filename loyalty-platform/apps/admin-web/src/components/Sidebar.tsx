@@ -23,6 +23,12 @@ const menuItems = [
   { label: 'Badges', href: '/badges', icon: '🏅' },
   { label: 'Missions', href: '/missions', icon: '🎯' },
   { label: 'Point Transactions', href: '/point-transactions', icon: '💳' },
+  { label: 'Stores', href: '/stores', icon: '🏪' },
+  { label: 'Cashback', href: '/cashback', icon: '💵' },
+  { label: 'Partner Brands', href: '/partner-brands', icon: '🤝' },
+  { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
+  { label: 'Gift Cards', href: '/gift-cards', icon: '💳' },
+  { label: 'Feedback', href: '/feedback', icon: '💬' },
   { label: 'Audit Log', href: '/audit-log', icon: '📋' },
   { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];

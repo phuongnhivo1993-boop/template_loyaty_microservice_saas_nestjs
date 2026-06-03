@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { auth } from '../services/api';
 
@@ -38,6 +38,7 @@ export default function ResetPasswordScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.title}>Set New Password</Text>
       <Text style={styles.subtitle}>Enter the reset token from your email and choose a new password</Text>
@@ -56,6 +57,7 @@ export default function ResetPasswordScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 

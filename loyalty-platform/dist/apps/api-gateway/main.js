@@ -45,26 +45,33 @@ const auth_module_1 = __webpack_require__(15);
 const tenant_module_1 = __webpack_require__(26);
 const user_module_1 = __webpack_require__(31);
 const member_module_1 = __webpack_require__(35);
-const member_self_module_1 = __webpack_require__(51);
-const member_voucher_module_1 = __webpack_require__(54);
-const tier_module_1 = __webpack_require__(39);
-const point_module_1 = __webpack_require__(43);
-const campaign_module_1 = __webpack_require__(58);
-const reward_module_1 = __webpack_require__(62);
-const voucher_module_1 = __webpack_require__(66);
-const promotion_module_1 = __webpack_require__(70);
-const referral_module_1 = __webpack_require__(74);
-const gamification_module_1 = __webpack_require__(77);
-const dashboard_module_1 = __webpack_require__(81);
-const upload_module_1 = __webpack_require__(84);
-const analytics_module_1 = __webpack_require__(89);
-const notification_module_1 = __webpack_require__(92);
-const audit_log_module_1 = __webpack_require__(95);
-const export_module_1 = __webpack_require__(98);
-const import_module_1 = __webpack_require__(101);
-const bulk_module_1 = __webpack_require__(105);
-const settings_module_1 = __webpack_require__(49);
-const checkin_module_1 = __webpack_require__(108);
+const member_self_module_1 = __webpack_require__(55);
+const member_voucher_module_1 = __webpack_require__(58);
+const tier_module_1 = __webpack_require__(40);
+const point_module_1 = __webpack_require__(47);
+const campaign_module_1 = __webpack_require__(62);
+const reward_module_1 = __webpack_require__(66);
+const voucher_module_1 = __webpack_require__(70);
+const promotion_module_1 = __webpack_require__(75);
+const referral_module_1 = __webpack_require__(79);
+const gamification_module_1 = __webpack_require__(82);
+const dashboard_module_1 = __webpack_require__(86);
+const upload_module_1 = __webpack_require__(89);
+const analytics_module_1 = __webpack_require__(94);
+const notification_module_1 = __webpack_require__(97);
+const audit_log_module_1 = __webpack_require__(100);
+const export_module_1 = __webpack_require__(103);
+const import_module_1 = __webpack_require__(106);
+const bulk_module_1 = __webpack_require__(110);
+const settings_module_1 = __webpack_require__(53);
+const checkin_module_1 = __webpack_require__(113);
+const earning_rule_module_1 = __webpack_require__(116);
+const store_module_1 = __webpack_require__(120);
+const cashback_module_1 = __webpack_require__(123);
+const partnership_module_1 = __webpack_require__(126);
+const webhook_module_1 = __webpack_require__(129);
+const gift_card_module_1 = __webpack_require__(132);
+const feedback_module_1 = __webpack_require__(135);
 let ApiGatewayModule = class ApiGatewayModule {
 };
 exports.ApiGatewayModule = ApiGatewayModule;
@@ -99,6 +106,13 @@ exports.ApiGatewayModule = ApiGatewayModule = __decorate([
             bulk_module_1.BulkModule,
             settings_module_1.SettingsModule,
             checkin_module_1.CheckinModule,
+            earning_rule_module_1.EarningRuleModule,
+            store_module_1.StoreModule,
+            cashback_module_1.CashbackModule,
+            partnership_module_1.PartnershipModule,
+            webhook_module_1.WebhookModule,
+            gift_card_module_1.GiftCardModule,
+            feedback_module_1.FeedbackModule,
         ],
         controllers: [api_gateway_controller_1.ApiGatewayController],
         providers: [
@@ -2046,15 +2060,16 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberModule = void 0;
 const common_1 = __webpack_require__(2);
 const member_service_1 = __webpack_require__(36);
-const member_controller_1 = __webpack_require__(37);
-const tier_module_1 = __webpack_require__(39);
-const point_module_1 = __webpack_require__(43);
+const member_controller_1 = __webpack_require__(38);
+const tier_module_1 = __webpack_require__(40);
+const point_module_1 = __webpack_require__(47);
+const common_module_1 = __webpack_require__(44);
 let MemberModule = class MemberModule {
 };
 exports.MemberModule = MemberModule;
 exports.MemberModule = MemberModule = __decorate([
     (0, common_1.Module)({
-        imports: [tier_module_1.TierModule, point_module_1.PointModule],
+        imports: [tier_module_1.TierModule, point_module_1.PointModule, common_module_1.CommonModule],
         controllers: [member_controller_1.MemberController],
         providers: [member_service_1.MemberService],
         exports: [member_service_1.MemberService],
@@ -2076,16 +2091,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
+const notification_trigger_service_1 = __webpack_require__(37);
 const sort_util_1 = __webpack_require__(28);
 let MemberService = class MemberService {
     prisma;
-    constructor(prisma) {
+    notificationTrigger;
+    constructor(prisma, notificationTrigger) {
         this.prisma = prisma;
+        this.notificationTrigger = notificationTrigger;
     }
     async findTenantByDomain(domain) {
         return this.prisma.tenant.findFirst({ where: { domain } });
@@ -2094,15 +2112,18 @@ let MemberService = class MemberService {
         const existing = await this.prisma.member.findUnique({ where: { email: data.email } });
         if (existing)
             throw new common_1.ConflictException('Email already exists');
-        const { birthday, ...rest } = data;
-        return this.prisma.member.create({
+        const { birthday, tags, ...rest } = data;
+        const member = await this.prisma.member.create({
             data: {
                 ...rest,
                 ...(birthday ? { birthday: new Date(birthday) } : {}),
+                ...(tags ? { tags: { set: tags } } : {}),
             },
         });
+        this.notificationTrigger.sendWelcome(member);
+        return member;
     }
-    async findAll(tenantId, page = 1, limit = 20, search, tierId, status, sort) {
+    async findAll(tenantId, page = 1, limit = 20, search, tierId, status, sort, tags) {
         const where = {};
         if (tenantId)
             where.tenantId = tenantId;
@@ -2110,6 +2131,8 @@ let MemberService = class MemberService {
             where.tierId = tierId;
         if (status)
             where.status = status;
+        if (tags && tags.length > 0)
+            where.tags = { hasSome: tags };
         if (search) {
             where.OR = [
                 { fullName: { contains: search, mode: 'insensitive' } },
@@ -2141,15 +2164,25 @@ let MemberService = class MemberService {
         return member;
     }
     async update(id, data) {
-        await this.findOne(id);
-        const { birthday, ...rest } = data;
-        return this.prisma.member.update({
+        const existing = await this.findOne(id);
+        const { birthday, tags, ...rest } = data;
+        const updated = await this.prisma.member.update({
             where: { id },
             data: {
                 ...rest,
                 ...(birthday !== undefined ? { birthday: birthday ? new Date(birthday) : null } : {}),
+                ...(tags !== undefined ? { tags: { set: tags } } : {}),
             },
         });
+        if (data.tierId && existing.tierId && data.tierId !== existing.tierId) {
+            const oldTier = existing.tier ? this.prisma.tier.findUnique({ where: { id: existing.tierId } }) : null;
+            const newTier = await this.prisma.tier.findUnique({ where: { id: data.tierId } });
+            if (newTier) {
+                const oldTierName = existing.tier?.name || 'Unknown';
+                this.notificationTrigger.sendTierChanged(id, oldTierName, newTier.name);
+            }
+        }
+        return updated;
     }
     async kycVerify(id) {
         await this.findOne(id);
@@ -2190,16 +2223,201 @@ let MemberService = class MemberService {
         ]);
         return { transactions, vouchers, referrals };
     }
+    async getTierSuggestion(id) {
+        const member = await this.prisma.member.findUnique({
+            where: { id },
+            include: { tier: true, tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
+        });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const tiers = member.tenant.tiers;
+        const currentTierIndex = tiers.findIndex(t => t.id === member.tierId);
+        const nextTier = tiers[currentTierIndex + 1];
+        if (!nextTier)
+            return { suggestion: null, message: 'Already at highest tier' };
+        const pointsNeeded = nextTier.minPoints - member.totalPoints;
+        return {
+            currentTier: member.tier?.name || 'N/A',
+            nextTier: nextTier.name,
+            pointsNeeded: Math.max(0, pointsNeeded),
+            pointsMultiplier: nextTier.pointsMultiplier,
+            message: pointsNeeded <= 0
+                ? `${member.fullName} đủ điều kiện lên hạng ${nextTier.name}!`
+                : `${member.fullName} cần ${pointsNeeded.toLocaleString()} điểm nữa để lên ${nextTier.name} (x${nextTier.pointsMultiplier} điểm)`,
+        };
+    }
+    async adjustPoints(id, amount, reason) {
+        const member = await this.findOne(id);
+        if (amount < 0 && member.availablePoints < Math.abs(amount)) {
+            throw new common_1.BadRequestException(`Insufficient points. Available: ${member.availablePoints}, requested: ${Math.abs(amount)}`);
+        }
+        const [transaction] = await this.prisma.$transaction([
+            this.prisma.pointTransaction.create({
+                data: {
+                    memberId: id,
+                    type: amount >= 0 ? 'EARN' : 'BURN',
+                    amount,
+                    balance: member.availablePoints + amount,
+                    reason: `Admin adjustment: ${reason}`,
+                },
+            }),
+            this.prisma.member.update({
+                where: { id },
+                data: {
+                    totalPoints: { increment: amount },
+                    availablePoints: { increment: amount },
+                },
+            }),
+        ]);
+        return { transaction, newBalance: member.availablePoints + amount };
+    }
 };
 exports.MemberService = MemberService;
 exports.MemberService = MemberService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof notification_trigger_service_1.NotificationTriggerService !== "undefined" && notification_trigger_service_1.NotificationTriggerService) === "function" ? _b : Object])
 ], MemberService);
 
 
 /***/ }),
 /* 37 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var NotificationTriggerService_1;
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NotificationTriggerService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+let NotificationTriggerService = NotificationTriggerService_1 = class NotificationTriggerService {
+    prisma;
+    logger = new common_1.Logger(NotificationTriggerService_1.name);
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async sendWelcome(member) {
+        try {
+            const template = await this.prisma.notificationTemplate.findFirst({
+                where: { tenantId: member.tenantId, name: { contains: 'welcome', mode: 'insensitive' } },
+            });
+            if (!template) {
+                this.logger.log(`No welcome template found for tenant ${member.tenantId}`);
+                return;
+            }
+            const content = template.content
+                .replace(/{{fullName}}/g, member.fullName)
+                .replace(/{{email}}/g, member.email);
+            await this.prisma.notificationLog.create({
+                data: {
+                    templateId: template.id,
+                    recipient: member.email,
+                    channel: 'email',
+                    subject: template.subject.replace(/{{fullName}}/g, member.fullName),
+                    content,
+                    status: 'SENT',
+                    sentAt: new Date(),
+                    tenantId: member.tenantId,
+                },
+            });
+            this.logger.log(`Welcome notification sent to ${member.email}`);
+        }
+        catch (error) {
+            this.logger.error(`Failed to send welcome notification to ${member.email}`, error);
+        }
+    }
+    async sendPointsEarned(memberId, amount, reason) {
+        try {
+            const member = await this.prisma.member.findUnique({
+                where: { id: memberId },
+                select: { email: true, fullName: true, tenantId: true, availablePoints: true },
+            });
+            if (!member)
+                return;
+            const template = await this.prisma.notificationTemplate.findFirst({
+                where: { tenantId: member.tenantId, name: { contains: 'points_earned', mode: 'insensitive' } },
+            });
+            if (!template) {
+                this.logger.log(`No points_earned template found for tenant ${member.tenantId}`);
+                return;
+            }
+            const content = template.content
+                .replace(/{{fullName}}/g, member.fullName)
+                .replace(/{{amount}}/g, amount.toLocaleString())
+                .replace(/{{balance}}/g, member.availablePoints.toLocaleString())
+                .replace(/{{reason}}/g, reason || '');
+            await this.prisma.notificationLog.create({
+                data: {
+                    templateId: template.id,
+                    recipient: member.email,
+                    channel: 'email',
+                    subject: template.subject.replace(/{{amount}}/g, amount.toLocaleString()),
+                    content,
+                    status: 'SENT',
+                    sentAt: new Date(),
+                    tenantId: member.tenantId,
+                },
+            });
+        }
+        catch (error) {
+            this.logger.error(`Failed to send points earned notification to member ${memberId}`, error);
+        }
+    }
+    async sendTierChanged(memberId, oldTierName, newTierName) {
+        try {
+            const member = await this.prisma.member.findUnique({
+                where: { id: memberId },
+                select: { email: true, fullName: true, tenantId: true },
+            });
+            if (!member)
+                return;
+            const template = await this.prisma.notificationTemplate.findFirst({
+                where: { tenantId: member.tenantId, name: { contains: 'tier_changed', mode: 'insensitive' } },
+            });
+            if (!template) {
+                this.logger.log(`No tier_changed template found for tenant ${member.tenantId}`);
+                return;
+            }
+            const content = template.content
+                .replace(/{{fullName}}/g, member.fullName)
+                .replace(/{{oldTier}}/g, oldTierName)
+                .replace(/{{newTier}}/g, newTierName);
+            await this.prisma.notificationLog.create({
+                data: {
+                    templateId: template.id,
+                    recipient: member.email,
+                    channel: 'email',
+                    subject: template.subject.replace(/{{newTier}}/g, newTierName),
+                    content,
+                    status: 'SENT',
+                    sentAt: new Date(),
+                    tenantId: member.tenantId,
+                },
+            });
+        }
+        catch (error) {
+            this.logger.error(`Failed to send tier changed notification to member ${memberId}`, error);
+        }
+    }
+};
+exports.NotificationTriggerService = NotificationTriggerService;
+exports.NotificationTriggerService = NotificationTriggerService = NotificationTriggerService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], NotificationTriggerService);
+
+
+/***/ }),
+/* 38 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2223,7 +2441,7 @@ const swagger_1 = __webpack_require__(3);
 const member_service_1 = __webpack_require__(36);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_member_dto_1 = __webpack_require__(38);
+const create_member_dto_1 = __webpack_require__(39);
 let MemberController = class MemberController {
     memberService;
     constructor(memberService) {
@@ -2242,7 +2460,7 @@ let MemberController = class MemberController {
         return this.memberService.create(body);
     }
     findAll(query) {
-        return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort);
+        return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
     }
     findOne(id) {
         return this.memberService.findOne(id);
@@ -2259,8 +2477,17 @@ let MemberController = class MemberController {
     toggleStatus(id) {
         return this.memberService.toggleStatus(id);
     }
+    updateTags(id, body) {
+        return this.memberService.update(id, { tags: body.tags });
+    }
+    tierSuggestion(id) {
+        return this.memberService.getTierSuggestion(id);
+    }
     getActivity(id) {
         return this.memberService.getActivity(id);
+    }
+    adjustPoints(id, body) {
+        return this.memberService.adjustPoints(id, body.amount, body.reason);
     }
 };
 exports.MemberController = MemberController;
@@ -2349,6 +2576,28 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], MemberController.prototype, "toggleStatus", null);
 __decorate([
+    (0, common_1.Post)(':id/tags'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update member tags' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], MemberController.prototype, "updateTags", null);
+__decorate([
+    (0, common_1.Get)(':id/tier-suggestion'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiOperation)({ summary: 'Get tier upgrade suggestion' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MemberController.prototype, "tierSuggestion", null);
+__decorate([
     (0, common_1.Get)(':id/activity'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -2358,6 +2607,18 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], MemberController.prototype, "getActivity", null);
+__decorate([
+    (0, common_1.Post)(':id/points'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Manual point adjustment (admin)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], MemberController.prototype, "adjustPoints", null);
 exports.MemberController = MemberController = __decorate([
     (0, swagger_1.ApiTags)('Members'),
     (0, common_1.Controller)('members'),
@@ -2366,7 +2627,7 @@ exports.MemberController = MemberController = __decorate([
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2388,6 +2649,7 @@ class CreateMemberDto {
     fullName;
     phone;
     birthday;
+    tags;
     tenantId;
     tierId;
 }
@@ -2415,6 +2677,13 @@ __decorate([
     __metadata("design:type", String)
 ], CreateMemberDto.prototype, "birthday", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateMemberDto.prototype, "tags", void 0);
+__decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
@@ -2429,6 +2698,7 @@ class UpdateMemberDto {
     fullName;
     phone;
     birthday;
+    tags;
     tierId;
     status;
 }
@@ -2454,6 +2724,13 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], UpdateMemberDto.prototype, "tags", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateMemberDto.prototype, "tierId", void 0);
@@ -2470,6 +2747,7 @@ class MemberQueryDto {
     search;
     tierId;
     status;
+    tags;
     sort;
 }
 exports.MemberQueryDto = MemberQueryDto;
@@ -2507,6 +2785,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], MemberQueryDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], MemberQueryDto.prototype, "tags", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false }),
     (0, class_validator_1.IsOptional)(),
@@ -2552,7 +2836,7 @@ __decorate([
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2565,13 +2849,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TierModule = void 0;
 const common_1 = __webpack_require__(2);
-const tier_service_1 = __webpack_require__(40);
-const tier_controller_1 = __webpack_require__(41);
+const tier_service_1 = __webpack_require__(41);
+const tier_controller_1 = __webpack_require__(42);
+const common_module_1 = __webpack_require__(44);
 let TierModule = class TierModule {
 };
 exports.TierModule = TierModule;
 exports.TierModule = TierModule = __decorate([
     (0, common_1.Module)({
+        imports: [common_module_1.CommonModule],
         controllers: [tier_controller_1.TierController],
         providers: [tier_service_1.TierService],
         exports: [tier_service_1.TierService],
@@ -2580,7 +2866,7 @@ exports.TierModule = TierModule = __decorate([
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2594,18 +2880,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var TierService_1;
-var _a, _b;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TierService = void 0;
 const common_1 = __webpack_require__(2);
 const schedule_1 = __webpack_require__(7);
 const prisma_service_1 = __webpack_require__(13);
+const notification_trigger_service_1 = __webpack_require__(37);
 const sort_util_1 = __webpack_require__(28);
 let TierService = TierService_1 = class TierService {
     prisma;
+    notificationTrigger;
     logger = new common_1.Logger(TierService_1.name);
-    constructor(prisma) {
+    constructor(prisma, notificationTrigger) {
         this.prisma = prisma;
+        this.notificationTrigger = notificationTrigger;
     }
     create(data) {
         return this.prisma.tier.create({
@@ -2654,7 +2943,7 @@ let TierService = TierService_1 = class TierService {
     async assignTierToMember(memberId) {
         const member = await this.prisma.member.findUnique({
             where: { id: memberId },
-            include: { tenant: { include: { tiers: { orderBy: { minPoints: 'desc' } } } } },
+            include: { tenant: { include: { tiers: { orderBy: { minPoints: 'desc' } } } }, tier: true },
         });
         if (!member || !member.tenant)
             return;
@@ -2663,11 +2952,13 @@ let TierService = TierService_1 = class TierService {
             return;
         const matchingTier = tiers.find(t => member.totalPoints >= t.minPoints && member.totalPoints <= t.maxPoints);
         if (matchingTier && member.tierId !== matchingTier.id) {
+            const oldTierName = member.tier?.name || 'Unknown';
             await this.prisma.member.update({
                 where: { id: memberId },
                 data: { tierId: matchingTier.id },
             });
             this.logger.log(`Member ${memberId} upgraded/downgraded to tier ${matchingTier.name}`);
+            this.notificationTrigger.sendTierChanged(memberId, oldTierName, matchingTier.name);
         }
     }
     async autoAssignTiers() {
@@ -2702,16 +2993,16 @@ __decorate([
     (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_DAY_AT_MIDNIGHT),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", typeof (_b = typeof Promise !== "undefined" && Promise) === "function" ? _b : Object)
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
 ], TierService.prototype, "autoAssignTiers", null);
 exports.TierService = TierService = TierService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof notification_trigger_service_1.NotificationTriggerService !== "undefined" && notification_trigger_service_1.NotificationTriggerService) === "function" ? _b : Object])
 ], TierService);
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2732,10 +3023,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TierController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const tier_service_1 = __webpack_require__(40);
+const tier_service_1 = __webpack_require__(41);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_tier_dto_1 = __webpack_require__(42);
+const create_tier_dto_1 = __webpack_require__(43);
 let TierController = class TierController {
     tierService;
     constructor(tierService) {
@@ -2816,7 +3107,7 @@ exports.TierController = TierController = __decorate([
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2967,7 +3258,7 @@ __decorate([
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2978,27 +3269,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PointModule = void 0;
+exports.CommonModule = void 0;
 const common_1 = __webpack_require__(2);
-const point_service_1 = __webpack_require__(44);
-const point_controller_1 = __webpack_require__(45);
-const point_expiry_service_1 = __webpack_require__(47);
-const settings_module_1 = __webpack_require__(49);
-let PointModule = class PointModule {
+const notification_trigger_service_1 = __webpack_require__(37);
+const cache_service_1 = __webpack_require__(45);
+let CommonModule = class CommonModule {
 };
-exports.PointModule = PointModule;
-exports.PointModule = PointModule = __decorate([
+exports.CommonModule = CommonModule;
+exports.CommonModule = CommonModule = __decorate([
     (0, common_1.Module)({
-        imports: [settings_module_1.SettingsModule],
-        controllers: [point_controller_1.PointController],
-        providers: [point_service_1.PointService, point_expiry_service_1.PointExpiryService],
-        exports: [point_service_1.PointService],
+        providers: [notification_trigger_service_1.NotificationTriggerService, cache_service_1.CacheService],
+        exports: [notification_trigger_service_1.NotificationTriggerService, cache_service_1.CacheService],
     })
-], PointModule);
+], CommonModule);
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3011,15 +3298,143 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var CacheService_1;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CacheService = void 0;
+const common_1 = __webpack_require__(2);
+const ioredis_1 = __importDefault(__webpack_require__(46));
+let CacheService = CacheService_1 = class CacheService {
+    logger = new common_1.Logger(CacheService_1.name);
+    client;
+    defaultTtl = 300;
+    constructor() {
+        const url = process.env.REDIS_URL || 'redis://localhost:6379';
+        this.client = new ioredis_1.default(url, {
+            retryStrategy: (times) => {
+                if (times > 3) {
+                    this.logger.warn('Redis connection failed after 3 retries, cache disabled');
+                    return null;
+                }
+                return Math.min(times * 200, 2000);
+            },
+            lazyConnect: true,
+        });
+        this.client.on('error', (err) => {
+            this.logger.warn(`Redis error: ${err.message}`);
+        });
+        this.client.connect().catch((err) => {
+            this.logger.warn(`Redis connection failed: ${err.message}. Cache will be disabled.`);
+        });
+    }
+    async get(key) {
+        try {
+            const val = await this.client.get(key);
+            if (val)
+                return JSON.parse(val);
+        }
+        catch { }
+        return null;
+    }
+    async set(key, value, ttlSeconds) {
+        try {
+            const ttl = ttlSeconds ?? this.defaultTtl;
+            await this.client.set(key, JSON.stringify(value), 'EX', ttl);
+        }
+        catch { }
+    }
+    async del(key) {
+        try {
+            await this.client.del(key);
+        }
+        catch { }
+    }
+    async delPattern(pattern) {
+        try {
+            const keys = await this.client.keys(pattern);
+            if (keys.length > 0) {
+                await this.client.del(...keys);
+            }
+        }
+        catch { }
+    }
+    onModuleDestroy() {
+        this.client.quit().catch(() => { });
+    }
+};
+exports.CacheService = CacheService;
+exports.CacheService = CacheService = CacheService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [])
+], CacheService);
+
+
+/***/ }),
+/* 46 */
+/***/ ((module) => {
+
+module.exports = require("ioredis");
+
+/***/ }),
+/* 47 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PointModule = void 0;
+const common_1 = __webpack_require__(2);
+const point_service_1 = __webpack_require__(48);
+const point_controller_1 = __webpack_require__(49);
+const point_expiry_service_1 = __webpack_require__(51);
+const settings_module_1 = __webpack_require__(53);
+const common_module_1 = __webpack_require__(44);
+let PointModule = class PointModule {
+};
+exports.PointModule = PointModule;
+exports.PointModule = PointModule = __decorate([
+    (0, common_1.Module)({
+        imports: [settings_module_1.SettingsModule, common_module_1.CommonModule],
+        controllers: [point_controller_1.PointController],
+        providers: [point_service_1.PointService, point_expiry_service_1.PointExpiryService],
+        exports: [point_service_1.PointService],
+    })
+], PointModule);
+
+
+/***/ }),
+/* 48 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PointService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
+const notification_trigger_service_1 = __webpack_require__(37);
 let PointService = class PointService {
     prisma;
-    constructor(prisma) {
+    notificationTrigger;
+    constructor(prisma, notificationTrigger) {
         this.prisma = prisma;
+        this.notificationTrigger = notificationTrigger;
     }
     async getWallet(memberId) {
         const member = await this.prisma.member.findUnique({ where: { id: memberId } });
@@ -3059,7 +3474,14 @@ let PointService = class PointService {
                 },
             }),
         ]);
+        const oldTierId = member.tierId;
         await this.maybeUpgradeTier(memberId, member.tenantId, newTotal);
+        const updatedMember = await this.prisma.member.findUnique({ where: { id: memberId }, include: { tier: true } });
+        if (updatedMember?.tierId && updatedMember.tierId !== oldTierId && updatedMember.tier) {
+            const oldTierName = member.tier?.name || 'Unknown';
+            this.notificationTrigger.sendTierChanged(memberId, oldTierName, updatedMember.tier.name);
+        }
+        this.notificationTrigger.sendPointsEarned(memberId, finalAmount, reason);
         return transaction;
     }
     async maybeUpgradeTier(memberId, tenantId, totalPoints) {
@@ -3069,10 +3491,13 @@ let PointService = class PointService {
             take: 1,
         });
         if (tiers.length > 0) {
-            await this.prisma.member.update({
-                where: { id: memberId },
-                data: { tierId: tiers[0].id },
-            });
+            const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+            if (member && member.tierId !== tiers[0].id) {
+                await this.prisma.member.update({
+                    where: { id: memberId },
+                    data: { tierId: tiers[0].id },
+                });
+            }
         }
     }
     async burn(memberId, amount, reason) {
@@ -3171,12 +3596,12 @@ let PointService = class PointService {
 exports.PointService = PointService;
 exports.PointService = PointService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof notification_trigger_service_1.NotificationTriggerService !== "undefined" && notification_trigger_service_1.NotificationTriggerService) === "function" ? _b : Object])
 ], PointService);
 
 
 /***/ }),
-/* 45 */
+/* 49 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3197,10 +3622,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PointController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const point_service_1 = __webpack_require__(44);
+const point_service_1 = __webpack_require__(48);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const point_dto_1 = __webpack_require__(46);
+const point_dto_1 = __webpack_require__(50);
 let PointController = class PointController {
     pointService;
     constructor(pointService) {
@@ -3287,7 +3712,7 @@ exports.PointController = PointController = __decorate([
 
 
 /***/ }),
-/* 46 */
+/* 50 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3424,7 +3849,7 @@ __decorate([
 
 
 /***/ }),
-/* 47 */
+/* 51 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3444,7 +3869,7 @@ exports.PointExpiryService = void 0;
 const common_1 = __webpack_require__(2);
 const schedule_1 = __webpack_require__(7);
 const prisma_service_1 = __webpack_require__(13);
-const settings_service_1 = __webpack_require__(48);
+const settings_service_1 = __webpack_require__(52);
 let PointExpiryService = PointExpiryService_1 = class PointExpiryService {
     prisma;
     settingsService;
@@ -3593,7 +4018,7 @@ exports.PointExpiryService = PointExpiryService = PointExpiryService_1 = __decor
 
 
 /***/ }),
-/* 48 */
+/* 52 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3712,7 +4137,7 @@ exports.SettingsService = SettingsService = __decorate([
 
 
 /***/ }),
-/* 49 */
+/* 53 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3726,8 +4151,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SettingsModule = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_module_1 = __webpack_require__(12);
-const settings_controller_1 = __webpack_require__(50);
-const settings_service_1 = __webpack_require__(48);
+const settings_controller_1 = __webpack_require__(54);
+const settings_service_1 = __webpack_require__(52);
 let SettingsModule = class SettingsModule {
 };
 exports.SettingsModule = SettingsModule;
@@ -3742,7 +4167,7 @@ exports.SettingsModule = SettingsModule = __decorate([
 
 
 /***/ }),
-/* 50 */
+/* 54 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3763,7 +4188,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SettingsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const settings_service_1 = __webpack_require__(48);
+const settings_service_1 = __webpack_require__(52);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let SettingsController = class SettingsController {
@@ -3829,7 +4254,7 @@ exports.SettingsController = SettingsController = __decorate([
 
 
 /***/ }),
-/* 51 */
+/* 55 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3842,8 +4267,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberSelfModule = void 0;
 const common_1 = __webpack_require__(2);
-const member_self_controller_1 = __webpack_require__(52);
-const member_self_service_1 = __webpack_require__(53);
+const member_self_controller_1 = __webpack_require__(56);
+const member_self_service_1 = __webpack_require__(57);
 let MemberSelfModule = class MemberSelfModule {
 };
 exports.MemberSelfModule = MemberSelfModule;
@@ -3857,7 +4282,7 @@ exports.MemberSelfModule = MemberSelfModule = __decorate([
 
 
 /***/ }),
-/* 52 */
+/* 56 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -3878,7 +4303,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberSelfController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const member_self_service_1 = __webpack_require__(53);
+const member_self_service_1 = __webpack_require__(57);
 const jwt_auth_guard_1 = __webpack_require__(21);
 let MemberSelfController = class MemberSelfController {
     memberSelfService;
@@ -3914,6 +4339,27 @@ let MemberSelfController = class MemberSelfController {
     }
     updateProfile(req, body) {
         return this.memberSelfService.updateProfile(req.user.id, body);
+    }
+    cartRedeem(req, body) {
+        return this.memberSelfService.cartRedeem(req.user.id, body.items);
+    }
+    getTransactions(req, page, limit, type) {
+        return this.memberSelfService.getTransactions(req.user.id, page || 1, limit || 50, type);
+    }
+    getCashback(req) {
+        return this.memberSelfService.getCashback(req.user.id);
+    }
+    getGiftCards(req) {
+        return this.memberSelfService.getGiftCards(req.user.id);
+    }
+    getStores(req) {
+        return this.memberSelfService.getStores(req.user.id);
+    }
+    createFeedback(req, body) {
+        return this.memberSelfService.createFeedback(req.user.id, body);
+    }
+    getFeedback(req) {
+        return this.memberSelfService.getFeedback(req.user.id);
     }
 };
 exports.MemberSelfController = MemberSelfController;
@@ -4020,6 +4466,81 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], MemberSelfController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Post)('cart-redeem'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Redeem multiple rewards in one cart' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "cartRedeem", null);
+__decorate([
+    (0, common_1.Get)('transactions'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get own point transactions (paginated, filterable)' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('type')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number, Number, String]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "getTransactions", null);
+__decorate([
+    (0, common_1.Get)('cashback'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get own cashback balance and transactions' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "getCashback", null);
+__decorate([
+    (0, common_1.Get)('gift-cards'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get own gift cards' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "getGiftCards", null);
+__decorate([
+    (0, common_1.Get)('stores'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get nearby stores / store list' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "getStores", null);
+__decorate([
+    (0, common_1.Post)('feedback'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit feedback/review' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "createFeedback", null);
+__decorate([
+    (0, common_1.Get)('feedback'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get own feedback history' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MemberSelfController.prototype, "getFeedback", null);
 exports.MemberSelfController = MemberSelfController = __decorate([
     (0, swagger_1.ApiTags)('Member Self-Service'),
     (0, common_1.Controller)('me'),
@@ -4028,7 +4549,7 @@ exports.MemberSelfController = MemberSelfController = __decorate([
 
 
 /***/ }),
-/* 53 */
+/* 57 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4236,6 +4757,141 @@ let MemberSelfService = class MemberSelfService {
         const { password: _, ...result } = updated;
         return result;
     }
+    async cartRedeem(memberId, items) {
+        if (!items.length)
+            throw new common_1.BadRequestException('Cart is empty');
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const rewardIds = items.map(i => i.rewardId);
+        const rewards = await this.prisma.reward.findMany({ where: { id: { in: rewardIds } } });
+        const rewardMap = new Map(rewards.map(r => [r.id, r]));
+        let totalPoints = 0;
+        const voucherEntries = [];
+        for (const item of items) {
+            const reward = rewardMap.get(item.rewardId);
+            if (!reward)
+                throw new common_1.NotFoundException(`Reward ${item.rewardId} not found`);
+            if (reward.quantity < item.quantity)
+                throw new common_1.BadRequestException(`Reward "${reward.name}" out of stock`);
+            const points = reward.pointsRequired * item.quantity;
+            totalPoints += points;
+            for (let i = 0; i < item.quantity; i++) {
+                voucherEntries.push({
+                    code: `CRT-${reward.id.slice(0, 4)}-${Date.now().toString(36).toUpperCase()}-${i}`,
+                    type: reward.type,
+                    value: reward.pointsRequired,
+                    tenantId: member.tenantId,
+                    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+                });
+            }
+        }
+        if (member.availablePoints < totalPoints) {
+            throw new common_1.BadRequestException(`Insufficient points. Need ${totalPoints}, have ${member.availablePoints}`);
+        }
+        const createdVouchers = await this.prisma.$transaction(async (tx) => {
+            await tx.pointTransaction.create({
+                data: {
+                    memberId,
+                    type: 'BURN',
+                    amount: -totalPoints,
+                    balance: member.availablePoints - totalPoints,
+                    reason: `Cart redemption: ${items.map(i => {
+                        const r = rewardMap.get(i.rewardId);
+                        return `${r?.name} x${i.quantity}`;
+                    }).join(', ')}`,
+                },
+            });
+            await tx.member.update({
+                where: { id: memberId },
+                data: { availablePoints: { decrement: totalPoints } },
+            });
+            for (const item of items) {
+                await tx.reward.update({
+                    where: { id: item.rewardId },
+                    data: { quantity: { decrement: item.quantity } },
+                });
+            }
+            const vouchers = await Promise.all(voucherEntries.map(v => tx.voucher.create({ data: v })));
+            await Promise.all(vouchers.map(v => tx.memberVoucher.create({
+                data: {
+                    memberId,
+                    voucherId: v.id,
+                    qrCode: `QR-${v.id.slice(0, 8)}-${Date.now().toString(36).toUpperCase()}`,
+                },
+            })));
+            return vouchers;
+        });
+        return {
+            vouchers: createdVouchers,
+            totalPointsUsed: totalPoints,
+            items: items.map(i => ({ rewardId: i.rewardId, quantity: i.quantity })),
+        };
+    }
+    async getTransactions(memberId, page = 1, limit = 50, type) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const where = { memberId };
+        if (type === 'earned')
+            where.amount = { gt: 0 };
+        else if (type === 'burned')
+            where.amount = { lt: 0 };
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.pointTransaction.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.pointTransaction.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async getCashback(memberId) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const aggregation = await this.prisma.cashbackTransaction.aggregate({
+            where: { memberId },
+            _sum: { amount: true },
+        });
+        const transactions = await this.prisma.cashbackTransaction.findMany({
+            where: { memberId },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+        });
+        return { balance: aggregation._sum.amount || 0, transactions };
+    }
+    async getGiftCards(memberId) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        return this.prisma.memberGiftCard.findMany({
+            where: { memberId },
+            include: { giftCard: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async getStores(memberId) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId }, select: { tenantId: true } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        return this.prisma.store.findMany({
+            where: { tenantId: member.tenantId, status: 'ACTIVE' },
+            orderBy: { name: 'asc' },
+        });
+    }
+    async createFeedback(memberId, data) {
+        return this.prisma.memberFeedback.create({ data: { ...data, memberId } });
+    }
+    async getFeedback(memberId) {
+        return this.prisma.memberFeedback.findMany({
+            where: { memberId },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 };
 exports.MemberSelfService = MemberSelfService;
 exports.MemberSelfService = MemberSelfService = __decorate([
@@ -4245,7 +4901,7 @@ exports.MemberSelfService = MemberSelfService = __decorate([
 
 
 /***/ }),
-/* 54 */
+/* 58 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4258,8 +4914,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberVoucherModule = void 0;
 const common_1 = __webpack_require__(2);
-const member_voucher_controller_1 = __webpack_require__(55);
-const member_voucher_service_1 = __webpack_require__(56);
+const member_voucher_controller_1 = __webpack_require__(59);
+const member_voucher_service_1 = __webpack_require__(60);
 let MemberVoucherModule = class MemberVoucherModule {
 };
 exports.MemberVoucherModule = MemberVoucherModule;
@@ -4273,7 +4929,7 @@ exports.MemberVoucherModule = MemberVoucherModule = __decorate([
 
 
 /***/ }),
-/* 55 */
+/* 59 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4294,7 +4950,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberVoucherController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const member_voucher_service_1 = __webpack_require__(56);
+const member_voucher_service_1 = __webpack_require__(60);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let MemberVoucherController = class MemberVoucherController {
@@ -4399,7 +5055,7 @@ exports.MemberVoucherController = MemberVoucherController = __decorate([
 
 
 /***/ }),
-/* 56 */
+/* 60 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4417,7 +5073,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MemberVoucherService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
-const crypto_1 = __webpack_require__(57);
+const crypto_1 = __webpack_require__(61);
 let MemberVoucherService = class MemberVoucherService {
     prisma;
     constructor(prisma) {
@@ -4521,13 +5177,13 @@ exports.MemberVoucherService = MemberVoucherService = __decorate([
 
 
 /***/ }),
-/* 57 */
+/* 61 */
 /***/ ((module) => {
 
 module.exports = require("crypto");
 
 /***/ }),
-/* 58 */
+/* 62 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4540,8 +5196,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CampaignModule = void 0;
 const common_1 = __webpack_require__(2);
-const campaign_service_1 = __webpack_require__(59);
-const campaign_controller_1 = __webpack_require__(60);
+const campaign_service_1 = __webpack_require__(63);
+const campaign_controller_1 = __webpack_require__(64);
 let CampaignModule = class CampaignModule {
 };
 exports.CampaignModule = CampaignModule;
@@ -4554,7 +5210,7 @@ exports.CampaignModule = CampaignModule = __decorate([
 
 
 /***/ }),
-/* 59 */
+/* 63 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4620,6 +5276,45 @@ let CampaignService = class CampaignService {
         await this.findOne(id);
         return this.prisma.campaign.delete({ where: { id } });
     }
+    async getPerformance(id) {
+        const campaign = await this.findOne(id);
+        const [earnedInRange, membersEnrolled, vouchersRedeemed] = await Promise.all([
+            this.prisma.pointTransaction.count({
+                where: {
+                    type: 'EARN',
+                    createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+                    member: { tenantId: campaign.tenantId },
+                },
+            }),
+            this.prisma.member.count({
+                where: {
+                    tenantId: campaign.tenantId,
+                    createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+                },
+            }),
+            this.prisma.memberVoucher.count({
+                where: {
+                    createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+                    voucher: { tenantId: campaign.tenantId },
+                },
+            }),
+        ]);
+        const pointsDistributed = await this.prisma.pointTransaction.aggregate({
+            where: {
+                type: 'EARN',
+                createdAt: { gte: campaign.startDate, lte: campaign.endDate },
+                member: { tenantId: campaign.tenantId },
+            },
+            _sum: { amount: true },
+        });
+        return {
+            earnedTransactions: earnedInRange,
+            membersEnrolled,
+            vouchersRedeemed,
+            pointsDistributed: pointsDistributed._sum.amount || 0,
+            daysRunning: Math.ceil((Math.min(campaign.endDate.getTime(), Date.now()) - campaign.startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        };
+    }
     async autoExpireCampaigns() {
         const now = new Date();
         await this.prisma.campaign.updateMany({
@@ -4646,7 +5341,7 @@ exports.CampaignService = CampaignService = __decorate([
 
 
 /***/ }),
-/* 60 */
+/* 64 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4667,10 +5362,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CampaignController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const campaign_service_1 = __webpack_require__(59);
+const campaign_service_1 = __webpack_require__(63);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_campaign_dto_1 = __webpack_require__(61);
+const create_campaign_dto_1 = __webpack_require__(65);
 let CampaignController = class CampaignController {
     campaignService;
     constructor(campaignService) {
@@ -4690,6 +5385,9 @@ let CampaignController = class CampaignController {
     }
     remove(id) {
         return this.campaignService.remove(id);
+    }
+    getPerformance(id) {
+        return this.campaignService.getPerformance(id);
     }
 };
 exports.CampaignController = CampaignController;
@@ -4737,6 +5435,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CampaignController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(':id/performance'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get campaign performance metrics' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CampaignController.prototype, "getPerformance", null);
 exports.CampaignController = CampaignController = __decorate([
     (0, swagger_1.ApiTags)('Campaigns'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -4747,7 +5454,7 @@ exports.CampaignController = CampaignController = __decorate([
 
 
 /***/ }),
-/* 61 */
+/* 65 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4882,7 +5589,7 @@ __decorate([
 
 
 /***/ }),
-/* 62 */
+/* 66 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4895,8 +5602,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.RewardModule = void 0;
 const common_1 = __webpack_require__(2);
-const reward_service_1 = __webpack_require__(63);
-const reward_controller_1 = __webpack_require__(64);
+const reward_service_1 = __webpack_require__(67);
+const reward_controller_1 = __webpack_require__(68);
 let RewardModule = class RewardModule {
 };
 exports.RewardModule = RewardModule;
@@ -4909,7 +5616,7 @@ exports.RewardModule = RewardModule = __decorate([
 
 
 /***/ }),
-/* 63 */
+/* 67 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -4936,10 +5643,12 @@ let RewardService = class RewardService {
     create(data) {
         return this.prisma.reward.create({ data });
     }
-    async findAll(tenantId, page = 1, limit = 20, search, sort) {
+    async findAll(tenantId, page = 1, limit = 20, search, sort, type) {
         const where = {};
         if (tenantId)
             where.tenantId = tenantId;
+        if (type)
+            where.type = type;
         if (search) {
             where.OR = [
                 { name: { contains: search, mode: 'insensitive' } },
@@ -5013,6 +5722,34 @@ let RewardService = class RewardService {
         await this.findOne(id);
         return this.prisma.reward.delete({ where: { id } });
     }
+    async getRedemptionStats(id) {
+        const reward = await this.findOne(id);
+        const [transactions, memberVouchers] = await Promise.all([
+            this.prisma.pointTransaction.findMany({
+                where: { reason: { contains: `Redeemed reward: ${reward.name}` } },
+                orderBy: { createdAt: 'desc' },
+                take: 20,
+                include: { member: { select: { id: true, fullName: true, email: true } } },
+            }),
+            this.prisma.voucher.findMany({
+                where: { code: { startsWith: `RWD-${reward.id.slice(0, 6)}` } },
+                include: { memberVouchers: { include: { member: { select: { id: true, fullName: true, email: true } } }, take: 1 } },
+            }),
+        ]);
+        const totalRedemptions = await this.prisma.pointTransaction.count({
+            where: { reason: { contains: `Redeemed reward: ${reward.name}` } },
+        });
+        return {
+            totalRedemptions,
+            recentRedemptions: transactions.map(t => ({
+                memberId: t.memberId,
+                fullName: t.member?.fullName || 'Unknown',
+                email: t.member?.email || '',
+                pointsUsed: Math.abs(t.amount),
+                createdAt: t.createdAt,
+            })),
+        };
+    }
 };
 exports.RewardService = RewardService;
 exports.RewardService = RewardService = __decorate([
@@ -5022,7 +5759,7 @@ exports.RewardService = RewardService = __decorate([
 
 
 /***/ }),
-/* 64 */
+/* 68 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5043,10 +5780,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.RewardController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const reward_service_1 = __webpack_require__(63);
+const reward_service_1 = __webpack_require__(67);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_reward_dto_1 = __webpack_require__(65);
+const create_reward_dto_1 = __webpack_require__(69);
 let RewardController = class RewardController {
     rewardService;
     constructor(rewardService) {
@@ -5056,7 +5793,7 @@ let RewardController = class RewardController {
         return this.rewardService.create(body);
     }
     findAll(query) {
-        return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
+        return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort, query.type);
     }
     findOne(id) {
         return this.rewardService.findOne(id);
@@ -5069,6 +5806,9 @@ let RewardController = class RewardController {
     }
     remove(id) {
         return this.rewardService.remove(id);
+    }
+    getRedemptionStats(id) {
+        return this.rewardService.getRedemptionStats(id);
     }
 };
 exports.RewardController = RewardController;
@@ -5083,7 +5823,7 @@ __decorate([
 ], RewardController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'List rewards (with pagination & sort)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List rewards (with pagination & sort & type filter)' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [typeof (_c = typeof create_reward_dto_1.RewardQueryDto !== "undefined" && create_reward_dto_1.RewardQueryDto) === "function" ? _c : Object]),
@@ -5126,6 +5866,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], RewardController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(':id/redemptions'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get reward redemption history' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], RewardController.prototype, "getRedemptionStats", null);
 exports.RewardController = RewardController = __decorate([
     (0, swagger_1.ApiTags)('Rewards'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -5136,7 +5885,7 @@ exports.RewardController = RewardController = __decorate([
 
 
 /***/ }),
-/* 65 */
+/* 69 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5260,6 +6009,7 @@ class RewardQueryDto {
     limit;
     search;
     sort;
+    type;
 }
 exports.RewardQueryDto = RewardQueryDto;
 __decorate([
@@ -5290,10 +6040,16 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], RewardQueryDto.prototype, "sort", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RewardQueryDto.prototype, "type", void 0);
 
 
 /***/ }),
-/* 66 */
+/* 70 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5306,8 +6062,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VoucherModule = void 0;
 const common_1 = __webpack_require__(2);
-const voucher_service_1 = __webpack_require__(67);
-const voucher_controller_1 = __webpack_require__(68);
+const voucher_service_1 = __webpack_require__(71);
+const voucher_controller_1 = __webpack_require__(72);
 let VoucherModule = class VoucherModule {
 };
 exports.VoucherModule = VoucherModule;
@@ -5320,7 +6076,7 @@ exports.VoucherModule = VoucherModule = __decorate([
 
 
 /***/ }),
-/* 67 */
+/* 71 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5337,8 +6093,10 @@ var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VoucherService = void 0;
 const common_1 = __webpack_require__(2);
+const schedule_1 = __webpack_require__(7);
 const prisma_service_1 = __webpack_require__(13);
 const sort_util_1 = __webpack_require__(28);
+const crypto_1 = __webpack_require__(61);
 let VoucherService = class VoucherService {
     prisma;
     constructor(prisma) {
@@ -5405,8 +6163,50 @@ let VoucherService = class VoucherService {
         await this.findOne(id);
         return this.prisma.voucher.delete({ where: { id } });
     }
+    async batchGenerate(data) {
+        const codes = [];
+        const entries = [];
+        for (let i = 0; i < data.count; i++) {
+            const suffix = (0, crypto_1.randomBytes)(3).toString('hex').toUpperCase();
+            const code = `${data.prefix}-${suffix}`;
+            codes.push(code);
+            entries.push({
+                code,
+                type: data.type,
+                value: data.value,
+                maxUsage: data.maxUsage,
+                expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+                tenantId: data.tenantId,
+            });
+        }
+        await this.prisma.voucher.createMany({ data: entries, skipDuplicates: true });
+        return { generated: codes.length, codes };
+    }
+    async autoExpireVouchers() {
+        const now = new Date();
+        const result = await this.prisma.voucher.updateMany({
+            where: { expiresAt: { lt: now }, NOT: { expiresAt: null } },
+            data: { maxUsage: 0 },
+        });
+        return { expired: result.count };
+    }
+    async getExpiredStats(tenantId) {
+        const now = new Date();
+        const where = tenantId ? { tenantId, expiresAt: { lt: now } } : { expiresAt: { lt: now } };
+        const total = await this.prisma.voucher.count({ where });
+        const withRedemptions = await this.prisma.voucher.count({
+            where: { ...where, usedCount: { gt: 0 } },
+        });
+        return { totalExpired: total, hadRedemptions: withRedemptions };
+    }
 };
 exports.VoucherService = VoucherService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_DAY_AT_MIDNIGHT),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], VoucherService.prototype, "autoExpireVouchers", null);
 exports.VoucherService = VoucherService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
@@ -5414,7 +6214,7 @@ exports.VoucherService = VoucherService = __decorate([
 
 
 /***/ }),
-/* 68 */
+/* 72 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5430,15 +6230,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e;
+var _a, _b, _c, _d, _e, _f;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VoucherController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const voucher_service_1 = __webpack_require__(67);
+const voucher_service_1 = __webpack_require__(71);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_voucher_dto_1 = __webpack_require__(69);
+const create_voucher_dto_1 = __webpack_require__(73);
 let VoucherController = class VoucherController {
     voucherService;
     constructor(voucherService) {
@@ -5464,6 +6264,12 @@ let VoucherController = class VoucherController {
     }
     remove(id) {
         return this.voucherService.remove(id);
+    }
+    batchGenerate(body) {
+        return this.voucherService.batchGenerate(body);
+    }
+    getExpiredStats(tenantId) {
+        return this.voucherService.getExpiredStats(tenantId);
     }
 };
 exports.VoucherController = VoucherController;
@@ -5528,6 +6334,24 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], VoucherController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)('batch-generate'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Batch generate vouchers' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_f = typeof create_voucher_dto_1.BatchGenerateVoucherDto !== "undefined" && create_voucher_dto_1.BatchGenerateVoucherDto) === "function" ? _f : Object]),
+    __metadata("design:returntype", void 0)
+], VoucherController.prototype, "batchGenerate", null);
+__decorate([
+    (0, common_1.Get)('stats/expired'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get expired voucher stats' }),
+    __param(0, (0, common_1.Query)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], VoucherController.prototype, "getExpiredStats", null);
 exports.VoucherController = VoucherController = __decorate([
     (0, swagger_1.ApiTags)('Vouchers'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -5538,7 +6362,7 @@ exports.VoucherController = VoucherController = __decorate([
 
 
 /***/ }),
-/* 69 */
+/* 73 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5552,9 +6376,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.VoucherQueryDto = exports.ValidateVoucherDto = exports.UpdateVoucherDto = exports.CreateVoucherDto = void 0;
+exports.BatchGenerateVoucherDto = exports.VoucherQueryDto = exports.ValidateVoucherDto = exports.UpdateVoucherDto = exports.CreateVoucherDto = void 0;
 const class_validator_1 = __webpack_require__(23);
 const swagger_1 = __webpack_require__(3);
+const class_transformer_1 = __webpack_require__(74);
 class CreateVoucherDto {
     code;
     type;
@@ -5646,11 +6471,13 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false, default: 1 }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], VoucherQueryDto.prototype, "page", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false, default: 20 }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], VoucherQueryDto.prototype, "limit", void 0);
 __decorate([
@@ -5665,10 +6492,66 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], VoucherQueryDto.prototype, "sort", void 0);
+class BatchGenerateVoucherDto {
+    prefix;
+    count;
+    type;
+    value;
+    maxUsage;
+    expiresAt;
+    tenantId;
+}
+exports.BatchGenerateVoucherDto = BatchGenerateVoucherDto;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BatchGenerateVoucherDto.prototype, "prefix", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], BatchGenerateVoucherDto.prototype, "count", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BatchGenerateVoucherDto.prototype, "type", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], BatchGenerateVoucherDto.prototype, "value", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], BatchGenerateVoucherDto.prototype, "maxUsage", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], BatchGenerateVoucherDto.prototype, "expiresAt", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BatchGenerateVoucherDto.prototype, "tenantId", void 0);
 
 
 /***/ }),
-/* 70 */
+/* 74 */
+/***/ ((module) => {
+
+module.exports = require("class-transformer");
+
+/***/ }),
+/* 75 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5681,8 +6564,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PromotionModule = void 0;
 const common_1 = __webpack_require__(2);
-const promotion_service_1 = __webpack_require__(71);
-const promotion_controller_1 = __webpack_require__(72);
+const promotion_service_1 = __webpack_require__(76);
+const promotion_controller_1 = __webpack_require__(77);
 let PromotionModule = class PromotionModule {
 };
 exports.PromotionModule = PromotionModule;
@@ -5695,7 +6578,7 @@ exports.PromotionModule = PromotionModule = __decorate([
 
 
 /***/ }),
-/* 71 */
+/* 76 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5766,7 +6649,7 @@ exports.PromotionService = PromotionService = __decorate([
 
 
 /***/ }),
-/* 72 */
+/* 77 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -5787,10 +6670,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PromotionController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const promotion_service_1 = __webpack_require__(71);
+const promotion_service_1 = __webpack_require__(76);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_promotion_dto_1 = __webpack_require__(73);
+const create_promotion_dto_1 = __webpack_require__(78);
 let PromotionController = class PromotionController {
     promotionService;
     constructor(promotionService) {
@@ -5867,7 +6750,7 @@ exports.PromotionController = PromotionController = __decorate([
 
 
 /***/ }),
-/* 73 */
+/* 78 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6018,7 +6901,7 @@ __decorate([
 
 
 /***/ }),
-/* 74 */
+/* 79 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6031,8 +6914,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ReferralModule = void 0;
 const common_1 = __webpack_require__(2);
-const referral_service_1 = __webpack_require__(75);
-const referral_controller_1 = __webpack_require__(76);
+const referral_service_1 = __webpack_require__(80);
+const referral_controller_1 = __webpack_require__(81);
 let ReferralModule = class ReferralModule {
 };
 exports.ReferralModule = ReferralModule;
@@ -6045,7 +6928,7 @@ exports.ReferralModule = ReferralModule = __decorate([
 
 
 /***/ }),
-/* 75 */
+/* 80 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6166,7 +7049,7 @@ exports.ReferralService = ReferralService = __decorate([
 
 
 /***/ }),
-/* 76 */
+/* 81 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6187,7 +7070,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ReferralController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const referral_service_1 = __webpack_require__(75);
+const referral_service_1 = __webpack_require__(80);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 const common_dto_1 = __webpack_require__(22);
@@ -6296,7 +7179,7 @@ exports.ReferralController = ReferralController = __decorate([
 
 
 /***/ }),
-/* 77 */
+/* 82 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6309,8 +7192,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GamificationModule = void 0;
 const common_1 = __webpack_require__(2);
-const gamification_service_1 = __webpack_require__(78);
-const gamification_controller_1 = __webpack_require__(79);
+const gamification_service_1 = __webpack_require__(83);
+const gamification_controller_1 = __webpack_require__(84);
 let GamificationModule = class GamificationModule {
 };
 exports.GamificationModule = GamificationModule;
@@ -6323,7 +7206,7 @@ exports.GamificationModule = GamificationModule = __decorate([
 
 
 /***/ }),
-/* 78 */
+/* 83 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6433,7 +7316,7 @@ exports.GamificationService = GamificationService = __decorate([
 
 
 /***/ }),
-/* 79 */
+/* 84 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6454,10 +7337,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GamificationController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const gamification_service_1 = __webpack_require__(78);
+const gamification_service_1 = __webpack_require__(83);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const create_gamification_dto_1 = __webpack_require__(80);
+const create_gamification_dto_1 = __webpack_require__(85);
 let GamificationController = class GamificationController {
     gamificationService;
     constructor(gamificationService) {
@@ -6593,7 +7476,7 @@ exports.GamificationController = GamificationController = __decorate([
 
 
 /***/ }),
-/* 80 */
+/* 85 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6847,7 +7730,7 @@ __decorate([
 
 
 /***/ }),
-/* 81 */
+/* 86 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6860,13 +7743,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DashboardModule = void 0;
 const common_1 = __webpack_require__(2);
-const dashboard_service_1 = __webpack_require__(82);
-const dashboard_controller_1 = __webpack_require__(83);
+const dashboard_service_1 = __webpack_require__(87);
+const dashboard_controller_1 = __webpack_require__(88);
+const common_module_1 = __webpack_require__(44);
 let DashboardModule = class DashboardModule {
 };
 exports.DashboardModule = DashboardModule;
 exports.DashboardModule = DashboardModule = __decorate([
     (0, common_1.Module)({
+        imports: [common_module_1.CommonModule],
         controllers: [dashboard_controller_1.DashboardController],
         providers: [dashboard_service_1.DashboardService],
     })
@@ -6874,7 +7759,7 @@ exports.DashboardModule = DashboardModule = __decorate([
 
 
 /***/ }),
-/* 82 */
+/* 87 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6887,17 +7772,24 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DashboardService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
+const cache_service_1 = __webpack_require__(45);
 let DashboardService = class DashboardService {
     prisma;
-    constructor(prisma) {
+    cache;
+    constructor(prisma, cache) {
         this.prisma = prisma;
+        this.cache = cache;
     }
     async getStats(tenantId) {
+        const cacheKey = tenantId ? `dashboard:stats:${tenantId}` : 'dashboard:stats:global';
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
         try {
             const tenantFilter = tenantId ? { tenantId } : {};
             const [tenants, members, activeCampaigns, rewards, vouchers, totalPoints, promotions, badges, missions, referrals, tiersWithMembers, membersByStatus, kycCount, activeVouchers,] = await Promise.all([
@@ -6924,7 +7816,26 @@ let DashboardService = class DashboardService {
                 acc[cur.status] = cur._count;
                 return acc;
             }, {});
-            return {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const ptWhere = { createdAt: { gte: today }, ...(tenantId ? { member: { tenantId } } : {}) };
+            const [earnedToday, burnedToday, newMembersToday, redeemedToday] = await Promise.all([
+                this.prisma.pointTransaction.aggregate({
+                    where: { ...ptWhere, amount: { gt: 0 } },
+                    _sum: { amount: true },
+                }),
+                this.prisma.pointTransaction.aggregate({
+                    where: { ...ptWhere, amount: { lt: 0 } },
+                    _sum: { amount: true },
+                }),
+                this.prisma.member.count({
+                    where: { createdAt: { gte: today }, ...(tenantId ? { tenantId } : {}) },
+                }),
+                this.prisma.memberVoucher.count({
+                    where: { redeemedAt: { gte: today }, ...(tenantId ? { member: { tenantId } } : {}) },
+                }),
+            ]);
+            const result = {
                 tenants, members, activeCampaigns, rewards, vouchers,
                 totalPoints: totalPoints._sum.totalPoints || 0,
                 promotions, badges, missions, referrals,
@@ -6932,7 +7843,15 @@ let DashboardService = class DashboardService {
                 activeVouchers,
                 membersByStatus: statusBreakdown,
                 tiers: tiersWithMembers.map(t => ({ name: t.name, color: t.color, memberCount: t._count.members })),
+                today: {
+                    earned: earnedToday._sum.amount || 0,
+                    burned: Math.abs(burnedToday._sum.amount || 0),
+                    newMembers: newMembersToday,
+                    redemptions: redeemedToday,
+                },
             };
+            this.cache.set(cacheKey, result, 120);
+            return result;
         }
         catch (e) {
             throw new common_1.InternalServerErrorException('Failed to load dashboard stats');
@@ -6942,12 +7861,12 @@ let DashboardService = class DashboardService {
 exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof cache_service_1.CacheService !== "undefined" && cache_service_1.CacheService) === "function" ? _b : Object])
 ], DashboardService);
 
 
 /***/ }),
-/* 83 */
+/* 88 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -6968,7 +7887,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DashboardController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const dashboard_service_1 = __webpack_require__(82);
+const dashboard_service_1 = __webpack_require__(87);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let DashboardController = class DashboardController {
@@ -7000,7 +7919,7 @@ exports.DashboardController = DashboardController = __decorate([
 
 
 /***/ }),
-/* 84 */
+/* 89 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7013,8 +7932,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UploadModule = void 0;
 const common_1 = __webpack_require__(2);
-const upload_controller_1 = __webpack_require__(85);
-const upload_service_1 = __webpack_require__(86);
+const upload_controller_1 = __webpack_require__(90);
+const upload_service_1 = __webpack_require__(91);
 let UploadModule = class UploadModule {
 };
 exports.UploadModule = UploadModule;
@@ -7028,7 +7947,7 @@ exports.UploadModule = UploadModule = __decorate([
 
 
 /***/ }),
-/* 85 */
+/* 90 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7052,7 +7971,7 @@ const swagger_1 = __webpack_require__(3);
 const platform_express_1 = __webpack_require__(6);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const upload_service_1 = __webpack_require__(86);
+const upload_service_1 = __webpack_require__(91);
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 const MAX_SIZE = 5 * 1024 * 1024;
 let UploadController = class UploadController {
@@ -7104,7 +8023,7 @@ exports.UploadController = UploadController = __decorate([
 
 
 /***/ }),
-/* 86 */
+/* 91 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7153,8 +8072,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UploadService = void 0;
 const common_1 = __webpack_require__(2);
-const fs = __importStar(__webpack_require__(87));
-const path = __importStar(__webpack_require__(88));
+const fs = __importStar(__webpack_require__(92));
+const path = __importStar(__webpack_require__(93));
 let UploadService = class UploadService {
     uploadDir = path.join(process.cwd(), 'uploads');
     constructor() {
@@ -7182,19 +8101,19 @@ exports.UploadService = UploadService = __decorate([
 
 
 /***/ }),
-/* 87 */
+/* 92 */
 /***/ ((module) => {
 
 module.exports = require("fs");
 
 /***/ }),
-/* 88 */
+/* 93 */
 /***/ ((module) => {
 
 module.exports = require("path");
 
 /***/ }),
-/* 89 */
+/* 94 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7207,13 +8126,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsModule = void 0;
 const common_1 = __webpack_require__(2);
-const analytics_controller_1 = __webpack_require__(90);
-const analytics_service_1 = __webpack_require__(91);
+const analytics_controller_1 = __webpack_require__(95);
+const analytics_service_1 = __webpack_require__(96);
+const common_module_1 = __webpack_require__(44);
 let AnalyticsModule = class AnalyticsModule {
 };
 exports.AnalyticsModule = AnalyticsModule;
 exports.AnalyticsModule = AnalyticsModule = __decorate([
     (0, common_1.Module)({
+        imports: [common_module_1.CommonModule],
         controllers: [analytics_controller_1.AnalyticsController],
         providers: [analytics_service_1.AnalyticsService],
         exports: [analytics_service_1.AnalyticsService],
@@ -7222,7 +8143,7 @@ exports.AnalyticsModule = AnalyticsModule = __decorate([
 
 
 /***/ }),
-/* 90 */
+/* 95 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7243,7 +8164,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const analytics_service_1 = __webpack_require__(91);
+const analytics_service_1 = __webpack_require__(96);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let AnalyticsController = class AnalyticsController {
@@ -7265,6 +8186,15 @@ let AnalyticsController = class AnalyticsController {
     }
     getVoucherStats(tenantId) {
         return this.analyticsService.getVoucherStats(tenantId);
+    }
+    getExpiringPoints(tenantId) {
+        return this.analyticsService.getExpiringPoints(tenantId);
+    }
+    getLeaderboard(limit, tenantId) {
+        return this.analyticsService.getLeaderboard(tenantId, limit || 20);
+    }
+    getVoucherAnalytics(days, tenantId) {
+        return this.analyticsService.getVoucherAnalytics(days || 30, tenantId);
     }
 };
 exports.AnalyticsController = AnalyticsController;
@@ -7316,6 +8246,35 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AnalyticsController.prototype, "getVoucherStats", null);
+__decorate([
+    (0, common_1.Get)('expiring-points'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Members with points nearing expiry' }),
+    __param(0, (0, common_1.Query)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "getExpiringPoints", null);
+__decorate([
+    (0, common_1.Get)('leaderboard'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Member leaderboard ranked by points' }),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "getLeaderboard", null);
+__decorate([
+    (0, common_1.Get)('voucher-analytics'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Voucher usage analytics (daily trend, popular, by type)' }),
+    __param(0, (0, common_1.Query)('days')),
+    __param(1, (0, common_1.Query)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "getVoucherAnalytics", null);
 exports.AnalyticsController = AnalyticsController = __decorate([
     (0, swagger_1.ApiTags)('Analytics'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -7326,7 +8285,7 @@ exports.AnalyticsController = AnalyticsController = __decorate([
 
 
 /***/ }),
-/* 91 */
+/* 96 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7339,15 +8298,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
+const cache_service_1 = __webpack_require__(45);
 let AnalyticsService = class AnalyticsService {
     prisma;
-    constructor(prisma) {
+    cache;
+    constructor(prisma, cache) {
         this.prisma = prisma;
+        this.cache = cache;
     }
     async getPointsTrend(days, tenantId) {
         try {
@@ -7397,51 +8359,163 @@ let AnalyticsService = class AnalyticsService {
         }
     }
     async getCampaignPerformance(tenantId) {
+        const cacheKey = tenantId ? `analytics:campaigns:${tenantId}` : 'analytics:campaigns:global';
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
         try {
             const where = tenantId ? { tenantId } : {};
             const campaigns = await this.prisma.campaign.findMany({ where });
             const total = campaigns.length;
             const active = campaigns.filter(c => c.status === 'ACTIVE').length;
             const completed = campaigns.filter(c => c.status === 'ENDED').length;
-            return { total, active, completed, draft: total - active - completed };
+            const result = { total, active, completed, draft: total - active - completed };
+            this.cache.set(cacheKey, result, 180);
+            return result;
         }
         catch (e) {
             throw new common_1.InternalServerErrorException('Failed to load campaign performance');
         }
     }
     async getTopMembers(limit, tenantId) {
+        const cacheKey = tenantId ? `analytics:topmembers:${tenantId}:${limit}` : `analytics:topmembers:global:${limit}`;
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
         try {
             const where = tenantId ? { tenantId } : {};
-            return this.prisma.member.findMany({
+            const result = await this.prisma.member.findMany({
                 where, orderBy: { totalPoints: 'desc' }, take: limit,
                 include: { tier: { select: { name: true, color: true } } },
             });
+            this.cache.set(cacheKey, result, 120);
+            return result;
         }
         catch (e) {
             throw new common_1.InternalServerErrorException('Failed to load top members');
         }
     }
     async getVoucherStats(tenantId) {
+        const cacheKey = tenantId ? `analytics:vouchers:${tenantId}` : 'analytics:vouchers:global';
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
         try {
             const where = tenantId ? { tenantId } : {};
             const total = await this.prisma.voucher.count({ where });
             const used = await this.prisma.voucher.count({ where: { ...where, usedCount: { gt: 0 } } });
-            return { total, used, remaining: total - used, usageRate: total > 0 ? ((used / total) * 100).toFixed(1) : '0' };
+            const result = { total, used, remaining: total - used, usageRate: total > 0 ? ((used / total) * 100).toFixed(1) : '0' };
+            this.cache.set(cacheKey, result, 180);
+            return result;
         }
         catch (e) {
             throw new common_1.InternalServerErrorException('Failed to load voucher stats');
+        }
+    }
+    async getExpiringPoints(tenantId) {
+        try {
+            const where = tenantId ? { tenantId } : {};
+            const members = await this.prisma.member.findMany({
+                where: { ...where, availablePoints: { gt: 0 } },
+                select: { id: true, fullName: true, email: true, availablePoints: true, totalPoints: true },
+                orderBy: { availablePoints: 'desc' },
+                take: 10,
+            });
+            const membersWithExpiry = await Promise.all(members.map(async (m) => {
+                const oldestEarn = await this.prisma.pointTransaction.findFirst({
+                    where: { memberId: m.id, type: 'EARN' },
+                    orderBy: { createdAt: 'asc' },
+                });
+                return {
+                    ...m,
+                    oldestEarnDate: oldestEarn?.createdAt || null,
+                    daysSinceOldestEarn: oldestEarn
+                        ? Math.floor((Date.now() - oldestEarn.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+                        : null,
+                };
+            }));
+            return membersWithExpiry.filter(m => m.daysSinceOldestEarn !== null && m.daysSinceOldestEarn > 300);
+        }
+        catch (e) {
+            throw new common_1.InternalServerErrorException('Failed to load expiring points');
+        }
+    }
+    async getLeaderboard(tenantId, limit = 20) {
+        const cacheKey = tenantId ? `analytics:leaderboard:${tenantId}:${limit}` : `analytics:leaderboard:global:${limit}`;
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
+        try {
+            const where = tenantId ? { tenantId } : {};
+            if (tenantId)
+                where.tenantId = tenantId;
+            const members = await this.prisma.member.findMany({
+                where,
+                orderBy: { totalPoints: 'desc' },
+                take: limit,
+                include: { tier: { select: { name: true, color: true } } },
+            });
+            const result = members.map((m, i) => ({
+                rank: i + 1,
+                id: m.id,
+                fullName: m.fullName,
+                email: m.email,
+                totalPoints: m.totalPoints,
+                availablePoints: m.availablePoints,
+                tier: m.tier?.name || 'Bronze',
+                tierColor: m.tier?.color || '#94a3b8',
+            }));
+            this.cache.set(cacheKey, result, 120);
+            return result;
+        }
+        catch (e) {
+            throw new common_1.InternalServerErrorException('Failed to load leaderboard');
+        }
+    }
+    async getVoucherAnalytics(days = 30, tenantId) {
+        try {
+            const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+            const memberVoucherWhere = { redeemedAt: { gte: since } };
+            if (tenantId)
+                memberVoucherWhere.member = { tenantId };
+            const redemptions = await this.prisma.memberVoucher.findMany({
+                where: memberVoucherWhere,
+                include: { voucher: { select: { code: true, type: true, value: true } } },
+                orderBy: { redeemedAt: 'asc' },
+            });
+            const daily = {};
+            const typeCount = {};
+            const popular = {};
+            for (const r of redemptions) {
+                const day = r.redeemedAt.toISOString().slice(0, 10);
+                daily[day] = (daily[day] || 0) + 1;
+                typeCount[r.voucher.type] = (typeCount[r.voucher.type] || 0) + 1;
+                const key = r.voucher.code;
+                if (!popular[key])
+                    popular[key] = { code: key, count: 0, value: r.voucher.value };
+                popular[key].count++;
+            }
+            return {
+                totalRedemptions: redemptions.length,
+                dailyTrend: Object.entries(daily).map(([date, count]) => ({ date, count })),
+                byType: Object.entries(typeCount).map(([type, count]) => ({ type, count })),
+                popular: Object.values(popular).sort((a, b) => b.count - a.count).slice(0, 10),
+            };
+        }
+        catch (e) {
+            throw new common_1.InternalServerErrorException('Failed to load voucher analytics');
         }
     }
 };
 exports.AnalyticsService = AnalyticsService;
 exports.AnalyticsService = AnalyticsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof cache_service_1.CacheService !== "undefined" && cache_service_1.CacheService) === "function" ? _b : Object])
 ], AnalyticsService);
 
 
 /***/ }),
-/* 92 */
+/* 97 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7454,8 +8528,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.NotificationModule = void 0;
 const common_1 = __webpack_require__(2);
-const notification_controller_1 = __webpack_require__(93);
-const notification_service_1 = __webpack_require__(94);
+const notification_controller_1 = __webpack_require__(98);
+const notification_service_1 = __webpack_require__(99);
 let NotificationModule = class NotificationModule {
 };
 exports.NotificationModule = NotificationModule;
@@ -7469,7 +8543,7 @@ exports.NotificationModule = NotificationModule = __decorate([
 
 
 /***/ }),
-/* 93 */
+/* 98 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7490,7 +8564,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.NotificationController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const notification_service_1 = __webpack_require__(94);
+const notification_service_1 = __webpack_require__(99);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 const common_dto_1 = __webpack_require__(22);
@@ -7624,7 +8698,7 @@ exports.NotificationController = NotificationController = __decorate([
 
 
 /***/ }),
-/* 94 */
+/* 99 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7768,7 +8842,7 @@ exports.NotificationService = NotificationService = __decorate([
 
 
 /***/ }),
-/* 95 */
+/* 100 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7782,8 +8856,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuditLogModule = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_module_1 = __webpack_require__(12);
-const audit_log_service_1 = __webpack_require__(96);
-const audit_log_controller_1 = __webpack_require__(97);
+const audit_log_service_1 = __webpack_require__(101);
+const audit_log_controller_1 = __webpack_require__(102);
 let AuditLogModule = class AuditLogModule {
 };
 exports.AuditLogModule = AuditLogModule;
@@ -7798,7 +8872,7 @@ exports.AuditLogModule = AuditLogModule = __decorate([
 
 
 /***/ }),
-/* 96 */
+/* 101 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7862,7 +8936,7 @@ exports.AuditLogService = AuditLogService = __decorate([
 
 
 /***/ }),
-/* 97 */
+/* 102 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7883,7 +8957,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuditLogController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const audit_log_service_1 = __webpack_require__(96);
+const audit_log_service_1 = __webpack_require__(101);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let AuditLogController = class AuditLogController {
@@ -7933,7 +9007,7 @@ exports.AuditLogController = AuditLogController = __decorate([
 
 
 /***/ }),
-/* 98 */
+/* 103 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7946,8 +9020,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ExportModule = void 0;
 const common_1 = __webpack_require__(2);
-const export_controller_1 = __webpack_require__(99);
-const export_service_1 = __webpack_require__(100);
+const export_controller_1 = __webpack_require__(104);
+const export_service_1 = __webpack_require__(105);
 let ExportModule = class ExportModule {
 };
 exports.ExportModule = ExportModule;
@@ -7961,7 +9035,7 @@ exports.ExportModule = ExportModule = __decorate([
 
 
 /***/ }),
-/* 99 */
+/* 104 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -7984,7 +9058,7 @@ const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const export_service_1 = __webpack_require__(100);
+const export_service_1 = __webpack_require__(105);
 const prisma_service_1 = __webpack_require__(13);
 const entityConfig = {
     tenants: {
@@ -8104,7 +9178,7 @@ exports.ExportController = ExportController = __decorate([
 
 
 /***/ }),
-/* 100 */
+/* 105 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8137,7 +9211,7 @@ exports.ExportService = ExportService = __decorate([
 
 
 /***/ }),
-/* 101 */
+/* 106 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8150,8 +9224,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ImportModule = void 0;
 const common_1 = __webpack_require__(2);
-const import_controller_1 = __webpack_require__(102);
-const import_service_1 = __webpack_require__(103);
+const import_controller_1 = __webpack_require__(107);
+const import_service_1 = __webpack_require__(108);
 let ImportModule = class ImportModule {
 };
 exports.ImportModule = ImportModule;
@@ -8165,7 +9239,7 @@ exports.ImportModule = ImportModule = __decorate([
 
 
 /***/ }),
-/* 102 */
+/* 107 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8188,7 +9262,7 @@ const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
-const import_service_1 = __webpack_require__(103);
+const import_service_1 = __webpack_require__(108);
 let ImportController = class ImportController {
     importService;
     constructor(importService) {
@@ -8232,7 +9306,7 @@ exports.ImportController = ImportController = __decorate([
 
 
 /***/ }),
-/* 103 */
+/* 108 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8283,7 +9357,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ImportService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(13);
-const XLSX = __importStar(__webpack_require__(104));
+const XLSX = __importStar(__webpack_require__(109));
 const entityConfigs = {
     tenants: {
         requiredFields: ['name', 'domain', 'email'],
@@ -8588,13 +9662,13 @@ exports.ImportService = ImportService = __decorate([
 
 
 /***/ }),
-/* 104 */
+/* 109 */
 /***/ ((module) => {
 
 module.exports = require("xlsx");
 
 /***/ }),
-/* 105 */
+/* 110 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8608,8 +9682,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BulkModule = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_module_1 = __webpack_require__(12);
-const bulk_controller_1 = __webpack_require__(106);
-const bulk_service_1 = __webpack_require__(107);
+const bulk_controller_1 = __webpack_require__(111);
+const bulk_service_1 = __webpack_require__(112);
 let BulkModule = class BulkModule {
 };
 exports.BulkModule = BulkModule;
@@ -8623,7 +9697,7 @@ exports.BulkModule = BulkModule = __decorate([
 
 
 /***/ }),
-/* 106 */
+/* 111 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8644,7 +9718,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BulkController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const bulk_service_1 = __webpack_require__(107);
+const bulk_service_1 = __webpack_require__(112);
 const jwt_auth_guard_1 = __webpack_require__(21);
 const roles_decorator_1 = __webpack_require__(9);
 let BulkController = class BulkController {
@@ -8688,7 +9762,7 @@ exports.BulkController = BulkController = __decorate([
 
 
 /***/ }),
-/* 107 */
+/* 112 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8774,7 +9848,7 @@ exports.BulkService = BulkService = __decorate([
 
 
 /***/ }),
-/* 108 */
+/* 113 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8788,8 +9862,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CheckinModule = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_module_1 = __webpack_require__(12);
-const checkin_controller_1 = __webpack_require__(109);
-const checkin_service_1 = __webpack_require__(110);
+const checkin_controller_1 = __webpack_require__(114);
+const checkin_service_1 = __webpack_require__(115);
 let CheckinModule = class CheckinModule {
 };
 exports.CheckinModule = CheckinModule;
@@ -8804,7 +9878,7 @@ exports.CheckinModule = CheckinModule = __decorate([
 
 
 /***/ }),
-/* 109 */
+/* 114 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8825,8 +9899,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CheckinController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
-const checkin_service_1 = __webpack_require__(110);
+const checkin_service_1 = __webpack_require__(115);
 const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
 let CheckinController = class CheckinController {
     checkinService;
     constructor(checkinService) {
@@ -8840,6 +9915,9 @@ let CheckinController = class CheckinController {
     }
     getHistory(req) {
         return this.checkinService.getHistory(req.user.id);
+    }
+    getAdminStats(tenantId) {
+        return this.checkinService.getAdminStats(tenantId);
     }
 };
 exports.CheckinController = CheckinController;
@@ -8867,6 +9945,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CheckinController.prototype, "getHistory", null);
+__decorate([
+    (0, common_1.Get)('admin/stats'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Admin: check-in analytics (streaks, trends)' }),
+    __param(0, (0, common_1.Query)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CheckinController.prototype, "getAdminStats", null);
 exports.CheckinController = CheckinController = __decorate([
     (0, swagger_1.ApiTags)('Daily Check-in'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -8877,7 +9964,7 @@ exports.CheckinController = CheckinController = __decorate([
 
 
 /***/ }),
-/* 110 */
+/* 115 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -8967,6 +10054,53 @@ let CheckinService = class CheckinService {
             orderBy: { date: 'desc' },
         });
     }
+    async getAdminStats(tenantId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const memberFilter = tenantId ? { member: { tenantId } } : {};
+        const tenantFilter = tenantId ? { tenantId } : {};
+        const [checkedInToday, totalThisMonth, streaks, recent] = await Promise.all([
+            this.prisma.dailyCheckin.count({
+                where: { date: today, ...memberFilter },
+            }),
+            this.prisma.dailyCheckin.count({
+                where: { date: { gte: startOfMonth }, ...memberFilter },
+            }),
+            this.prisma.dailyCheckin.findMany({
+                where: { ...memberFilter, streak: { gte: 7 } },
+                include: { member: { select: { id: true, fullName: true, email: true } } },
+                orderBy: { streak: 'desc' },
+                take: 10,
+            }),
+            this.prisma.dailyCheckin.findMany({
+                where: memberFilter,
+                include: { member: { select: { id: true, fullName: true, email: true } } },
+                orderBy: { date: 'desc' },
+                take: 20,
+            }),
+        ]);
+        return {
+            checkedInToday,
+            totalThisMonth,
+            activeStreaks: streaks.length,
+            topStreaks: streaks.map(s => ({
+                memberId: s.memberId,
+                fullName: s.member?.fullName,
+                email: s.member?.email,
+                streak: s.streak,
+                lastCheckin: s.date,
+            })),
+            recentActivity: recent.map(r => ({
+                id: r.id,
+                memberId: r.memberId,
+                fullName: r.member?.fullName,
+                streak: r.streak,
+                pointsAwarded: r.pointsAwarded,
+                date: r.date,
+            })),
+        };
+    }
 };
 exports.CheckinService = CheckinService;
 exports.CheckinService = CheckinService = __decorate([
@@ -8976,7 +10110,2168 @@ exports.CheckinService = CheckinService = __decorate([
 
 
 /***/ }),
-/* 111 */
+/* 116 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EarningRuleModule = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_module_1 = __webpack_require__(12);
+const earning_rule_controller_1 = __webpack_require__(117);
+const earning_rule_service_1 = __webpack_require__(118);
+let EarningRuleModule = class EarningRuleModule {
+};
+exports.EarningRuleModule = EarningRuleModule;
+exports.EarningRuleModule = EarningRuleModule = __decorate([
+    (0, common_1.Module)({
+        imports: [prisma_module_1.PrismaModule],
+        controllers: [earning_rule_controller_1.EarningRuleController],
+        providers: [earning_rule_service_1.EarningRuleService],
+        exports: [earning_rule_service_1.EarningRuleService],
+    })
+], EarningRuleModule);
+
+
+/***/ }),
+/* 117 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EarningRuleController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const earning_rule_service_1 = __webpack_require__(118);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+const earning_rule_dto_1 = __webpack_require__(119);
+let EarningRuleController = class EarningRuleController {
+    earningRuleService;
+    constructor(earningRuleService) {
+        this.earningRuleService = earningRuleService;
+    }
+    create(body) {
+        return this.earningRuleService.create(body);
+    }
+    findAll(query) {
+        return this.earningRuleService.findAll(query.tenantId, query.page, query.limit, query.search, query.category);
+    }
+    calculate(tenantId, amount, category) {
+        return this.earningRuleService.calculateEarning(tenantId, Number(amount), category);
+    }
+    findOne(id) {
+        return this.earningRuleService.findOne(id);
+    }
+    update(id, body) {
+        return this.earningRuleService.update(id, body);
+    }
+    remove(id) {
+        return this.earningRuleService.remove(id);
+    }
+};
+exports.EarningRuleController = EarningRuleController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a point earning rule' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof earning_rule_dto_1.CreateEarningRuleDto !== "undefined" && earning_rule_dto_1.CreateEarningRuleDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'List earning rules (paginated)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_c = typeof earning_rule_dto_1.EarningRuleQueryDto !== "undefined" && earning_rule_dto_1.EarningRuleQueryDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('calculate'),
+    (0, swagger_1.ApiOperation)({ summary: 'Calculate points for a purchase amount' }),
+    __param(0, (0, common_1.Query)('tenantId')),
+    __param(1, (0, common_1.Query)('amount')),
+    __param(2, (0, common_1.Query)('category')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, String]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "calculate", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get earning rule by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update earning rule' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_d = typeof earning_rule_dto_1.UpdateEarningRuleDto !== "undefined" && earning_rule_dto_1.UpdateEarningRuleDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete earning rule' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], EarningRuleController.prototype, "remove", null);
+exports.EarningRuleController = EarningRuleController = __decorate([
+    (0, swagger_1.ApiTags)('Point Earning Rules'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('earning-rules'),
+    __metadata("design:paramtypes", [typeof (_a = typeof earning_rule_service_1.EarningRuleService !== "undefined" && earning_rule_service_1.EarningRuleService) === "function" ? _a : Object])
+], EarningRuleController);
+
+
+/***/ }),
+/* 118 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EarningRuleService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+let EarningRuleService = class EarningRuleService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    create(data) {
+        return this.prisma.pointEarningRule.create({ data: data });
+    }
+    async findAll(tenantId, page = 1, limit = 20, search, category) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (category)
+            where.category = category;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { category: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.pointEarningRule.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+            this.prisma.pointEarningRule.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async findOne(id) {
+        const rule = await this.prisma.pointEarningRule.findUnique({ where: { id } });
+        if (!rule)
+            throw new common_1.NotFoundException('Earning rule not found');
+        return rule;
+    }
+    async update(id, data) {
+        await this.findOne(id);
+        return this.prisma.pointEarningRule.update({ where: { id }, data: data });
+    }
+    async remove(id) {
+        await this.findOne(id);
+        return this.prisma.pointEarningRule.delete({ where: { id } });
+    }
+    async calculateEarning(tenantId, amount, category) {
+        const where = { tenantId, status: 'ACTIVE' };
+        if (category)
+            where.category = category;
+        const rules = await this.prisma.pointEarningRule.findMany({ where, orderBy: { pointsPerUnit: 'desc' } });
+        if (rules.length === 0)
+            return { points: 0, rule: null, amount };
+        const matched = rules.find(r => {
+            if (r.minAmount && amount < r.minAmount)
+                return false;
+            if (r.maxAmount && amount > r.maxAmount)
+                return false;
+            return true;
+        });
+        if (!matched)
+            return { points: 0, rule: null, amount };
+        const points = Math.round(amount * matched.pointsPerUnit);
+        return { points, rule: matched.name, amount };
+    }
+};
+exports.EarningRuleService = EarningRuleService;
+exports.EarningRuleService = EarningRuleService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], EarningRuleService);
+
+
+/***/ }),
+/* 119 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EarningRuleQueryDto = exports.UpdateEarningRuleDto = exports.CreateEarningRuleDto = void 0;
+const class_validator_1 = __webpack_require__(23);
+const swagger_1 = __webpack_require__(3);
+const class_transformer_1 = __webpack_require__(74);
+class CreateEarningRuleDto {
+    name;
+    description;
+    pointsPerUnit;
+    minAmount;
+    maxAmount;
+    category;
+    tenantId;
+}
+exports.CreateEarningRuleDto = CreateEarningRuleDto;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEarningRuleDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEarningRuleDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ default: 1.0 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CreateEarningRuleDto.prototype, "pointsPerUnit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CreateEarningRuleDto.prototype, "minAmount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CreateEarningRuleDto.prototype, "maxAmount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEarningRuleDto.prototype, "category", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEarningRuleDto.prototype, "tenantId", void 0);
+class UpdateEarningRuleDto {
+    name;
+    description;
+    pointsPerUnit;
+    minAmount;
+    maxAmount;
+    category;
+    status;
+}
+exports.UpdateEarningRuleDto = UpdateEarningRuleDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateEarningRuleDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateEarningRuleDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], UpdateEarningRuleDto.prototype, "pointsPerUnit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], UpdateEarningRuleDto.prototype, "minAmount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], UpdateEarningRuleDto.prototype, "maxAmount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateEarningRuleDto.prototype, "category", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateEarningRuleDto.prototype, "status", void 0);
+class EarningRuleQueryDto {
+    tenantId;
+    page;
+    limit;
+    search;
+    category;
+}
+exports.EarningRuleQueryDto = EarningRuleQueryDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], EarningRuleQueryDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false, default: 1 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], EarningRuleQueryDto.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false, default: 20 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], EarningRuleQueryDto.prototype, "limit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], EarningRuleQueryDto.prototype, "search", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], EarningRuleQueryDto.prototype, "category", void 0);
+
+
+/***/ }),
+/* 120 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.StoreModule = void 0;
+const common_1 = __webpack_require__(2);
+const store_service_1 = __webpack_require__(121);
+const store_controller_1 = __webpack_require__(122);
+let StoreModule = class StoreModule {
+};
+exports.StoreModule = StoreModule;
+exports.StoreModule = StoreModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [store_controller_1.StoreController],
+        providers: [store_service_1.StoreService],
+        exports: [store_service_1.StoreService],
+    })
+], StoreModule);
+
+
+/***/ }),
+/* 121 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.StoreService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+const sort_util_1 = __webpack_require__(28);
+let StoreService = class StoreService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(data) {
+        const existing = await this.prisma.store.findUnique({ where: { code: data.code } });
+        if (existing)
+            throw new common_1.BadRequestException('Store code already exists');
+        return this.prisma.store.create({
+            data: {
+                name: data.name,
+                code: data.code,
+                address: data.address,
+                phone: data.phone,
+                email: data.email,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                openingHours: data.openingHours || null,
+                tenantId: data.tenantId,
+            },
+        });
+    }
+    async findAll(tenantId, page = 1, limit = 20, search, status, sort) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (status)
+            where.status = status;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { code: { contains: search, mode: 'insensitive' } },
+                { address: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        const { orderBy, orderDirection } = (0, sort_util_1.parseSort)(sort);
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.store.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
+            this.prisma.store.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async findOne(id) {
+        const store = await this.prisma.store.findUnique({ where: { id }, include: { storeStaff: true } });
+        if (!store)
+            throw new common_1.NotFoundException('Store not found');
+        return store;
+    }
+    async update(id, data) {
+        await this.findOne(id);
+        return this.prisma.store.update({ where: { id }, data: data });
+    }
+    async remove(id) {
+        await this.findOne(id);
+        await this.prisma.storeStaff.deleteMany({ where: { storeId: id } });
+        return this.prisma.store.delete({ where: { id } });
+    }
+    async addStaff(storeId, data) {
+        await this.findOne(storeId);
+        return this.prisma.storeStaff.create({ data: { ...data, storeId } });
+    }
+    async listStaff(storeId) {
+        await this.findOne(storeId);
+        return this.prisma.storeStaff.findMany({ where: { storeId } });
+    }
+    async updateStaff(staffId, data) {
+        const staff = await this.prisma.storeStaff.findUnique({ where: { id: staffId } });
+        if (!staff)
+            throw new common_1.NotFoundException('Staff not found');
+        return this.prisma.storeStaff.update({ where: { id: staffId }, data });
+    }
+    async removeStaff(staffId) {
+        const staff = await this.prisma.storeStaff.findUnique({ where: { id: staffId } });
+        if (!staff)
+            throw new common_1.NotFoundException('Staff not found');
+        return this.prisma.storeStaff.delete({ where: { id: staffId } });
+    }
+};
+exports.StoreService = StoreService;
+exports.StoreService = StoreService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], StoreService);
+
+
+/***/ }),
+/* 122 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.StoreController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const store_service_1 = __webpack_require__(121);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let StoreController = class StoreController {
+    storeService;
+    constructor(storeService) {
+        this.storeService = storeService;
+    }
+    create(body) {
+        return this.storeService.create(body);
+    }
+    findAll(query) {
+        return this.storeService.findAll(query.tenantId, query.page, query.limit, query.search, query.status, query.sort);
+    }
+    findOne(id) {
+        return this.storeService.findOne(id);
+    }
+    update(id, body) {
+        return this.storeService.update(id, body);
+    }
+    remove(id) {
+        return this.storeService.remove(id);
+    }
+    addStaff(id, body) {
+        return this.storeService.addStaff(id, body);
+    }
+    listStaff(id) {
+        return this.storeService.listStaff(id);
+    }
+    updateStaff(staffId, body) {
+        return this.storeService.updateStaff(staffId, body);
+    }
+    removeStaff(staffId) {
+        return this.storeService.removeStaff(staffId);
+    }
+};
+exports.StoreController = StoreController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a store/outlet' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'List stores' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get store by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update store' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete store' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/staff'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Add staff to store' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "addStaff", null);
+__decorate([
+    (0, common_1.Get)(':id/staff'),
+    (0, swagger_1.ApiOperation)({ summary: 'List store staff' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "listStaff", null);
+__decorate([
+    (0, common_1.Put)('staff/:staffId'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update store staff' }),
+    __param(0, (0, common_1.Param)('staffId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "updateStaff", null);
+__decorate([
+    (0, common_1.Delete)('staff/:staffId'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Remove store staff' }),
+    __param(0, (0, common_1.Param)('staffId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StoreController.prototype, "removeStaff", null);
+exports.StoreController = StoreController = __decorate([
+    (0, swagger_1.ApiTags)('Stores'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('stores'),
+    __metadata("design:paramtypes", [typeof (_a = typeof store_service_1.StoreService !== "undefined" && store_service_1.StoreService) === "function" ? _a : Object])
+], StoreController);
+
+
+/***/ }),
+/* 123 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CashbackModule = void 0;
+const common_1 = __webpack_require__(2);
+const cashback_service_1 = __webpack_require__(124);
+const cashback_controller_1 = __webpack_require__(125);
+let CashbackModule = class CashbackModule {
+};
+exports.CashbackModule = CashbackModule;
+exports.CashbackModule = CashbackModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [cashback_controller_1.CashbackController],
+        providers: [cashback_service_1.CashbackService],
+        exports: [cashback_service_1.CashbackService],
+    })
+], CashbackModule);
+
+
+/***/ }),
+/* 124 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CashbackService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+let CashbackService = class CashbackService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async createConfig(data) {
+        return this.prisma.cashbackConfig.create({
+            data: {
+                ...data,
+                rate: data.rate || 0.01,
+                startDate: data.startDate ? new Date(data.startDate) : undefined,
+                endDate: data.endDate ? new Date(data.endDate) : undefined,
+            },
+        });
+    }
+    async listConfigs(tenantId, page = 1, limit = 20) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.cashbackConfig.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+            this.prisma.cashbackConfig.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async getConfig(id) {
+        const config = await this.prisma.cashbackConfig.findUnique({ where: { id } });
+        if (!config)
+            throw new common_1.NotFoundException('Cashback config not found');
+        return config;
+    }
+    async updateConfig(id, data) {
+        await this.getConfig(id);
+        return this.prisma.cashbackConfig.update({ where: { id }, data });
+    }
+    async deleteConfig(id) {
+        await this.getConfig(id);
+        return this.prisma.cashbackConfig.delete({ where: { id } });
+    }
+    async getBalance(memberId) {
+        const aggregations = await this.prisma.cashbackTransaction.aggregate({
+            where: { memberId },
+            _sum: { amount: true },
+        });
+        return { balance: aggregations._sum.amount || 0 };
+    }
+    async earn(memberId, amount, description, referenceId) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const currentBalance = (await this.getBalance(memberId)).balance;
+        const newBalance = currentBalance + amount;
+        return this.prisma.cashbackTransaction.create({
+            data: {
+                memberId,
+                type: 'EARN',
+                amount,
+                balance: newBalance,
+                description: description || 'Cashback earned',
+                referenceId,
+                tenantId: member.tenantId,
+            },
+        });
+    }
+    async redeem(memberId, amount, description) {
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        const currentBalance = (await this.getBalance(memberId)).balance;
+        if (currentBalance < amount)
+            throw new common_1.BadRequestException('Insufficient cashback balance');
+        const newBalance = currentBalance - amount;
+        return this.prisma.cashbackTransaction.create({
+            data: {
+                memberId,
+                type: 'REDEEM',
+                amount: -Math.abs(amount),
+                balance: newBalance,
+                description: description || 'Cashback redeemed',
+                tenantId: member.tenantId,
+            },
+        });
+    }
+    async getTransactions(memberId, page = 1, limit = 20, type) {
+        const where = { memberId };
+        if (type)
+            where.type = type;
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.cashbackTransaction.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+            this.prisma.cashbackTransaction.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+};
+exports.CashbackService = CashbackService;
+exports.CashbackService = CashbackService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], CashbackService);
+
+
+/***/ }),
+/* 125 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CashbackController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const cashback_service_1 = __webpack_require__(124);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let CashbackController = class CashbackController {
+    cashbackService;
+    constructor(cashbackService) {
+        this.cashbackService = cashbackService;
+    }
+    createConfig(body) {
+        return this.cashbackService.createConfig(body);
+    }
+    listConfigs(query) {
+        return this.cashbackService.listConfigs(query.tenantId, query.page, query.limit);
+    }
+    getConfig(id) {
+        return this.cashbackService.getConfig(id);
+    }
+    updateConfig(id, body) {
+        return this.cashbackService.updateConfig(id, body);
+    }
+    deleteConfig(id) {
+        return this.cashbackService.deleteConfig(id);
+    }
+    earn(body) {
+        return this.cashbackService.earn(body.memberId, body.amount, body.description, body.referenceId);
+    }
+    redeem(body) {
+        return this.cashbackService.redeem(body.memberId, body.amount, body.description);
+    }
+    getBalance(memberId) {
+        return this.cashbackService.getBalance(memberId);
+    }
+    getTransactions(memberId, query) {
+        return this.cashbackService.getTransactions(memberId, query.page, query.limit, query.type);
+    }
+};
+exports.CashbackController = CashbackController;
+__decorate([
+    (0, common_1.Post)('configs'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create cashback config' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "createConfig", null);
+__decorate([
+    (0, common_1.Get)('configs'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List cashback configs' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "listConfigs", null);
+__decorate([
+    (0, common_1.Get)('configs/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get cashback config' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "getConfig", null);
+__decorate([
+    (0, common_1.Put)('configs/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update cashback config' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "updateConfig", null);
+__decorate([
+    (0, common_1.Delete)('configs/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete cashback config' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "deleteConfig", null);
+__decorate([
+    (0, common_1.Post)('earn'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Earn cashback for member' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "earn", null);
+__decorate([
+    (0, common_1.Post)('redeem'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Redeem cashback for member' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "redeem", null);
+__decorate([
+    (0, common_1.Get)('balance/:memberId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get member cashback balance' }),
+    __param(0, (0, common_1.Param)('memberId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "getBalance", null);
+__decorate([
+    (0, common_1.Get)('transactions/:memberId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get member cashback transactions' }),
+    __param(0, (0, common_1.Param)('memberId')),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CashbackController.prototype, "getTransactions", null);
+exports.CashbackController = CashbackController = __decorate([
+    (0, swagger_1.ApiTags)('Cashback'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('cashback'),
+    __metadata("design:paramtypes", [typeof (_a = typeof cashback_service_1.CashbackService !== "undefined" && cashback_service_1.CashbackService) === "function" ? _a : Object])
+], CashbackController);
+
+
+/***/ }),
+/* 126 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PartnershipModule = void 0;
+const common_1 = __webpack_require__(2);
+const partnership_service_1 = __webpack_require__(127);
+const partnership_controller_1 = __webpack_require__(128);
+let PartnershipModule = class PartnershipModule {
+};
+exports.PartnershipModule = PartnershipModule;
+exports.PartnershipModule = PartnershipModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [partnership_controller_1.PartnershipController],
+        providers: [partnership_service_1.PartnershipService],
+        exports: [partnership_service_1.PartnershipService],
+    })
+], PartnershipModule);
+
+
+/***/ }),
+/* 127 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PartnershipService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+const sort_util_1 = __webpack_require__(28);
+let PartnershipService = class PartnershipService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async createBrand(data) {
+        const existing = await this.prisma.partnerBrand.findUnique({ where: { code: data.code } });
+        if (existing)
+            throw new common_1.BadRequestException('Brand code already exists');
+        return this.prisma.partnerBrand.create({
+            data: { ...data, commissionRate: data.commissionRate || 0.05 },
+        });
+    }
+    async listBrands(tenantId, page = 1, limit = 20, search, status, sort) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (status)
+            where.status = status;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { code: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        const { orderBy, orderDirection } = (0, sort_util_1.parseSort)(sort);
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.partnerBrand.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
+            this.prisma.partnerBrand.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async getBrand(id) {
+        const brand = await this.prisma.partnerBrand.findUnique({ where: { id }, include: { partnerRewards: true } });
+        if (!brand)
+            throw new common_1.NotFoundException('Partner brand not found');
+        return brand;
+    }
+    async updateBrand(id, data) {
+        await this.getBrand(id);
+        return this.prisma.partnerBrand.update({ where: { id }, data });
+    }
+    async deleteBrand(id) {
+        await this.getBrand(id);
+        await this.prisma.partnerReward.deleteMany({ where: { brandId: id } });
+        return this.prisma.partnerBrand.delete({ where: { id } });
+    }
+    async createReward(brandId, data) {
+        await this.getBrand(brandId);
+        return this.prisma.partnerReward.create({
+            data: {
+                ...data,
+                quantity: data.quantity || 0,
+                brandId,
+                startDate: data.startDate ? new Date(data.startDate) : undefined,
+                endDate: data.endDate ? new Date(data.endDate) : undefined,
+            },
+        });
+    }
+    async listRewards(brandId, page = 1, limit = 20) {
+        const where = { brandId };
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.partnerReward.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+            this.prisma.partnerReward.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async updateReward(id, data) {
+        const reward = await this.prisma.partnerReward.findUnique({ where: { id } });
+        if (!reward)
+            throw new common_1.NotFoundException('Partner reward not found');
+        return this.prisma.partnerReward.update({ where: { id }, data });
+    }
+    async deleteReward(id) {
+        const reward = await this.prisma.partnerReward.findUnique({ where: { id } });
+        if (!reward)
+            throw new common_1.NotFoundException('Partner reward not found');
+        return this.prisma.partnerReward.delete({ where: { id } });
+    }
+    async redeemReward(memberId, rewardId, quantity = 1) {
+        const reward = await this.prisma.partnerReward.findUnique({ where: { id: rewardId } });
+        if (!reward)
+            throw new common_1.NotFoundException('Partner reward not found');
+        if (reward.quantity < quantity)
+            throw new common_1.BadRequestException('Not enough stock');
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        if (member.availablePoints < reward.pointsRequired * quantity) {
+            throw new common_1.BadRequestException('Insufficient points');
+        }
+        const totalPoints = reward.pointsRequired * quantity;
+        await this.prisma.$transaction(async (tx) => {
+            await tx.partnerReward.update({ where: { id: rewardId }, data: { quantity: { decrement: quantity } } });
+            await tx.member.update({ where: { id: memberId }, data: { availablePoints: { decrement: totalPoints }, totalPoints: { decrement: totalPoints } } });
+            await tx.pointTransaction.create({
+                data: {
+                    memberId,
+                    type: 'BURN',
+                    amount: -totalPoints,
+                    balance: member.availablePoints - totalPoints,
+                    reason: `Redeemed partner reward: ${reward.name}`,
+                    reference: rewardId,
+                },
+            });
+        });
+        return { message: 'Partner reward redeemed successfully', reward: reward.name, pointsSpent: totalPoints };
+    }
+};
+exports.PartnershipService = PartnershipService;
+exports.PartnershipService = PartnershipService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], PartnershipService);
+
+
+/***/ }),
+/* 128 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PartnershipController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const partnership_service_1 = __webpack_require__(127);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let PartnershipController = class PartnershipController {
+    partnershipService;
+    constructor(partnershipService) {
+        this.partnershipService = partnershipService;
+    }
+    createBrand(body) {
+        return this.partnershipService.createBrand(body);
+    }
+    listBrands(query) {
+        return this.partnershipService.listBrands(query.tenantId, query.page, query.limit, query.search, query.status, query.sort);
+    }
+    getBrand(id) {
+        return this.partnershipService.getBrand(id);
+    }
+    updateBrand(id, body) {
+        return this.partnershipService.updateBrand(id, body);
+    }
+    deleteBrand(id) {
+        return this.partnershipService.deleteBrand(id);
+    }
+    createReward(brandId, body) {
+        return this.partnershipService.createReward(brandId, body);
+    }
+    listRewards(brandId, query) {
+        return this.partnershipService.listRewards(brandId, query.page, query.limit);
+    }
+    updateReward(id, body) {
+        return this.partnershipService.updateReward(id, body);
+    }
+    deleteReward(id) {
+        return this.partnershipService.deleteReward(id);
+    }
+    redeemReward(body) {
+        return this.partnershipService.redeemReward(body.memberId, body.rewardId, body.quantity);
+    }
+};
+exports.PartnershipController = PartnershipController;
+__decorate([
+    (0, common_1.Post)('brands'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create partner brand' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "createBrand", null);
+__decorate([
+    (0, common_1.Get)('brands'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List partner brands' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "listBrands", null);
+__decorate([
+    (0, common_1.Get)('brands/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get partner brand' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "getBrand", null);
+__decorate([
+    (0, common_1.Put)('brands/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update partner brand' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "updateBrand", null);
+__decorate([
+    (0, common_1.Delete)('brands/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete partner brand' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "deleteBrand", null);
+__decorate([
+    (0, common_1.Post)('brands/:brandId/rewards'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create partner reward' }),
+    __param(0, (0, common_1.Param)('brandId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "createReward", null);
+__decorate([
+    (0, common_1.Get)('brands/:brandId/rewards'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List partner rewards' }),
+    __param(0, (0, common_1.Param)('brandId')),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "listRewards", null);
+__decorate([
+    (0, common_1.Put)('rewards/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update partner reward' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "updateReward", null);
+__decorate([
+    (0, common_1.Delete)('rewards/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete partner reward' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "deleteReward", null);
+__decorate([
+    (0, common_1.Post)('redeem'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Redeem partner reward with member points' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PartnershipController.prototype, "redeemReward", null);
+exports.PartnershipController = PartnershipController = __decorate([
+    (0, swagger_1.ApiTags)('Partnership'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('partnership'),
+    __metadata("design:paramtypes", [typeof (_a = typeof partnership_service_1.PartnershipService !== "undefined" && partnership_service_1.PartnershipService) === "function" ? _a : Object])
+], PartnershipController);
+
+
+/***/ }),
+/* 129 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WebhookModule = void 0;
+const common_1 = __webpack_require__(2);
+const webhook_service_1 = __webpack_require__(130);
+const webhook_controller_1 = __webpack_require__(131);
+let WebhookModule = class WebhookModule {
+};
+exports.WebhookModule = WebhookModule;
+exports.WebhookModule = WebhookModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [webhook_controller_1.WebhookController],
+        providers: [webhook_service_1.WebhookService],
+        exports: [webhook_service_1.WebhookService],
+    })
+], WebhookModule);
+
+
+/***/ }),
+/* 130 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WebhookService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+let WebhookService = class WebhookService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async createEndpoint(data) {
+        return this.prisma.webhookEndpoint.create({ data });
+    }
+    async listEndpoints(tenantId) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        return this.prisma.webhookEndpoint.findMany({ where, orderBy: { createdAt: 'desc' } });
+    }
+    async getEndpoint(id) {
+        const endpoint = await this.prisma.webhookEndpoint.findUnique({ where: { id } });
+        if (!endpoint)
+            throw new common_1.NotFoundException('Webhook endpoint not found');
+        return endpoint;
+    }
+    async updateEndpoint(id, data) {
+        await this.getEndpoint(id);
+        return this.prisma.webhookEndpoint.update({ where: { id }, data });
+    }
+    async deleteEndpoint(id) {
+        await this.getEndpoint(id);
+        await this.prisma.webhookEventLog.deleteMany({ where: { endpointId: id } });
+        return this.prisma.webhookEndpoint.delete({ where: { id } });
+    }
+    async testEndpoint(id) {
+        const endpoint = await this.getEndpoint(id);
+        const payload = { event: 'test', timestamp: new Date().toISOString(), data: { message: 'Webhook test from Loyalty Platform' } };
+        try {
+            const response = await fetch(endpoint.url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Webhook-Secret': endpoint.secret || '',
+                    'X-Event': 'test',
+                },
+                body: JSON.stringify(payload),
+            });
+            await this.prisma.webhookEventLog.create({
+                data: {
+                    endpointId: id,
+                    event: 'test',
+                    payload,
+                    responseCode: response.status,
+                    responseBody: await response.text(),
+                    success: response.ok,
+                },
+            });
+            return { success: response.ok, statusCode: response.status };
+        }
+        catch (error) {
+            await this.prisma.webhookEventLog.create({
+                data: {
+                    endpointId: id,
+                    event: 'test',
+                    payload,
+                    responseCode: 0,
+                    responseBody: error.message,
+                    success: false,
+                },
+            });
+            return { success: false, error: error.message };
+        }
+    }
+    async listLogs(endpointId, page = 1, limit = 20) {
+        const where = {};
+        if (endpointId)
+            where.endpointId = endpointId;
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.webhookEventLog.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+            this.prisma.webhookEventLog.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async getLog(id) {
+        const log = await this.prisma.webhookEventLog.findUnique({ where: { id } });
+        if (!log)
+            throw new common_1.NotFoundException('Webhook log not found');
+        return log;
+    }
+    async dispatch(eventName, payload, tenantId) {
+        const endpoints = await this.prisma.webhookEndpoint.findMany({
+            where: { tenantId, active: true, events: { has: eventName } },
+        });
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(endpoint.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Webhook-Secret': endpoint.secret || '',
+                        'X-Event': eventName,
+                    },
+                    body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString(), data: payload }),
+                });
+                await this.prisma.webhookEventLog.create({
+                    data: {
+                        endpointId: endpoint.id,
+                        event: eventName,
+                        payload,
+                        responseCode: response.status,
+                        responseBody: await response.text(),
+                        success: response.ok,
+                    },
+                });
+                if (!response.ok) {
+                    await this.prisma.webhookEndpoint.update({ where: { id: endpoint.id }, data: { failureCount: { increment: 1 } } });
+                }
+            }
+            catch (error) {
+                await this.prisma.webhookEventLog.create({
+                    data: {
+                        endpointId: endpoint.id,
+                        event: eventName,
+                        payload,
+                        responseCode: 0,
+                        responseBody: error.message,
+                        success: false,
+                    },
+                });
+                await this.prisma.webhookEndpoint.update({ where: { id: endpoint.id }, data: { failureCount: { increment: 1 } } });
+            }
+        }
+    }
+};
+exports.WebhookService = WebhookService;
+exports.WebhookService = WebhookService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], WebhookService);
+
+
+/***/ }),
+/* 131 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WebhookController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const webhook_service_1 = __webpack_require__(130);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let WebhookController = class WebhookController {
+    webhookService;
+    constructor(webhookService) {
+        this.webhookService = webhookService;
+    }
+    createEndpoint(body) {
+        return this.webhookService.createEndpoint(body);
+    }
+    listEndpoints(query) {
+        return this.webhookService.listEndpoints(query.tenantId);
+    }
+    getEndpoint(id) {
+        return this.webhookService.getEndpoint(id);
+    }
+    updateEndpoint(id, body) {
+        return this.webhookService.updateEndpoint(id, body);
+    }
+    deleteEndpoint(id) {
+        return this.webhookService.deleteEndpoint(id);
+    }
+    testEndpoint(id) {
+        return this.webhookService.testEndpoint(id);
+    }
+    listLogs(query) {
+        return this.webhookService.listLogs(query.endpointId, query.page, query.limit);
+    }
+    getLog(id) {
+        return this.webhookService.getLog(id);
+    }
+};
+exports.WebhookController = WebhookController;
+__decorate([
+    (0, common_1.Post)('endpoints'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create webhook endpoint' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "createEndpoint", null);
+__decorate([
+    (0, common_1.Get)('endpoints'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List webhook endpoints' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "listEndpoints", null);
+__decorate([
+    (0, common_1.Get)('endpoints/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get webhook endpoint' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "getEndpoint", null);
+__decorate([
+    (0, common_1.Put)('endpoints/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update webhook endpoint' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "updateEndpoint", null);
+__decorate([
+    (0, common_1.Delete)('endpoints/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete webhook endpoint' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "deleteEndpoint", null);
+__decorate([
+    (0, common_1.Post)('endpoints/:id/test'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Test webhook endpoint' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "testEndpoint", null);
+__decorate([
+    (0, common_1.Get)('logs'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List webhook event logs' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "listLogs", null);
+__decorate([
+    (0, common_1.Get)('logs/:id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get webhook event log' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WebhookController.prototype, "getLog", null);
+exports.WebhookController = WebhookController = __decorate([
+    (0, swagger_1.ApiTags)('Webhooks'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('webhooks'),
+    __metadata("design:paramtypes", [typeof (_a = typeof webhook_service_1.WebhookService !== "undefined" && webhook_service_1.WebhookService) === "function" ? _a : Object])
+], WebhookController);
+
+
+/***/ }),
+/* 132 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GiftCardModule = void 0;
+const common_1 = __webpack_require__(2);
+const gift_card_service_1 = __webpack_require__(133);
+const gift_card_controller_1 = __webpack_require__(134);
+let GiftCardModule = class GiftCardModule {
+};
+exports.GiftCardModule = GiftCardModule;
+exports.GiftCardModule = GiftCardModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [gift_card_controller_1.GiftCardController],
+        providers: [gift_card_service_1.GiftCardService],
+        exports: [gift_card_service_1.GiftCardService],
+    })
+], GiftCardModule);
+
+
+/***/ }),
+/* 133 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GiftCardService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+const sort_util_1 = __webpack_require__(28);
+const crypto = __importStar(__webpack_require__(61));
+let GiftCardService = class GiftCardService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(data) {
+        const code = 'GC' + crypto.randomBytes(4).toString('hex').toUpperCase();
+        return this.prisma.giftCard.create({
+            data: {
+                code,
+                initialValue: data.initialValue,
+                balance: data.initialValue,
+                type: data.type || 'digital',
+                expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+                tenantId: data.tenantId,
+            },
+        });
+    }
+    async findAll(tenantId, page = 1, limit = 20, search, status, sort) {
+        const where = {};
+        if (tenantId)
+            where.tenantId = tenantId;
+        if (status)
+            where.status = status;
+        if (search) {
+            where.OR = [{ code: { contains: search, mode: 'insensitive' } }];
+        }
+        const { orderBy, orderDirection } = (0, sort_util_1.parseSort)(sort);
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.giftCard.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
+            this.prisma.giftCard.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async findOne(id) {
+        const card = await this.prisma.giftCard.findUnique({ where: { id } });
+        if (!card)
+            throw new common_1.NotFoundException('Gift card not found');
+        return card;
+    }
+    async update(id, data) {
+        await this.findOne(id);
+        return this.prisma.giftCard.update({ where: { id }, data });
+    }
+    async assign(id, memberId) {
+        const card = await this.findOne(id);
+        const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+        if (!member)
+            throw new common_1.NotFoundException('Member not found');
+        if (card.status !== 'ACTIVE')
+            throw new common_1.BadRequestException('Gift card is not active');
+        await this.prisma.memberGiftCard.create({ data: { memberId, giftCardId: id, balance: card.balance } });
+        return { message: 'Gift card assigned successfully' };
+    }
+    async getMemberGiftCards(memberId) {
+        return this.prisma.memberGiftCard.findMany({
+            where: { memberId },
+            include: { giftCard: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async redeem(id, memberId, amount) {
+        const card = await this.findOne(id);
+        if (card.balance < amount)
+            throw new common_1.BadRequestException('Insufficient gift card balance');
+        const memberCard = await this.prisma.memberGiftCard.findFirst({
+            where: { giftCardId: id, memberId },
+        });
+        if (!memberCard)
+            throw new common_1.BadRequestException('Gift card not assigned to this member');
+        await this.prisma.$transaction(async (tx) => {
+            await tx.giftCard.update({ where: { id }, data: { balance: { decrement: amount } } });
+            await tx.memberGiftCard.update({ where: { id: memberCard.id }, data: { balance: { decrement: amount } } });
+        });
+        return { message: 'Gift card redeemed successfully', amount };
+    }
+};
+exports.GiftCardService = GiftCardService;
+exports.GiftCardService = GiftCardService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], GiftCardService);
+
+
+/***/ }),
+/* 134 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GiftCardController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const gift_card_service_1 = __webpack_require__(133);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let GiftCardController = class GiftCardController {
+    giftCardService;
+    constructor(giftCardService) {
+        this.giftCardService = giftCardService;
+    }
+    create(body) {
+        return this.giftCardService.create(body);
+    }
+    findAll(query) {
+        return this.giftCardService.findAll(query.tenantId, query.page, query.limit, query.search, query.status, query.sort);
+    }
+    findOne(id) {
+        return this.giftCardService.findOne(id);
+    }
+    update(id, body) {
+        return this.giftCardService.update(id, body);
+    }
+    assign(id, body) {
+        return this.giftCardService.assign(id, body.memberId);
+    }
+    getMemberGiftCards(memberId) {
+        return this.giftCardService.getMemberGiftCards(memberId);
+    }
+    redeem(id, body) {
+        return this.giftCardService.redeem(id, body.memberId, body.amount);
+    }
+};
+exports.GiftCardController = GiftCardController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a gift card' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List gift cards' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get gift card by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update gift card' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/assign'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Assign gift card to member' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "assign", null);
+__decorate([
+    (0, common_1.Get)('member/:memberId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get member gift cards' }),
+    __param(0, (0, common_1.Param)('memberId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "getMemberGiftCards", null);
+__decorate([
+    (0, common_1.Post)(':id/redeem'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'Redeem gift card balance' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], GiftCardController.prototype, "redeem", null);
+exports.GiftCardController = GiftCardController = __decorate([
+    (0, swagger_1.ApiTags)('Gift Cards'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('gift-cards'),
+    __metadata("design:paramtypes", [typeof (_a = typeof gift_card_service_1.GiftCardService !== "undefined" && gift_card_service_1.GiftCardService) === "function" ? _a : Object])
+], GiftCardController);
+
+
+/***/ }),
+/* 135 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FeedbackModule = void 0;
+const common_1 = __webpack_require__(2);
+const feedback_service_1 = __webpack_require__(136);
+const feedback_controller_1 = __webpack_require__(137);
+let FeedbackModule = class FeedbackModule {
+};
+exports.FeedbackModule = FeedbackModule;
+exports.FeedbackModule = FeedbackModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [feedback_controller_1.FeedbackController],
+        providers: [feedback_service_1.FeedbackService],
+        exports: [feedback_service_1.FeedbackService],
+    })
+], FeedbackModule);
+
+
+/***/ }),
+/* 136 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FeedbackService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(13);
+const sort_util_1 = __webpack_require__(28);
+let FeedbackService = class FeedbackService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(data) {
+        return this.prisma.memberFeedback.create({ data });
+    }
+    async findAll(tenantId, page = 1, limit = 20, entityType, entityId, rating, status, sort) {
+        const where = {};
+        if (entityType)
+            where.entityType = entityType;
+        if (entityId)
+            where.entityId = entityId;
+        if (rating)
+            where.rating = rating;
+        if (status)
+            where.status = status;
+        if (tenantId) {
+            where.member = { tenantId };
+        }
+        const { orderBy, orderDirection } = (0, sort_util_1.parseSort)(sort);
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            this.prisma.memberFeedback.findMany({
+                where,
+                orderBy: { [orderBy]: orderDirection },
+                skip,
+                take: limit,
+                include: { member: { select: { id: true, fullName: true, avatar: true } } },
+            }),
+            this.prisma.memberFeedback.count({ where }),
+        ]);
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+    async findOne(id) {
+        const feedback = await this.prisma.memberFeedback.findUnique({ where: { id }, include: { member: { select: { id: true, fullName: true, avatar: true } } } });
+        if (!feedback)
+            throw new common_1.NotFoundException('Feedback not found');
+        return feedback;
+    }
+    async update(id, data) {
+        await this.findOne(id);
+        return this.prisma.memberFeedback.update({ where: { id }, data });
+    }
+    async remove(id) {
+        await this.findOne(id);
+        return this.prisma.memberFeedback.delete({ where: { id } });
+    }
+    async getPublic(entityType, entityId) {
+        const feedbacks = await this.prisma.memberFeedback.findMany({
+            where: { entityType, entityId, status: 'PUBLISHED' },
+            orderBy: { createdAt: 'desc' },
+            include: { member: { select: { id: true, fullName: true, avatar: true } } },
+        });
+        const stats = await this.prisma.memberFeedback.groupBy({
+            by: ['rating'],
+            where: { entityType, entityId, status: 'PUBLISHED' },
+            _count: { rating: true },
+        });
+        const total = feedbacks.length;
+        const averageRating = total > 0 ? feedbacks.reduce((sum, f) => sum + f.rating, 0) / total : 0;
+        return { feedbacks, stats: { total, averageRating, distribution: stats } };
+    }
+};
+exports.FeedbackService = FeedbackService;
+exports.FeedbackService = FeedbackService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+], FeedbackService);
+
+
+/***/ }),
+/* 137 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FeedbackController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(3);
+const feedback_service_1 = __webpack_require__(136);
+const jwt_auth_guard_1 = __webpack_require__(21);
+const roles_decorator_1 = __webpack_require__(9);
+let FeedbackController = class FeedbackController {
+    feedbackService;
+    constructor(feedbackService) {
+        this.feedbackService = feedbackService;
+    }
+    create(body) {
+        return this.feedbackService.create(body);
+    }
+    findAll(query) {
+        return this.feedbackService.findAll(query.tenantId, query.page, query.limit, query.entityType, query.entityId, query.rating, query.status, query.sort);
+    }
+    findOne(id) {
+        return this.feedbackService.findOne(id);
+    }
+    update(id, body) {
+        return this.feedbackService.update(id, body);
+    }
+    remove(id) {
+        return this.feedbackService.remove(id);
+    }
+    getPublic(entityType, entityId) {
+        return this.feedbackService.getPublic(entityType, entityId);
+    }
+};
+exports.FeedbackController = FeedbackController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)('MEMBER'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create feedback/review' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN', 'STAFF'),
+    (0, swagger_1.ApiOperation)({ summary: 'List feedback (admin)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get feedback by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update feedback status' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)('HOST', 'ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete feedback' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)('public/:entityType/:entityId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get public feedback for entity' }),
+    __param(0, (0, common_1.Param)('entityType')),
+    __param(1, (0, common_1.Param)('entityId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], FeedbackController.prototype, "getPublic", null);
+exports.FeedbackController = FeedbackController = __decorate([
+    (0, swagger_1.ApiTags)('Feedback'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Controller)('feedback'),
+    __metadata("design:paramtypes", [typeof (_a = typeof feedback_service_1.FeedbackService !== "undefined" && feedback_service_1.FeedbackService) === "function" ? _a : Object])
+], FeedbackController);
+
+
+/***/ }),
+/* 138 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -9020,7 +12315,7 @@ exports.GlobalExceptionFilter = GlobalExceptionFilter = __decorate([
 
 
 /***/ }),
-/* 112 */
+/* 139 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -9033,7 +12328,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LoggingInterceptor = void 0;
 const common_1 = __webpack_require__(2);
-const rxjs_1 = __webpack_require__(113);
+const rxjs_1 = __webpack_require__(140);
 let LoggingInterceptor = class LoggingInterceptor {
     logger = new common_1.Logger('HTTP');
     intercept(context, next) {
@@ -9050,13 +12345,13 @@ exports.LoggingInterceptor = LoggingInterceptor = __decorate([
 
 
 /***/ }),
-/* 113 */
+/* 140 */
 /***/ ((module) => {
 
 module.exports = require("rxjs");
 
 /***/ }),
-/* 114 */
+/* 141 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -9069,7 +12364,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TransformInterceptor = void 0;
 const common_1 = __webpack_require__(2);
-const rxjs_1 = __webpack_require__(113);
+const rxjs_1 = __webpack_require__(140);
 let TransformInterceptor = class TransformInterceptor {
     intercept(context, next) {
         const response = context.switchToHttp().getResponse();
@@ -9106,7 +12401,7 @@ exports.TransformInterceptor = TransformInterceptor = __decorate([
 
 
 /***/ }),
-/* 115 */
+/* 142 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -9123,7 +12418,7 @@ var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuditLogInterceptor = void 0;
 const common_1 = __webpack_require__(2);
-const rxjs_1 = __webpack_require__(113);
+const rxjs_1 = __webpack_require__(140);
 const prisma_service_1 = __webpack_require__(13);
 const ENTITY_MODEL_MAP = {
     tenants: 'tenant',
@@ -9231,10 +12526,10 @@ const core_1 = __webpack_require__(1);
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(3);
 const api_gateway_module_1 = __webpack_require__(4);
-const global_exception_filter_1 = __webpack_require__(111);
-const logging_interceptor_1 = __webpack_require__(112);
-const transform_interceptor_1 = __webpack_require__(114);
-const audit_log_interceptor_1 = __webpack_require__(115);
+const global_exception_filter_1 = __webpack_require__(138);
+const logging_interceptor_1 = __webpack_require__(139);
+const transform_interceptor_1 = __webpack_require__(141);
+const audit_log_interceptor_1 = __webpack_require__(142);
 const prisma_service_1 = __webpack_require__(13);
 async function bootstrap() {
     const logger = new common_1.Logger('ApiGateway');

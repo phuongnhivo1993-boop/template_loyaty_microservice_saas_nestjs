@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { checkin } from '../services/api';
 import type { CheckinStats, DailyCheckin } from '../services/types';
 import { LoadingState, ErrorState } from '../components';
@@ -44,6 +44,7 @@ export default function CheckinScreen() {
   const checkedDates = new Set(history.map(h => new Date(h.date).toDateString()));
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={['#2563eb']} />}>
       <View style={styles.header}>
@@ -94,6 +95,7 @@ export default function CheckinScreen() {
         {!stats?.checkedInToday && <Text style={styles.checkinBonus}>Earn up to 100 points!</Text>}
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, FlatList, StyleSheet } from 'react-native';
 import { members } from '../services/api';
 import type { Badge } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -24,6 +24,7 @@ export default function BadgesScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.title}>Badges</Text>
       <FlatList
@@ -42,6 +43,7 @@ export default function BadgesScreen() {
         )}
       />
     </View>
+    </SafeAreaView>
   );
 }
 

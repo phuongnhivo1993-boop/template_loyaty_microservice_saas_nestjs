@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { rewards, cartRedeem } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -10,6 +10,7 @@ export default function RewardsScreen() {
   const navigation = useNavigation<any>();
   const [items, setItems] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [cart, setCart] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
@@ -24,6 +25,15 @@ export default function RewardsScreen() {
       .catch(() => setError('Failed to load rewards'))
       .finally(() => setLoading(false));
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const r = await rewards.list();
+      setItems(Array.isArray(r.data) ? r.data : r.data?.data || []);
+    } catch { setError('Failed to load rewards'); }
+    setRefreshing(false);
+  }, []);
 
   useEffect(() => { load(); }, []);
 
@@ -102,7 +112,9 @@ export default function RewardsScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <ScrollView style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>
         <Text style={styles.title}>Rewards Catalog</Text>
         <Text style={styles.subtitle}>Redeem your points</Text>
@@ -183,6 +195,7 @@ export default function RewardsScreen() {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

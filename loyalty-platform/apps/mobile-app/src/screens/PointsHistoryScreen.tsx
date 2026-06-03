@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { checkin, members } from '../services/api';
+import { members } from '../services/api';
 import { LoadingState, ErrorState, EmptyState } from '../components';
 
 export default function PointsHistoryScreen() {
   const navigation = useNavigation<any>();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -18,12 +19,8 @@ export default function PointsHistoryScreen() {
     if (append) setLoadingMore(true); else setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ page: String(p), limit: '30' });
-      if (typeFilter) params.set('type', typeFilter);
-      const res = await fetch(`http://localhost:3001/api/v1/me/transactions?${params}`, {
-        headers: { Authorization: `Bearer ${await require('expo-secure-store').getItemAsync('auth_token')}` },
-      });
-      const result = await res.json();
+      const res = await members.getTransactions({ page: p, limit: 30, type: typeFilter || undefined });
+      const result = res.data;
       const payload = result.data ?? result;
       setTransactions(append ? [...transactions, ...(Array.isArray(payload) ? payload : payload?.data || [])] : (Array.isArray(payload) ? payload : payload?.data || []));
       setTotalPages(result.totalPages || 1);
@@ -31,6 +28,19 @@ export default function PointsHistoryScreen() {
     } catch { setError('Failed to load transactions'); }
     if (append) setLoadingMore(false); else setLoading(false);
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await members.getTransactions({ page: 1, limit: 30, type: typeFilter || undefined });
+      const result = res.data;
+      const payload = result.data ?? result;
+      setTransactions(Array.isArray(payload) ? payload : payload?.data || []);
+      setTotalPages(result.totalPages || 1);
+      setPage(1);
+    } catch { setError('Failed to load transactions'); }
+    setRefreshing(false);
+  }, [typeFilter]);
 
   useEffect(() => { load(); }, [typeFilter]);
 
@@ -48,7 +58,9 @@ export default function PointsHistoryScreen() {
   if (error) return <ErrorState message={error} onRetry={() => load()} />;
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <ScrollView style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>
         <Text style={styles.title}>Points History</Text>
       </View>
@@ -91,6 +103,7 @@ export default function PointsHistoryScreen() {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

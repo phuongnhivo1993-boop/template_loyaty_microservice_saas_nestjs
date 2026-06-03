@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Share } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, Share } from 'react-native';
 import { members } from '../services/api';
 import type { Referral } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -35,6 +35,7 @@ export default function ReferralsScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Referrals</Text>
@@ -72,6 +73,7 @@ export default function ReferralsScreen() {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

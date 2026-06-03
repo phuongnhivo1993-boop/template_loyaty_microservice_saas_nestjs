@@ -279,4 +279,54 @@ export class MemberSelfService {
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
+
+  async getCashback(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const aggregation = await this.prisma.cashbackTransaction.aggregate({
+      where: { memberId },
+      _sum: { amount: true },
+    });
+
+    const transactions = await this.prisma.cashbackTransaction.findMany({
+      where: { memberId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return { balance: aggregation._sum.amount || 0, transactions };
+  }
+
+  async getGiftCards(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    return this.prisma.memberGiftCard.findMany({
+      where: { memberId },
+      include: { giftCard: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getStores(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId }, select: { tenantId: true } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    return this.prisma.store.findMany({
+      where: { tenantId: member.tenantId, status: 'ACTIVE' },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createFeedback(memberId: string, data: { entityType: string; entityId: string; rating: number; content?: string }) {
+    return this.prisma.memberFeedback.create({ data: { ...data, memberId } });
+  }
+
+  async getFeedback(memberId: string) {
+    return this.prisma.memberFeedback.findMany({
+      where: { memberId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

@@ -115,4 +115,44 @@ export class MemberSelfController {
   ) {
     return this.memberSelfService.getTransactions(req.user.id, page || 1, limit || 50, type);
   }
+
+  @Get('cashback')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own cashback balance and transactions' })
+  getCashback(@Req() req: any) {
+    return this.memberSelfService.getCashback(req.user.id);
+  }
+
+  @Get('gift-cards')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own gift cards' })
+  getGiftCards(@Req() req: any) {
+    return this.memberSelfService.getGiftCards(req.user.id);
+  }
+
+  @Get('stores')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get nearby stores / store list' })
+  getStores(@Req() req: any) {
+    return this.memberSelfService.getStores(req.user.id);
+  }
+
+  @Post('feedback')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit feedback/review' })
+  createFeedback(@Req() req: any, @Body() body: { entityType: string; entityId: string; rating: number; content?: string }) {
+    return this.memberSelfService.createFeedback(req.user.id, body);
+  }
+
+  @Get('feedback')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own feedback history' })
+  getFeedback(@Req() req: any) {
+    return this.memberSelfService.getFeedback(req.user.id);
+  }
 }

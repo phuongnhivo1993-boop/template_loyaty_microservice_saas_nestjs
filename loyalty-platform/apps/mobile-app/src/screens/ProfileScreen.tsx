@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import Card from '../components/Card';
@@ -30,6 +30,7 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -60,6 +61,7 @@ export default function ProfileScreen({ navigation }: any) {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

@@ -71,12 +71,15 @@ export default function HomeScreen() {
       <View style={styles.menuGrid}>
         {[
           { label: 'Wallet', icon: '⭐', screen: 'Wallet' },
+          { label: 'Cashback', icon: '💵', screen: 'Cashback' },
           { label: 'Rewards', icon: '🎁', screen: 'Rewards' },
           { label: 'Check-in', icon: '📅', screen: 'Checkin' },
+          { label: 'Stores', icon: '📍', screen: 'Stores' },
           { label: 'Referrals', icon: '🔗', screen: 'Referrals' },
           { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
           { label: 'Badges', icon: '🏅', screen: 'Badges' },
           { label: 'Missions', icon: '🎯', screen: 'Missions' },
+          { label: 'Feedback', icon: '⭐', screen: 'Feedback' },
           { label: 'Membership', icon: '💳', screen: 'MembershipCard' },
           { label: 'Tiers', icon: '📊', screen: 'TierProgress' },
           { label: 'KYC', icon: '✅', screen: 'KYCUpload' },

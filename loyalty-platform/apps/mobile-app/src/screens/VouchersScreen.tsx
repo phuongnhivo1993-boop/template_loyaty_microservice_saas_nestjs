@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, RefreshControl } from 'react-native';
 import { members } from '../services/api';
 import type { MemberVoucher } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -9,6 +9,7 @@ const TABS = ['ALL', 'ACTIVE', 'REDEEMED'];
 export default function VouchersScreen() {
   const [vouchers, setVouchers] = useState<MemberVoucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
   const [selectedVoucher, setSelectedVoucher] = useState<MemberVoucher | null>(null);
@@ -53,6 +54,7 @@ export default function VouchersScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.title}>My Vouchers</Text>
 
@@ -88,6 +90,7 @@ export default function VouchersScreen() {
         </View>
       </Modal>
     </View>
+    </SafeAreaView>
   );
 }
 

@@ -32,6 +32,12 @@ import { BulkModule } from './bulk/bulk.module';
 import { SettingsModule } from './settings/settings.module';
 import { CheckinModule } from './checkin/checkin.module';
 import { EarningRuleModule } from './earning-rule/earning-rule.module';
+import { StoreModule } from './store/store.module';
+import { CashbackModule } from './cashback/cashback.module';
+import { PartnershipModule } from './partnership/partnership.module';
+import { WebhookModule } from './webhook/webhook.module';
+import { GiftCardModule } from './gift-card/gift-card.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -64,6 +70,12 @@ import { EarningRuleModule } from './earning-rule/earning-rule.module';
     SettingsModule,
     CheckinModule,
     EarningRuleModule,
+    StoreModule,
+    CashbackModule,
+    PartnershipModule,
+    WebhookModule,
+    GiftCardModule,
+    FeedbackModule,
   ],
   controllers: [ApiGatewayController],
   providers: [

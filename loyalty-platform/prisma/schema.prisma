@@ -47,6 +47,7 @@ model Tenant {
   email     String
   phone     String?
   address   String?
+  logo      String?
   status    TenantStatus @default(ACTIVE)
   hostId    String
   host      Host         @relation(fields: [hostId], references: [id])
@@ -65,6 +66,11 @@ model Tenant {
   notificationLogs NotificationLog[]
   notificationTemplates NotificationTemplate[]
   pointEarningRules    PointEarningRule[]
+  stores       Store[]
+  cashbackConfigs      CashbackConfig[]
+  partnerBrands        PartnerBrand[]
+  webhookEndpoints     WebhookEndpoint[]
+  giftCards            GiftCard[]
 
   @@map("tenants")
 }
@@ -123,11 +129,14 @@ model Member {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  pointTransactions PointTransaction[]
-  referralsGiven    Referral[]        @relation("ReferralGiven")
-  referralsReceived Referral[]        @relation("ReferralReceived")
-  memberVouchers    MemberVoucher[]
-  dailyCheckins     DailyCheckin[]
+  pointTransactions  PointTransaction[]
+  referralsGiven     Referral[]          @relation("ReferralGiven")
+  referralsReceived  Referral[]          @relation("ReferralReceived")
+  memberVouchers     MemberVoucher[]
+  dailyCheckins      DailyCheckin[]
+  cashbackTransactions CashbackTransaction[]
+  memberGiftCards    MemberGiftCard[]
+  feedback           MemberFeedback[]
 
   @@index([tenantId])
   @@index([status])
@@ -386,4 +395,221 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+enum StoreStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+model Store {
+  id             String      @id @default(uuid())
+  name           String
+  code           String      @unique
+  address        String?
+  phone          String?
+  email          String?
+  latitude       Float?
+  longitude      Float?
+  openingHours   Json?
+  status         StoreStatus @default(ACTIVE)
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  storeStaff StoreStaff[]
+
+  @@index([tenantId])
+  @@index([code])
+  @@index([status])
+  @@map("stores")
+}
+
+model StoreStaff {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  userId    String?
+  name      String
+  phone     String
+  pinCode   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([phone])
+  @@map("store_staff")
+}
+
+model CashbackConfig {
+  id               String   @id @default(uuid())
+  name             String
+  description      String?
+  rate             Float    @default(0.01)
+  minAmount        Float?
+  maxAmount        Float?
+  minPointsBalance Int?
+  startDate        DateTime?
+  endDate          DateTime?
+  status           String   @default("ACTIVE")
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("cashback_configs")
+}
+
+model CashbackTransaction {
+  id            String   @id @default(uuid())
+  memberId      String
+  member        Member   @relation(fields: [memberId], references: [id])
+  type          String   // EARN, REDEEM, EXPIRE
+  amount        Float
+  referenceId   String?  // link to order/transaction
+  description   String?
+  balance       Float
+  tenantId      String
+  createdAt     DateTime @default(now())
+
+  @@index([memberId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("cashback_transactions")
+}
+
+model PartnerBrand {
+  id             String   @id @default(uuid())
+  name           String
+  code           String   @unique
+  description    String?
+  logo           String?
+  website        String?
+  contactEmail   String?
+  contactPhone   String?
+  commissionRate Float    @default(0.05)
+  status         String   @default("ACTIVE")
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  partnerRewards PartnerReward[]
+
+  @@index([tenantId])
+  @@index([code])
+  @@map("partner_brands")
+}
+
+model PartnerReward {
+  id             String   @id @default(uuid())
+  brandId        String
+  brand          PartnerBrand @relation(fields: [brandId], references: [id])
+  name           String
+  description    String?
+  type           String   // voucher, gift, discount
+  value          Float
+  pointsRequired Int
+  quantity       Int      @default(0)
+  imageUrl       String?
+  startDate      DateTime?
+  endDate        DateTime?
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([brandId])
+  @@map("partner_rewards")
+}
+
+model WebhookEndpoint {
+  id          String   @id @default(uuid())
+  name        String
+  url         String
+  secret      String?
+  events      String[] // e.g. ["point.earned", "member.created", "voucher.redeemed"]
+  active      Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  failureCount Int     @default(0)
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  eventLogs WebhookEventLog[]
+
+  @@index([tenantId])
+  @@map("webhook_endpoints")
+}
+
+model WebhookEventLog {
+  id           String   @id @default(uuid())
+  endpointId   String
+  endpoint     WebhookEndpoint @relation(fields: [endpointId], references: [id])
+  event        String
+  payload      Json?
+  responseCode Int?
+  responseBody String?
+  success      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([endpointId])
+  @@index([success])
+  @@map("webhook_event_logs")
+}
+
+model GiftCard {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  initialValue Float
+  balance     Float
+  type        String   // physical, digital
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, REDEEMED, DISABLED
+  expiresAt   DateTime?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberGiftCards MemberGiftCard[]
+
+  @@index([tenantId])
+  @@index([code])
+  @@map("gift_cards")
+}
+
+model MemberGiftCard {
+  id         String   @id @default(uuid())
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id])
+  giftCardId String
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id])
+  balance    Float
+  createdAt  DateTime @default(now())
+
+  @@index([memberId])
+  @@map("member_gift_cards")
+}
+
+model MemberFeedback {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  entityType  String   // reward, voucher, campaign, store
+  entityId    String
+  rating      Int      // 1-5
+  content     String?
+  status      String   @default("PUBLISHED") // PENDING, PUBLISHED, HIDDEN
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([entityType, entityId])
+  @@index([rating])
+  @@map("member_feedback")
 }

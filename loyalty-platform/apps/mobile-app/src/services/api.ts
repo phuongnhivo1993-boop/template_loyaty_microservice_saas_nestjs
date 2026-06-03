@@ -114,6 +114,26 @@ export const checkin = {
   history: () => api.get('/checkin/history'),
 };
 
+export const cashback = {
+  getBalance: (memberId: string) => api.get(`/cashback/balance/${memberId}`),
+  getTransactions: (memberId: string) => api.get(`/cashback/transactions/${memberId}`),
+};
+
+export const giftCards = {
+  list: (memberId: string) => api.get(`/gift-cards/${memberId}`),
+};
+
+export const stores = {
+  list: () => api.get('/stores'),
+};
+
+export const feedback = {
+  create: (data: { entityType?: string; entityId?: string; rating: number; comment?: string }) =>
+    api.post('/feedback', data),
+  list: () => api.get('/me/feedback'),
+  getPublic: (entityType: string, entityId: string) => api.get(`/feedback/${entityType}/${entityId}`),
+};
+
 export const analytics = {
   leaderboard: (limit = 10) => api.get('/analytics/leaderboard', { params: { limit } }),
 };

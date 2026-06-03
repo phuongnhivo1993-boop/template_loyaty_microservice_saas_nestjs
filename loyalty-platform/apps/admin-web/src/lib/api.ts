@@ -262,6 +262,59 @@ export const importExcel = (endpoint: string, file: File) => {
   });
 };
 
+// Stores
+export const getStores = (params?: ListParams) => api.getList('/stores', params);
+export const getStore = (id: string) => api.get(`/stores/${id}`);
+export const createStore = (data: any) => api.create('/stores', data);
+export const updateStore = (id: string, data: any) => api.update(`/stores/${id}`, data);
+export const deleteStore = (id: string) => api.delete(`/stores/${id}`);
+export const getStoreStaff = (storeId: string) => api.get(`/stores/${storeId}/staff`);
+export const addStoreStaff = (storeId: string, data: any) => api.create(`/stores/${storeId}/staff`, data);
+export const updateStoreStaff = (staffId: string, data: any) => api.update(`/stores/staff/${staffId}`, data);
+export const deleteStoreStaff = (staffId: string) => api.delete(`/stores/staff/${staffId}`);
+
+// Cashback
+export const getCashbackConfigs = (params?: ListParams) => api.getList('/cashback/configs', params);
+export const getCashbackConfig = (id: string) => api.get(`/cashback/configs/${id}`);
+export const createCashbackConfig = (data: any) => api.create('/cashback/configs', data);
+export const updateCashbackConfig = (id: string, data: any) => api.update(`/cashback/configs/${id}`, data);
+export const deleteCashbackConfig = (id: string) => api.delete(`/cashback/configs/${id}`);
+
+// Partner Brands
+export const getPartnerBrands = (params?: ListParams) => api.getList('/partnership/brands', params);
+export const getPartnerBrand = (id: string) => api.get(`/partnership/brands/${id}`);
+export const createPartnerBrand = (data: any) => api.create('/partnership/brands', data);
+export const updatePartnerBrand = (id: string, data: any) => api.update(`/partnership/brands/${id}`, data);
+export const deletePartnerBrand = (id: string) => api.delete(`/partnership/brands/${id}`);
+export const getPartnerBrandRewards = (brandId: string) => api.get(`/partnership/brands/${brandId}/rewards`);
+export const createPartnerReward = (brandId: string, data: any) => api.create(`/partnership/brands/${brandId}/rewards`, data);
+export const updatePartnerReward = (id: string, data: any) => api.update(`/partnership/rewards/${id}`, data);
+export const deletePartnerReward = (id: string) => api.delete(`/partnership/rewards/${id}`);
+
+// Webhooks
+export const getWebhookEndpoints = (params?: ListParams) => api.getList('/webhooks/endpoints', params);
+export const getWebhookEndpoint = (id: string) => api.get(`/webhooks/endpoints/${id}`);
+export const createWebhookEndpoint = (data: any) => api.create('/webhooks/endpoints', data);
+export const updateWebhookEndpoint = (id: string, data: any) => api.update(`/webhooks/endpoints/${id}`, data);
+export const deleteWebhookEndpoint = (id: string) => api.delete(`/webhooks/endpoints/${id}`);
+export const testWebhookEndpoint = (id: string) => api.post(`/webhooks/endpoints/${id}/test`);
+export const getWebhookLogs = (params?: ListParams) => api.getList('/webhooks/logs', params);
+export const getWebhookLog = (id: string) => api.get(`/webhooks/logs/${id}`);
+
+// Gift Cards
+export const getGiftCards = (params?: ListParams) => api.getList('/gift-cards', params);
+export const getGiftCard = (id: string) => api.get(`/gift-cards/${id}`);
+export const createGiftCard = (data: any) => api.create('/gift-cards', data);
+export const updateGiftCard = (id: string, data: any) => api.update(`/gift-cards/${id}`, data);
+export const assignGiftCard = (id: string, memberId: string) => api.post(`/gift-cards/${id}/assign`, { memberId });
+
+// Feedback
+export const getFeedbackList = (params?: ListParams) => api.getList('/feedback', params);
+export const getFeedback = (id: string) => api.get(`/feedback/${id}`);
+export const createFeedback = (data: any) => api.create('/feedback', data);
+export const updateFeedback = (id: string, data: any) => api.update(`/feedback/${id}`, data);
+export const deleteFeedback = (id: string) => api.delete(`/feedback/${id}`);
+
 export const exportCsv = (endpoint: string, params?: ListParams) => {
   const q = buildQuery(params);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

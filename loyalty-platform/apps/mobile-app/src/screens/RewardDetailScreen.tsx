@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { rewards, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -61,6 +61,7 @@ export default function RewardDetailScreen() {
   const outOfStock = reward.quantity <= 0;
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView style={styles.container}>
       <View style={styles.imageContainer}>
         {reward.imageUrl ? (
@@ -104,6 +105,7 @@ export default function RewardDetailScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

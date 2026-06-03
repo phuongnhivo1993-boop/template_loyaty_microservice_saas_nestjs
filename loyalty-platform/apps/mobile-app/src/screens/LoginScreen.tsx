@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { auth, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -35,6 +35,7 @@ export default function LoginScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.title}>Loyalty Platform</Text>
       <Text style={styles.subtitle}>Member App</Text>
@@ -52,6 +53,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 

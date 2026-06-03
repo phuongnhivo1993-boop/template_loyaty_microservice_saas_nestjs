@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { notifications } from '../services/api';
 import { LoadingState, ErrorState, EmptyState } from '../components';
 
@@ -43,6 +43,7 @@ export default function NotificationCenterScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.screenTitle}>Notifications</Text>
       <FlatList
@@ -53,6 +54,7 @@ export default function NotificationCenterScreen() {
         ListEmptyComponent={<EmptyState message="No notifications yet" icon="🔔" />}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
