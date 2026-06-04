@@ -149,8 +149,11 @@ export interface GiftCard {
   id: string;
   name: string;
   code: string;
+  type: 'PHYSICAL' | 'DIGITAL';
   balance: number;
+  initialValue: number;
   currency: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REDEEMED' | 'DISABLED';
   expiresAt?: string;
 }
 

@@ -12,7 +12,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf, bulkDeleteCampaigns, bulkActivateCampaigns } from '@/lib/api';
 
 interface CampaignForm {
   name: string; description: string; startDate: string; endDate: string; budget: string; status: string;
@@ -160,19 +162,36 @@ export default function CampaignsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} campaigns?`)) return;
-            for (const id of selectedIds) try { await deleteCampaign(id); } catch {}
-            showToast(`Deleted ${selectedIds.length} campaigns`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['name', 'startDate', 'endDate', 'budget', 'status'];
-            const rows = campaigns.filter(c => selectedIds.includes(c.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-campaigns.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa chiến dịch',
+              onClick: async (ids) => { await bulkDeleteCampaigns(ids); },
+            },
+            {
+              label: 'Kích hoạt', variant: 'primary', icon: '✅',
+              onClick: async (ids) => { await bulkActivateCampaigns(ids); },
+            },
+            {
+              label: 'Vô hiệu hóa', variant: 'warning', icon: '⏸️',
+              onClick: async (ids) => {
+                for (const id of ids) await updateCampaign(id, { status: 'PAUSED' });
+              },
+            },
+            {
+              label: 'Xuất CSV', variant: 'primary', icon: '📥',
+              onClick: async () => {
+                const cols = ['name', 'startDate', 'endDate', 'budget', 'status'];
+                const rows = campaigns.filter(c => selectedIds.includes(c.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+                const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+                const a = document.createElement('a'); a.href = url; a.download = 'selected-campaigns.csv'; a.click(); URL.revokeObjectURL(url);
+              },
+            },
+          ]} />
         <DataTable columns={columns} data={campaigns} emptyMessage="No campaigns found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 

@@ -25,7 +25,12 @@ export class MemberService {
         ...(tags ? { tags: { set: tags } } : {}),
       },
     });
-    this.notificationTrigger.sendWelcome(member);
+    let tierName = 'Member';
+    if (data.tierId) {
+      const tier = await this.prisma.tier.findUnique({ where: { id: data.tierId } });
+      if (tier) tierName = tier.name;
+    }
+    this.notificationTrigger.sendWelcome(member, tierName);
     return member;
   }
 

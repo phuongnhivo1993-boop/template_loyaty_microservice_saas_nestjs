@@ -1,12 +1,15 @@
 import {
-  Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards,
+  Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req, Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionService } from './subscription.service';
 import { PlanLimitsService } from './plan-limits.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../auth/public.decorator';
+import { SkipTenantCheck } from '../auth/skip-tenant.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { CreateSubscriptionDto, UpdateSubscriptionDto, SubscriptionQueryDto } from './dto/subscription.dto';
+import { CreateCheckoutSessionDto, CreatePortalSessionDto } from './dto/stripe.dto';
 
 @ApiTags('Subscriptions')
 @ApiBearerAuth()
@@ -86,5 +89,32 @@ export class SubscriptionController {
       usage,
       features: (subscription as any).features,
     };
+  }
+
+  @Post('create-checkout-session')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Create Stripe checkout session for subscription' })
+  async createCheckoutSession(@Req() req: any, @Body() body: CreateCheckoutSessionDto) {
+    const tenantId = req.tenantId;
+    return this.subscriptionService.createCheckoutSession(tenantId, body.plan, body.successUrl, body.cancelUrl);
+  }
+
+  @Post('webhook')
+  @Public()
+  @SkipTenantCheck()
+  @ApiOperation({ summary: 'Stripe webhook endpoint' })
+  async handleWebhook(
+    @Req() req: any,
+    @Headers('stripe-signature') signature: string,
+  ) {
+    const rawBody = req.rawBody || JSON.stringify(req.body);
+    return this.subscriptionService.handleStripeWebhook(signature, rawBody);
+  }
+
+  @Post(':id/portal-session')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Create Stripe customer portal session' })
+  async createPortalSession(@Param('id') id: string, @Body() body: CreatePortalSessionDto) {
+    return this.subscriptionService.createPortalSession(id, body.returnUrl);
   }
 }

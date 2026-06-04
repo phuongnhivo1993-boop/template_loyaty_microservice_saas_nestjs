@@ -1,0 +1,31 @@
+{{- if .Values.vpa.enabled }}
+{{- range $componentKey, $component := dict "api-gateway" .Values.apiGateway "admin-web" .Values.adminWeb "member-web" .Values.memberWeb }}
+{{- if $component.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ $component.name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "loyalty-platform.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $component.name }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $component.name }}
+  updatePolicy:
+    updateMode: {{ $.Values.vpa.updateMode }}
+  resourcePolicy:
+    containerPolicies:
+      - containerName: {{ $component.name }}
+        minAllowed:
+          cpu: {{ $.Values.vpa.minAllowed.cpu }}
+          memory: {{ $.Values.vpa.minAllowed.memory }}
+        maxAllowed:
+          cpu: {{ $.Values.vpa.maxAllowed.cpu }}
+          memory: {{ $.Values.vpa.maxAllowed.memory }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

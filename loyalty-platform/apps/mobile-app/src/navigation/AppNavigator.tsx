@@ -32,6 +32,7 @@ import CreateOrderScreen from '../screens/CreateOrderScreen';
 import CancelOrderScreen from '../screens/CancelOrderScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
+import GiftCardScreen from '../screens/GiftCardScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -103,6 +104,7 @@ export default function AppNavigator() {
           <Stack.Screen name="CreateOrder" component={CreateOrderScreen} />
           <Stack.Screen name="CancelOrder" component={CancelOrderScreen} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+          <Stack.Screen name="GiftCards" component={GiftCardScreen} />
         </>
       ) : (
         <>

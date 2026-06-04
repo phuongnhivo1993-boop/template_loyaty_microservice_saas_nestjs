@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: loyalty-platform
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: loyalty-platform
+
+resources:
+  - namespace.yaml
+  - api-gateway/deployment.yaml
+  - api-gateway/service.yaml
+  - api-gateway/configmap.yaml
+  - api-gateway/hpa.yaml
+  - api-gateway/serviceaccount.yaml
+  - admin-web/deployment.yaml
+  - admin-web/service.yaml
+  - admin-web/configmap.yaml
+  - admin-web/serviceaccount.yaml
+  - member-web/deployment.yaml
+  - member-web/service.yaml
+  - member-web/configmap.yaml
+  - member-web/serviceaccount.yaml

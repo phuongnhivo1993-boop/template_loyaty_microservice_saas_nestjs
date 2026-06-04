@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: member-web
+  namespace: loyalty-platform
+  labels:
+    app: member-web
+    app.kubernetes.io/name: member-web
+    app.kubernetes.io/part-of: loyalty-platform
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app: member-web

@@ -1,0 +1,60 @@
+---
+global:
+  environment: staging
+  namespace: loyalty-platform-staging
+
+ingress:
+  hosts:
+    api: api.staging.loyalty.example.com
+    admin: admin.staging.loyalty.example.com
+    member: member.staging.loyalty.example.com
+  tls:
+    secretName: loyalty-platform-staging-tls
+
+apiGateway:
+  replicas: 2
+  image:
+    tag: staging-latest
+  hpa:
+    minReplicas: 2
+    maxReplicas: 5
+    cpuUtilization: 70
+    memoryUtilization: 80
+  config:
+    NODE_ENV: staging
+    LOG_LEVEL: debug
+    CORS_ORIGIN: "*"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 400m
+      memory: 512Mi
+
+adminWeb:
+  replicas: 1
+  image:
+    tag: staging-latest
+  config:
+    NODE_ENV: staging
+    NEXT_PUBLIC_API_URL: https://api.staging.loyalty.example.com/api/v1
+    NEXT_PUBLIC_WS_URL: wss://api.staging.loyalty.example.com
+
+memberWeb:
+  replicas: 1
+  image:
+    tag: staging-latest
+  config:
+    NODE_ENV: staging
+    NEXT_PUBLIC_API_URL: https://api.staging.loyalty.example.com/api/v1
+    NEXT_PUBLIC_WS_URL: wss://api.staging.loyalty.example.com
+
+vpa:
+  enabled: true
+  updateMode: "Off"
+
+pdb:
+  enabled: true
+  minAvailable: 0
+  maxUnavailable: 1

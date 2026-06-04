@@ -76,7 +76,8 @@ model Tenant {
   productCategories    ProductCategory[]
   products             Product[]
   orders               Order[]
-  subscriptions Subscription[]
+  subscriptions         Subscription[]
+  coupons              Coupon[]
 
   @@index([hostId])
   @@index([status])
@@ -379,6 +380,9 @@ model Subscription {
   maxVouchers   Int                @default(50)
   maxStores     Int                @default(1)
   features      Json               @default("{\"referral\":false,\"gamification\":false,\"apiAccess\":false,\"customDomain\":false,\"whiteLabel\":false,\"advancedAnalytics\":false}")
+  stripeCustomerId String?         @map("stripe_customer_id")
+  stripeSubscriptionId String?     @map("stripe_subscription_id")
+  metadata      Json?
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
 

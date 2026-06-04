@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyOrders } from '@/lib/api';
+
+const PAGE_SIZE = 10;
+
+const statusFilters = ['All', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'] as const;
+type StatusFilter = (typeof statusFilters)[number];
 
 const statusColors: Record<string, string> = {
   PENDING: '#f59e0b', CONFIRMED: '#3b82f6', PROCESSING: '#8b5cf6',
@@ -15,6 +20,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+  const [page, setPage] = useState(1);
 
   const loadData = () => {
     setError('');
@@ -28,6 +35,19 @@ export default function OrdersPage() {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     loadData();
   }, []);
+
+  const filtered = useMemo(() => {
+    if (statusFilter === 'All') return orders;
+    return orders.filter(o => o.status === statusFilter.toUpperCase());
+  }, [orders, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleStatusFilter = (f: StatusFilter) => {
+    setStatusFilter(f);
+    setPage(1);
+  };
 
   if (loading) {
     return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
@@ -44,31 +64,65 @@ export default function OrdersPage() {
       <div className="header">
         <div>
           <div className="header-title">🛒 My Orders</div>
-          <div className="header-subtitle">{orders.length} order{orders.length !== 1 ? 's' : ''}</div>
+          <div className="header-subtitle">{filtered.length} order{filtered.length !== 1 ? 's' : ''}</div>
         </div>
       </div>
 
-      {orders.length === 0 ? (
+      <div className="tab-bar" style={{ overflowX: 'auto', flexWrap: 'wrap' }}>
+        {statusFilters.map(f => (
+          <button key={f} className={`tab ${statusFilter === f ? 'active' : ''}`} onClick={() => handleStatusFilter(f)}>
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📦</div>
           <div className="empty-text">No orders yet</div>
         </div>
       ) : (
-        orders.map((o: any) => (
-          <div key={o.id} className="card order-card" onClick={() => router.push(`/orders/${o.id}`)}>
-            <div className="order-header">
-              <div className="order-code">{o.orderCode}</div>
-              <div className="order-total">{o.total?.toLocaleString()} VND</div>
+        <>
+          {paginated.map((o: any) => (
+            <div key={o.id} className="card order-card" onClick={() => router.push(`/orders/${o.id}`)}>
+              <div className="order-header">
+                <div className="order-code">{o.orderCode}</div>
+                <div className="order-total">{o.total?.toLocaleString()} VND</div>
+              </div>
+              <span className="badge" style={{ background: `${statusColors[o.status] || '#94a3b8'}20`, color: statusColors[o.status] || '#64748b' }}>{o.status}</span>
+              <div className="order-meta" style={{ marginTop: '8px' }}>
+                <span>{o.items?.length || 0} item{(o.items?.length || 0) !== 1 ? 's' : ''}</span>
+                <span>🪙 +{o.pointsEarned || 0} pts</span>
+                <span>{new Date(o.createdAt).toLocaleDateString('vi-VN')}</span>
+              </div>
+              {o.couponCode && <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--primary)' }}>🏷️ {o.couponCode}</div>}
             </div>
-            <span className="badge" style={{ background: `${statusColors[o.status] || '#94a3b8'}20`, color: statusColors[o.status] || '#64748b' }}>{o.status}</span>
-            <div className="order-meta" style={{ marginTop: '8px' }}>
-              <span>{o.items?.length || 0} item{(o.items?.length || 0) !== 1 ? 's' : ''}</span>
-              <span>🪙 +{o.pointsEarned || 0} pts</span>
-              <span>{new Date(o.createdAt).toLocaleDateString('vi-VN')}</span>
+          ))}
+
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+              <button
+                className="btn btn-sm btn-outline"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{ width: 'auto', opacity: page <= 1 ? 0.5 : 1 }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                {page} / {totalPages}
+              </span>
+              <button
+                className="btn btn-sm btn-outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{ width: 'auto', opacity: page >= totalPages ? 0.5 : 1 }}
+              >
+                Next
+              </button>
             </div>
-            {o.couponCode && <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--primary)' }}>🏷️ {o.couponCode}</div>}
-          </div>
-        ))
+          )}
+        </>
       )}
     </MemberLayout>
   );

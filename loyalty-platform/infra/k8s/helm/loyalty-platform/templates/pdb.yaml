@@ -1,0 +1,26 @@
+{{- if .Values.pdb.enabled }}
+{{- range $componentKey, $component := dict "api-gateway" .Values.apiGateway "admin-web" .Values.adminWeb "member-web" .Values.memberWeb }}
+{{- if $component.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $component.name }}-pdb
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "loyalty-platform.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $component.name }}
+spec:
+  {{- if $.Values.pdb.minAvailable }}
+  minAvailable: {{ $.Values.pdb.minAvailable }}
+  {{- end }}
+  {{- if $.Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ $.Values.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "loyalty-platform.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $component.name }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

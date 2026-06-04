@@ -1,0 +1,152 @@
+{
+  "/api/v1/auth/member/login": {
+    "method": "POST",
+    "response": {
+      "accessToken": "mock-access-token-e2e-test",
+      "refreshToken": "mock-refresh-token-e2e-test"
+    },
+    "statusCode": 200
+  },
+  "/api/v1/members/register": {
+    "method": "POST",
+    "response": {
+      "id": "mock-member-id",
+      "email": "test@example.com",
+      "fullName": "Test User",
+      "status": "ACTIVE",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    "statusCode": 201
+  },
+  "/api/v1/me/profile": {
+    "method": "GET",
+    "response": {
+      "id": "mock-member-id",
+      "email": "test@example.com",
+      "fullName": "Test User",
+      "phone": "+84123456789",
+      "avatar": null,
+      "status": "ACTIVE",
+      "kycVerified": false,
+      "totalPoints": 15000,
+      "availablePoints": 12000,
+      "tenantId": "mock-tenant-id",
+      "tierId": "tier-gold",
+      "tier": {
+        "id": "tier-gold",
+        "name": "Gold",
+        "minPoints": 10000,
+        "maxPoints": 49999,
+        "benefits": "10% bonus points, priority support",
+        "color": "#F59E0B"
+      },
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-06-01T00:00:00.000Z"
+    },
+    "statusCode": 200
+  },
+  "/api/v1/me/wallet": {
+    "method": "GET",
+    "response": {
+      "availablePoints": 12000,
+      "transactions": [
+        {
+          "id": "tx-001",
+          "memberId": "mock-member-id",
+          "type": "EARN",
+          "amount": 500,
+          "balance": 11500,
+          "reason": "Purchase at Store #1",
+          "createdAt": "2025-06-01T10:00:00.000Z"
+        },
+        {
+          "id": "tx-002",
+          "memberId": "mock-member-id",
+          "type": "EARN",
+          "amount": 200,
+          "balance": 11700,
+          "reason": "Check-in bonus",
+          "createdAt": "2025-06-01T12:00:00.000Z"
+        },
+        {
+          "id": "tx-003",
+          "memberId": "mock-member-id",
+          "type": "BURN",
+          "amount": -300,
+          "balance": 11400,
+          "reason": "Voucher redemption",
+          "createdAt": "2025-05-30T14:00:00.000Z"
+        },
+        {
+          "id": "tx-004",
+          "memberId": "mock-member-id",
+          "type": "EARN",
+          "amount": 1000,
+          "balance": 12400,
+          "reason": "Referral reward",
+          "createdAt": "2025-05-28T09:00:00.000Z"
+        },
+        {
+          "id": "tx-005",
+          "memberId": "mock-member-id",
+          "type": "EXPIRE",
+          "amount": -400,
+          "balance": 12000,
+          "reason": "Points expired",
+          "createdAt": "2025-05-25T00:00:00.000Z"
+        }
+      ]
+    },
+    "statusCode": 200
+  },
+  "/api/v1/me/transactions": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/orders": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/rewards": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/notifications": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/badges": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/vouchers": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/referrals": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/me/missions": {
+    "method": "GET",
+    "response": [],
+    "statusCode": 200
+  },
+  "/api/v1/checkin/stats": {
+    "method": "GET",
+    "response": {
+      "currentStreak": 3,
+      "totalCheckins": 15,
+      "longestStreak": 7,
+      "checkedInToday": false
+    },
+    "statusCode": 200
+  }
+}

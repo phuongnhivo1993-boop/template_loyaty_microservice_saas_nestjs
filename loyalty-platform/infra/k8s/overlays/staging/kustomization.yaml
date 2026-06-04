@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: loyalty-platform-staging
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+  app.kubernetes.io/environment: staging
+
+resources:
+  - ../../base
+
+patches:
+  - path: api-gateway-patch.yaml
+
+configMapGenerator:
+  - name: api-gateway-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+      - CORS_ORIGIN=*
+  - name: admin-web-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - NEXT_PUBLIC_API_URL=https://api.staging.loyalty.example.com/api/v1
+      - NEXT_PUBLIC_WS_URL=wss://api.staging.loyalty.example.com
+  - name: member-web-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - NEXT_PUBLIC_API_URL=https://api.staging.loyalty.example.com/api/v1
+      - NEXT_PUBLIC_WS_URL=wss://api.staging.loyalty.example.com
+
+replicas:
+  - name: api-gateway
+    count: 2
+  - name: admin-web
+    count: 1
+  - name: member-web
+    count: 1
+
+images:
+  - name: loyalty-platform/api-gateway
+    newTag: staging-latest
+  - name: loyalty-platform/admin-web
+    newTag: staging-latest
+  - name: loyalty-platform/member-web
+    newTag: staging-latest

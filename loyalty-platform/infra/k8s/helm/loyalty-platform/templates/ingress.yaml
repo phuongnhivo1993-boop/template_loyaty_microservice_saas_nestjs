@@ -1,0 +1,67 @@
+{{- if .Values.ingress.enabled }}
+{{- $apiGatewayName := .Values.apiGateway.name }}
+{{- $adminWebName := .Values.adminWeb.name }}
+{{- $memberWebName := .Values.memberWeb.name }}
+{{- $apiGatewayPort := .Values.apiGateway.port }}
+{{- $adminWebPort := .Values.adminWeb.port }}
+{{- $memberWebPort := .Values.memberWeb.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loyalty-platform-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "loyalty-platform.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- end }}
+    kubernetes.io/ingress.class: {{ .Values.ingress.className }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .Values.ingress.hosts.admin }},https://{{ .Values.ingress.hosts.member }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hosts.api }}
+        - {{ .Values.ingress.hosts.admin }}
+        - {{ .Values.ingress.hosts.member }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.hosts.api }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $apiGatewayName }}
+                port:
+                  number: {{ $apiGatewayPort }}
+    - host: {{ .Values.ingress.hosts.admin }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $adminWebName }}
+                port:
+                  number: {{ $adminWebPort }}
+    - host: {{ .Values.ingress.hosts.member }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $memberWebName }}
+                port:
+                  number: {{ $memberWebPort }}
+{{- end }}

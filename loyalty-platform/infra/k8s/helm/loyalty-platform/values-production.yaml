@@ -1,0 +1,61 @@
+---
+global:
+  environment: production
+  namespace: loyalty-platform-production
+
+ingress:
+  hosts:
+    api: api.loyalty.example.com
+    admin: admin.loyalty.example.com
+    member: member.loyalty.example.com
+  tls:
+    secretName: loyalty-platform-tls
+
+apiGateway:
+  replicas: 3
+  image:
+    tag: production-latest
+  hpa:
+    minReplicas: 3
+    maxReplicas: 15
+    cpuUtilization: 70
+    memoryUtilization: 75
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+adminWeb:
+  replicas: 2
+  image:
+    tag: production-latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+memberWeb:
+  replicas: 2
+  image:
+    tag: production-latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+vpa:
+  enabled: true
+  updateMode: "Auto"
+
+pdb:
+  enabled: true
+  minAvailable: 1

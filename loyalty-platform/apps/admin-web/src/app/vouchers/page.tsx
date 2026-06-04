@@ -12,7 +12,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api, bulkDeleteVouchers, bulkVouchersExpire } from '@/lib/api';
 
 interface VoucherForm {
   code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;

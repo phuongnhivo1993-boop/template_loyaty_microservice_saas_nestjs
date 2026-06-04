@@ -1,0 +1,50 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: loyalty-platform-production
+  labels:
+    app: api-gateway
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: loyalty-platform
+    app.kubernetes.io/component: api-gateway
+    environment: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: admin-web-pdb
+  namespace: loyalty-platform-production
+  labels:
+    app: admin-web
+    app.kubernetes.io/name: admin-web
+    app.kubernetes.io/part-of: loyalty-platform
+    app.kubernetes.io/component: admin-web
+    environment: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: admin-web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: member-web-pdb
+  namespace: loyalty-platform-production
+  labels:
+    app: member-web
+    app.kubernetes.io/name: member-web
+    app.kubernetes.io/part-of: loyalty-platform
+    app.kubernetes.io/component: member-web
+    environment: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: member-web

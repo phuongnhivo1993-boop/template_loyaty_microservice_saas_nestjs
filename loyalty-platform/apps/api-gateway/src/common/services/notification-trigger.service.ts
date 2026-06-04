@@ -7,7 +7,7 @@ export class NotificationTriggerService {
 
   constructor(private prisma: PrismaService) {}
 
-  async sendWelcome(member: { id: string; email: string; fullName: string; tenantId: string }) {
+  async sendWelcome(member: { id: string; email: string; fullName: string; tenantId: string }, tierName = 'Member') {
     try {
       const template = await this.prisma.notificationTemplate.findFirst({
         where: { tenantId: member.tenantId, name: { contains: 'welcome', mode: 'insensitive' } },
@@ -17,15 +17,21 @@ export class NotificationTriggerService {
         return;
       }
       const content = template.content
+        .replace(/{{memberName}}/g, member.fullName)
         .replace(/{{fullName}}/g, member.fullName)
-        .replace(/{{email}}/g, member.email);
+        .replace(/{{memberEmail}}/g, member.email)
+        .replace(/{{email}}/g, member.email)
+        .replace(/{{tierName}}/g, tierName);
 
       await this.prisma.notificationLog.create({
         data: {
           templateId: template.id,
           recipient: member.email,
           channel: 'email',
-          subject: template.subject.replace(/{{fullName}}/g, member.fullName),
+          subject: template.subject
+            .replace(/{{memberName}}/g, member.fullName)
+            .replace(/{{fullName}}/g, member.fullName)
+            .replace(/{{tierName}}/g, tierName),
           content,
           status: 'SENT',
           sentAt: new Date(),
@@ -92,6 +98,7 @@ export class NotificationTriggerService {
         return;
       }
       const content = template.content
+        .replace(/{{memberName}}/g, member.fullName)
         .replace(/{{fullName}}/g, member.fullName)
         .replace(/{{oldTier}}/g, oldTierName)
         .replace(/{{newTier}}/g, newTierName);
@@ -101,7 +108,10 @@ export class NotificationTriggerService {
           templateId: template.id,
           recipient: member.email,
           channel: 'email',
-          subject: template.subject.replace(/{{newTier}}/g, newTierName),
+          subject: template.subject
+            .replace(/{{memberName}}/g, member.fullName)
+            .replace(/{{fullName}}/g, member.fullName)
+            .replace(/{{newTier}}/g, newTierName),
           content,
           status: 'SENT',
           sentAt: new Date(),
@@ -110,6 +120,39 @@ export class NotificationTriggerService {
       });
     } catch (error) {
       this.logger.error(`Failed to send tier changed notification to member ${memberId}`, error);
+    }
+  }
+
+  async sendOrderConfirmation(memberEmail: string, orderCode: string, total: number, tenantId: string) {
+    try {
+      const template = await this.prisma.notificationTemplate.findFirst({
+        where: { tenantId, name: { contains: 'order_confirmation', mode: 'insensitive' } },
+      });
+      if (!template) {
+        this.logger.log(`No order_confirmation template found for tenant ${tenantId}`);
+        return;
+      }
+      const content = template.content
+        .replace(/{{memberEmail}}/g, memberEmail)
+        .replace(/{{orderCode}}/g, orderCode)
+        .replace(/{{total}}/g, total.toLocaleString());
+
+      await this.prisma.notificationLog.create({
+        data: {
+          templateId: template.id,
+          recipient: memberEmail,
+          channel: 'email',
+          subject: template.subject
+            .replace(/{{orderCode}}/g, orderCode),
+          content,
+          status: 'SENT',
+          sentAt: new Date(),
+          tenantId,
+        },
+      });
+      this.logger.log(`Order confirmation sent to ${memberEmail} for order ${orderCode}`);
+    } catch (error) {
+      this.logger.error(`Failed to send order confirmation to ${memberEmail}`, error);
     }
   }
 }

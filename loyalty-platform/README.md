@@ -1,98 +1,103 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Loyalty Platform - SaaS Multi-Tenant Loyalty Microservices
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A full-stack loyalty platform built with NestJS microservices and Next.js frontends, supporting multi-tenant SaaS operations with real-time updates, gamification, and analytics.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Backend**: NestJS (monorepo), Prisma ORM, PostgreSQL, Redis, Kafka
+- **Frontend**: Next.js 14 (admin-web), Next.js 14 (member-web), React Native (mobile)
+- **Infra**: Docker Compose (PostgreSQL, Redis, Kafka, MinIO, Keycloak, ClickHouse, Elasticsearch, Prometheus, Grafana, Jaeger)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Quick Start
 
 ```bash
-$ npm install
+# Start API Gateway only (no Docker required)
+cd loyalty-platform
+npx nest build api-gateway
+nohup node dist/apps/api-gateway/main.js > /tmp/api-gateway.log 2>&1 & disown
+
+# Start admin web
+cd apps/admin-web && nohup npx next dev > /tmp/admin-web.log 2>&1 & disown
+
+# Start member web
+cd apps/member-web && nohup npx next dev -p 3002 > /tmp/member-web.log 2>&1 & disown
 ```
 
-## Compile and run the project
+### Ports
+
+| App              | Port |
+|------------------|------|
+| API Gateway      | 3001 |
+| Admin Web        | 3000 |
+| Member Web       | 3002 |
+| PostgreSQL       | 5432 |
+| Redis            | 6379 |
+
+## Architecture
+
+```
+loyalty-platform/
+  apps/
+    api-gateway/          # NestJS - central API gateway (port 3001)
+    membership-service/   # NestJS - member CRUD, tiers, KYC (port 3002)
+    loyalty-service/      # NestJS - points wallet, earn/burn (port 3003)
+    campaign-service/     # NestJS - campaigns, rules (port 3004)
+    reward-service/       # NestJS - reward catalog, redemption (port 3005)
+    referral-service/     # NestJS - referral links, tracking (port 3006)
+    voucher-service/      # NestJS - voucher series, redemption (port 3007)
+    promotion-service/    # NestJS - promotion engine (port 3008)
+    gamification-service/ # NestJS - badges, missions, leaderboard (port 3009)
+    notification-service/ # NestJS - email, SMS, push (port 3010)
+    analytics-service/    # NestJS - dashboards, ClickHouse (port 3011)
+    customer360-service/  # NestJS - unified profiles (port 3012)
+    admin-web/            # Next.js 14 - admin dashboard (port 3000)
+    member-web/           # Next.js 14 - member portal (port 3002)
+    mobile-app/           # React Native - mobile app
+  libs/
+    common/               # Shared types, DTOs
+  prisma/
+    schema.prisma         # Unified Prisma schema (all models)
+    seed.ts               # Demo data
+```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture.
+
+## Default Accounts
+
+| Role   | Email                          | Password       |
+|--------|--------------------------------|----------------|
+| Host   | host@loyalty.vn               | Host@123456    |
+| Admin  | admin@sunshine.vn             | Admin@123456   |
+| Member | nguyen.van.a@sunshine.vn      | Member@123456  |
+
+See [docs/SEED_DATA.md](docs/SEED_DATA.md) for full seed data details.
+
+## Commands
 
 ```bash
-# development
-$ npm run start
+# Build
+npx nest build api-gateway
 
-# watch mode
-$ npm run start:dev
+# Seed database
+npx ts-node prisma/seed.ts
 
-# production mode
-$ npm run start:prod
+# Sync schema (migrate dev fails in non-interactive)
+npx prisma db push --accept-data-loss
+
+# Start with nohup (survives shell exit)
+nohup node dist/apps/api-gateway/main.js > /tmp/api-gateway.log 2>&1 & disown
 ```
 
-## Run tests
+## Documentation
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- [Architecture](docs/ARCHITECTURE.md)
+- [API Endpoints](docs/API_ENDPOINTS.md)
+- [Authentication & Authorization](docs/AUTH.md)
+- [Database Schema](docs/DATABASE.md)
+- [Multi-Tenancy](docs/MULTI_TENANCY.md)
+- [Features](docs/FEATURES.md)
+- [Seed Data](docs/SEED_DATA.md)
+- [WebSocket Events](docs/WEBSOCKET.md)
+- [Security](docs/security/)
+- [QA & Test Plans](docs/qa/)
+- [PRD Documents](docs/prd/)

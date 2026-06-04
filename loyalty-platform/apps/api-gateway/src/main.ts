@@ -14,7 +14,9 @@ import * as helmet from 'helmet';
 
 async function bootstrap() {
   const logger = new Logger('ApiGateway');
-  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
+  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule, {
+    rawBody: true,
+  });
 
   app.setGlobalPrefix('api/v1');
 
@@ -46,14 +48,36 @@ async function bootstrap() {
   logger.log('WebSocket Redis adapter initialized');
 
   // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Loyalty Platform - API Gateway')
-    .setDescription('API Gateway for Loyalty Platform Microservices')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  const swaggerEnabled = process.env.SWAGGER_ENABLED !== 'false';
+
+  if (swaggerEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle('Loyalty Platform API')
+      .setDescription('Multi-tenant loyalty platform API with microservices architecture')
+      .setVersion('1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } as const,
+        'JWT-auth',
+      )
+      .addApiKey(
+        { type: 'apiKey', name: 'x-api-key', in: 'header' },
+        'ApiKey-auth',
+      )
+      .addApiKey(
+        { type: 'apiKey', name: 'tenant-id', in: 'header' },
+        'TenantId-auth',
+      )
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+    });
+    logger.log('Swagger docs available at /api/docs');
+  }
 
   const port = process.env.API_GATEWAY_PORT ?? 3001;
   await app.listen(port);

@@ -12,7 +12,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getMembers, createMember, updateMember, deleteMember, getTiers } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { getMembers, createMember, updateMember, deleteMember, getTiers, bulkDeleteMembers, bulkActivateMembers, bulkDeactivateMembers } from '@/lib/api';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; birthday: string; status: string;
@@ -161,22 +163,41 @@ export default function MembersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} members?`)) return;
-            for (const id of selectedIds) try { await deleteMember(id); } catch {}
-            showToast(`Deleted ${selectedIds.length} members`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['fullName', 'email', 'availablePoints', 'status'];
-            const rows = members.filter(m => selectedIds.includes(m.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-members.csv'; a.click(); URL.revokeObjectURL(url);
-          }}
-          customActions={[
-            { label: 'Add Tags', onClick: () => { setTagAction('add'); setTagInput(''); setShowTagModal(true); } },
-            { label: 'Remove Tags', onClick: () => { setTagAction('remove'); setTagInput(''); setShowTagModal(true); } },
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa thành viên',
+              onClick: async (ids) => { await bulkDeleteMembers(ids); },
+            },
+            {
+              label: 'Kích hoạt', variant: 'primary', icon: '✅',
+              onClick: async (ids) => { await bulkActivateMembers(ids); },
+            },
+            {
+              label: 'Vô hiệu hóa', variant: 'warning', icon: '⏸️',
+              onClick: async (ids) => { await bulkDeactivateMembers(ids); },
+            },
+            {
+              label: 'Thêm tag', variant: 'primary', icon: '🏷️',
+              onClick: async () => { setTagAction('add'); setTagInput(''); setShowTagModal(true); },
+            },
+            {
+              label: 'Xóa tag', variant: 'warning', icon: '🏷️',
+              onClick: async () => { setTagAction('remove'); setTagInput(''); setShowTagModal(true); },
+            },
+            {
+              label: 'Xuất CSV', variant: 'primary', icon: '📥',
+              onClick: async () => {
+                const cols = ['fullName', 'email', 'availablePoints', 'status'];
+                const rows = members.filter(m => selectedIds.includes(m.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+                const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+                const a = document.createElement('a'); a.href = url; a.download = 'selected-members.csv'; a.click(); URL.revokeObjectURL(url);
+              },
+            },
           ]} />
         <DataTable columns={columns} data={members} emptyMessage="No members found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

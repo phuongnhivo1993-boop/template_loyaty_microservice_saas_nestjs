@@ -1,0 +1,807 @@
+{
+  "__description": "API Performance Dashboard - Loyalty Platform",
+  "dashboard": {
+    "title": "API Performance",
+    "description": "Detailed API performance metrics including latency, error rates, and throughput",
+    "tags": ["loyalty", "api-performance", "microservices"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "15s",
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate by Endpoint Group",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+        "description": "Request rate per second grouped by API endpoint area",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\"}[5m])) by (handler)",
+            "legendFormat": "{{ handler }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 2,
+        "title": "Request Rate by HTTP Method",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+        "description": "Request rate by HTTP method across all services",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\"}[5m])) by (method)",
+            "legendFormat": "{{ method }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 3,
+        "title": "Latency Heatmap (p50/p95/p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 6 },
+        "description": "Combined p50, p95, and p99 latency across all API gateway requests",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "latency",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.5 }, { "color": "red", "value": 1 }] }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "p99" },
+              "properties": [
+                { "id": "custom.lineWidth", "value": 3 },
+                { "id": "custom.fillOpacity", "value": 5 }
+              ]
+            }
+          ]
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le))",
+            "legendFormat": "p50",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le))",
+            "legendFormat": "p95",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le))",
+            "legendFormat": "p99",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "C"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 4,
+        "title": "Latency Distribution (Heatmap)",
+        "type": "heatmap",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+        "description": "Request latency distribution as a heatmap over time",
+        "options": {
+          "calculate": false,
+          "calculation": { "xBucketSize": "", "xBuckets": 0, "yBucketSize": "", "yBuckets": 0 },
+          "cellGap": 1,
+          "color": {
+            "exponent": 0.5,
+            "fill": "#8B1A1A",
+            "max": "",
+            "min": "",
+            "mode": "opacity",
+            "reverse": false,
+            "scale": "exponential",
+            "scheme": "OrRd",
+            "steps": 64
+          },
+          "filterValues": { "le": 1e-9 },
+          "legend": { "show": true },
+          "reverseYBuckets": false,
+          "rowsFrame": { "layout": "le" },
+          "showValue": false,
+          "tooltip": { "mode": "single", "show": true, "showColorScale": false, "yAxisSort": "desc" },
+          "yBucketBound": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "scheme", "scheme": "OrRd" },
+            "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le)",
+            "legendFormat": "{{ le }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A",
+            "format": "heatmap"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 5,
+        "title": "Error Rate by Status Code",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 },
+        "description": "Request rate split by 2xx, 4xx, and 5xx status codes",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 5 }, { "color": "red", "value": 20 }] }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "5xx" },
+              "properties": [
+                { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+                { "id": "custom.fillOpacity", "value": 20 }
+              ]
+            }
+          ]
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\",status=~\"2..\"}[5m]))",
+            "legendFormat": "2xx",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\",status=~\"4..\"}[5m]))",
+            "legendFormat": "4xx",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\",status=~\"5..\"}[5m]))",
+            "legendFormat": "5xx",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "C"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 6,
+        "title": "Error Ratio (% of total)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 },
+        "description": "Percentage of requests resulting in errors",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.01 }, { "color": "red", "value": 0.05 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"api-gateway\"}[5m]))",
+            "legendFormat": "5xx Ratio",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\",status=~\"4..\"}[5m])) / sum(rate(http_requests_total{job=\"api-gateway\"}[5m]))",
+            "legendFormat": "4xx Ratio",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 7,
+        "title": "Slowest Endpoints (Top 10 by p95)",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+        "description": "Top 10 slowest API endpoints ranked by p95 latency",
+        "options": {
+          "footer": { "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+          "frameIndex": 0,
+          "showHeader": true,
+          "sortBy": [{ "displayName": "p95 Latency", "desc": true }]
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "thresholds" },
+            "custom": {
+              "align": "auto",
+              "cellOptions": { "type": "auto" },
+              "inspect": false,
+              "minWidth": 100
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 3 }] }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "p95 Latency" },
+              "properties": [{ "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "thresholds" } }]
+            }
+          ]
+        },
+        "targets": [
+          {
+            "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le, handler)))",
+            "legendFormat": "{{ handler }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "datasource": { "uid": "prometheus" },
+        "transformations": [
+          { "id": "organize", "options": { "excludeByName": {}, "indexByName": {}, "renameByName": { "Time": "", "handler": "Endpoint", "Value": "p95 Latency" } } }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "API Usage by Tenant",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 12, "y": 18 },
+        "description": "Request rate broken down by tenant",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{job=\"api-gateway\"}[5m])) by (tenant)",
+            "legendFormat": "{{ tenant }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 9,
+        "title": "Throttled Requests",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 26 },
+        "description": "Number of rate-limited/throttled requests over time",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "cps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 30,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 10 }, { "color": "red", "value": 50 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(throttled_requests_total[5m])) by (job)",
+            "legendFormat": "{{ job }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 10,
+        "title": "Database Query Performance (p50/p95/p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 26 },
+        "description": "Database query latency percentiles across all services",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.3 }, { "color": "red", "value": 1 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(db_query_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "C"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 11,
+        "title": "Database Queries Rate",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 26 },
+        "description": "Rate of database queries per service",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "cps",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "queries/s",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(db_query_duration_seconds_count[5m])) by (job)",
+            "legendFormat": "{{ job }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 12,
+        "title": "Request Latency by Endpoint (p95)",
+        "type": "bargauge",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 32 },
+        "description": "p95 latency per endpoint handler",
+        "options": {
+          "displayMode": "gradient",
+          "legend": { "calcs": [], "displayMode": "hidden", "placement": "bottom", "showLegend": false },
+          "minVizHeight": 10,
+          "minVizWidth": 0,
+          "orientation": "horizontal",
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+          "showUnfilled": true,
+          "tooltip": { "mode": "single", "sort": "none" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "thresholds" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.5 }, { "color": "red", "value": 2 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le, handler))",
+            "legendFormat": "{{ handler }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 13,
+        "title": "HTTP Request Size",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 32 },
+        "description": "Average HTTP request size over time",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_request_size_bytes_sum[5m])) / sum(rate(http_request_size_bytes_count[5m]))",
+            "legendFormat": "Avg Request Size",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 14,
+        "title": "HTTP Response Size",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 32 },
+        "description": "Average HTTP response size over time",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_response_size_bytes_sum[5m])) / sum(rate(http_response_size_bytes_count[5m]))",
+            "legendFormat": "Avg Response Size",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 15,
+        "title": "API Gateway Active Requests",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 38 },
+        "description": "Number of requests currently being processed by the API gateway",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "requests",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 30,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 50 }, { "color": "red", "value": 100 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(http_requests_active{job=\"api-gateway\"})",
+            "legendFormat": "Active Requests",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      }
+    ]
+  }
+}

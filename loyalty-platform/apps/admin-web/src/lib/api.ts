@@ -333,6 +333,30 @@ export const deleteCoupon = (id: string) => api.delete(`/coupons/${id}`);
 export const validateCoupon = (data: any) => api.post('/coupons/validate', data);
 export const applyCoupon = (data: any) => api.post('/coupons/apply', data);
 
+// Bulk operations - Members
+export const bulkDeleteMembers = (ids: string[]) =>
+  api.post('/members/bulk-delete', { ids });
+
+export const bulkActivateMembers = (ids: string[]) =>
+  api.post('/members/bulk-activate', { ids });
+
+export const bulkDeactivateMembers = (ids: string[]) =>
+  api.post('/members/bulk-deactivate', { ids });
+
+// Bulk operations - Campaigns
+export const bulkDeleteCampaigns = (ids: string[]) =>
+  api.post('/campaigns/bulk-delete', { ids });
+
+export const bulkActivateCampaigns = (ids: string[]) =>
+  api.post('/campaigns/bulk-activate', { ids });
+
+// Bulk operations - Vouchers
+export const bulkDeleteVouchers = (ids: string[]) =>
+  api.post('/vouchers/bulk-delete', { ids });
+
+export const bulkVouchersExpire = (ids: string[]) =>
+  api.post('/vouchers/bulk-expire', { ids });
+
 export const exportCsv = (endpoint: string, params?: ListParams) => {
   const q = buildQuery(params);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

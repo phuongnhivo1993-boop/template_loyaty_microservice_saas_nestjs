@@ -95,6 +95,37 @@ export class AuthService {
     }).catch(() => {});
   }
 
+  private async checkIpRateLimit(ipAddress: string, identifier: string): Promise<void> {
+    if (!ipAddress) return;
+    const since = new Date(Date.now() - 15 * 60 * 1000);
+    const recent = await this.prisma.loginAttempt.findMany({
+      where: {
+        ipAddress,
+        identifier,
+        success: false,
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    if (recent.length >= 5) {
+      const oldest = recent[recent.length - 1];
+      const retryAfter = 15 * 60 * 1000 - (Date.now() - oldest.createdAt.getTime());
+      this.logger.warn(`IP rate limited: ${ipAddress} for ${identifier} (${recent.length} failures)`);
+      throw new ServiceException(
+        `Too many failed attempts from this IP. Please try again after ${Math.ceil(retryAfter / 1000 / 60)} minutes.`,
+        ErrorCodes.RATE_LIMIT_EXCEEDED,
+        429,
+      );
+    }
+  }
+
+  private async recordLoginAttempt(identifier: string, success: boolean, ipAddress?: string): Promise<void> {
+    await this.prisma.loginAttempt.create({
+      data: { identifier, ipAddress: ipAddress || null, success },
+    }).catch((err) => this.logger.warn(`Failed to record login attempt: ${err.message}`));
+  }
+
   async registerHost(email: string, password: string, name: string) {
     if (password.length < 8) {
       throw new ServiceException('Password must be at least 8 characters', ErrorCodes.AUTH_WEAK_PASSWORD, 422);
@@ -112,13 +143,16 @@ export class AuthService {
 
   async loginHost(email: string, password: string, ipAddress?: string) {
     await this.checkAccountLockout(`host:${email}`);
+    await this.checkIpRateLimit(ipAddress || '', `host:${email}`);
     const host = await this.prisma.host.findUnique({ where: { email } });
     if (!host || !(await this.comparePassword(password, host.password))) {
       await this.recordFailedAttempt(`host:${email}`);
+      await this.recordLoginAttempt(`host:${email}`, false, ipAddress);
       this.logger.warn(`Failed login attempt for host: ${email} from IP: ${ipAddress}`);
       throw new ServiceException('Invalid credentials', ErrorCodes.AUTH_INVALID_CREDENTIALS, 401);
     }
     await this.clearFailedAttempts(`host:${email}`);
+    await this.recordLoginAttempt(`host:${email}`, true, ipAddress);
     await this.prisma.auditLog.create({
       data: { entityType: 'auth', entityId: host.id, action: 'LOGIN', userEmail: email, ipAddress: ipAddress || '' },
     });
@@ -127,9 +161,11 @@ export class AuthService {
 
   async loginTenant(email: string, password: string, tenantId?: string, ipAddress?: string) {
     await this.checkAccountLockout(`tenant:${email}`);
+    await this.checkIpRateLimit(ipAddress || '', `tenant:${email}`);
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || !(await this.comparePassword(password, user.password))) {
       await this.recordFailedAttempt(`tenant:${email}`);
+      await this.recordLoginAttempt(`tenant:${email}`, false, ipAddress);
       this.logger.warn(`Failed login attempt for tenant user: ${email} from IP: ${ipAddress}`);
       throw new ServiceException('Invalid credentials', ErrorCodes.AUTH_INVALID_CREDENTIALS, 401);
     }
@@ -141,6 +177,7 @@ export class AuthService {
       throw new ServiceException('Tenant account is suspended', ErrorCodes.TENANT_SUSPENDED, 403);
     }
     await this.clearFailedAttempts(`tenant:${email}`);
+    await this.recordLoginAttempt(`tenant:${email}`, true, ipAddress);
     await this.prisma.auditLog.create({
       data: { entityType: 'auth', entityId: user.id, action: 'LOGIN', userEmail: email, ipAddress: ipAddress || '' },
     });
@@ -149,9 +186,11 @@ export class AuthService {
 
   async loginMember(email: string, password: string, ipAddress?: string) {
     await this.checkAccountLockout(`member:${email}`);
+    await this.checkIpRateLimit(ipAddress || '', `member:${email}`);
     const member = await this.prisma.member.findUnique({ where: { email } });
     if (!member) {
       await this.recordFailedAttempt(`member:${email}`);
+      await this.recordLoginAttempt(`member:${email}`, false, ipAddress);
       throw new ServiceException('Invalid credentials', ErrorCodes.AUTH_INVALID_CREDENTIALS, 401);
     }
     if (member.status === 'LOCKED') {
@@ -162,10 +201,12 @@ export class AuthService {
     }
     if (member.password && !(await this.comparePassword(password, member.password))) {
       await this.recordFailedAttempt(`member:${email}`);
+      await this.recordLoginAttempt(`member:${email}`, false, ipAddress);
       this.logger.warn(`Failed login attempt for member: ${email}`);
       throw new ServiceException('Invalid credentials', ErrorCodes.AUTH_INVALID_CREDENTIALS, 401);
     }
     await this.clearFailedAttempts(`member:${email}`);
+    await this.recordLoginAttempt(`member:${email}`, true, ipAddress);
     await this.prisma.auditLog.create({
       data: { entityType: 'auth', entityId: member.id, action: 'LOGIN', userEmail: email, ipAddress: ipAddress || '' },
     });

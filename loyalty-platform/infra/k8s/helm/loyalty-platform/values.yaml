@@ -1,0 +1,304 @@
+---
+# Global configuration
+global:
+  environment: production
+  namespace: loyalty-platform
+  priorityClassName: ""
+  imagePullSecrets:
+    - regcred
+  labels:
+    app.kubernetes.io/part-of: loyalty-platform
+    app.kubernetes.io/managed-by: helm
+
+# Image configuration
+image:
+  repository: loyalty-platform
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+  hosts:
+    api: api.loyalty.example.com
+    admin: admin.loyalty.example.com
+    member: member.loyalty.example.com
+  tls:
+    enabled: true
+    secretName: loyalty-platform-tls
+
+# Secrets configuration
+secrets:
+  externalSecrets:
+    enabled: false
+    provider: aws
+    region: us-east-1
+  sealedSecrets:
+    enabled: false
+  inline:
+    enabled: true
+
+# Autoscaling behavior
+autoscaling:
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 300
+
+# VPA configuration
+vpa:
+  enabled: false
+  updateMode: "Off"
+  minAllowed:
+    cpu: 50m
+    memory: 64Mi
+  maxAllowed:
+    cpu: 1000m
+    memory: 1024Mi
+
+# PodDisruptionBudget
+pdb:
+  enabled: true
+  minAvailable: 1
+  maxUnavailable: 0
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  annotations: {}
+
+# Pod topology spread constraints
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+
+# --- API Gateway ---
+apiGateway:
+  name: api-gateway
+  enabled: true
+  image:
+    repository: loyalty-platform/api-gateway
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  port: 3001
+  health:
+    path: /api/v1/health
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+    startupDelay: 5
+    startupFailureThreshold: 30
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    cpuUtilization: 70
+    memoryUtilization: 80
+    scaleUpStabilization: 0
+    scaleDownStabilization: 300
+    customMetrics: []
+  lifecycle:
+    preStopSleepSeconds: 15
+  config:
+    NODE_ENV: production
+    API_GATEWAY_PORT: "3001"
+    CORS_ORIGIN: "https://admin.loyalty.example.com,https://member.loyalty.example.com"
+    LOG_LEVEL: info
+    REDIS_HOST: redis.loyalty-platform.svc.cluster.local
+    REDIS_PORT: "6379"
+    KAFKA_BROKER: kafka.loyalty-platform.svc.cluster.local:9092
+    KAFKA_CLIENT_ID: loyalty-platform
+  secrets:
+    - name: DATABASE_URL
+      key: DATABASE_URL
+    - name: JWT_SECRET
+      key: JWT_SECRET
+    - name: REDIS_URL
+      key: REDIS_URL
+    - name: REDIS_PASSWORD
+      key: REDIS_PASSWORD
+    - name: JWT_EXPIRATION
+      key: JWT_EXPIRATION
+    - name: JWT_REFRESH_EXPIRATION
+      key: JWT_REFRESH_EXPIRATION
+    - name: KEYCLOAK_URL
+      key: KEYCLOAK_URL
+    - name: KEYCLOAK_REALM
+      key: KEYCLOAK_REALM
+    - name: KEYCLOAK_CLIENT_ID
+      key: KEYCLOAK_CLIENT_ID
+    - name: KEYCLOAK_CLIENT_SECRET
+      key: KEYCLOAK_CLIENT_SECRET
+    - name: SMTP_HOST
+      key: SMTP_HOST
+    - name: SMTP_PORT
+      key: SMTP_PORT
+    - name: SMTP_USER
+      key: SMTP_USER
+    - name: SMTP_PASS
+      key: SMTP_PASS
+    - name: SMTP_FROM_NAME
+      key: SMTP_FROM_NAME
+    - name: SMTP_FROM_EMAIL
+      key: SMTP_FROM_EMAIL
+    - name: ENCRYPTION_KEY
+      key: ENCRYPTION_KEY
+    - name: MINIO_ENDPOINT
+      key: MINIO_ENDPOINT
+    - name: MINIO_ACCESS_KEY
+      key: MINIO_ACCESS_KEY
+    - name: MINIO_SECRET_KEY
+      key: MINIO_SECRET_KEY
+    - name: MINIO_BUCKET
+      key: MINIO_BUCKET
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - api-gateway
+            topologyKey: kubernetes.io/hostname
+
+# --- Admin Web ---
+adminWeb:
+  name: admin-web
+  enabled: true
+  image:
+    repository: loyalty-platform/admin-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  port: 3000
+  health:
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+    startupDelay: 5
+    startupFailureThreshold: 30
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  hpa:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    cpuUtilization: 70
+    memoryUtilization: 80
+  config:
+    NODE_ENV: production
+    NEXT_PUBLIC_API_URL: https://api.loyalty.example.com/api/v1
+    API_URL: http://api-gateway.loyalty-platform.svc.cluster.local:3001/api/v1
+    NEXT_PUBLIC_WS_URL: wss://api.loyalty.example.com
+    PORT: "3000"
+  lifecycle:
+    preStopSleepSeconds: 15
+  secrets:
+    - name: API_URL
+      key: API_URL
+    - name: NEXT_PUBLIC_API_URL
+      key: NEXT_PUBLIC_API_URL
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - admin-web
+            topologyKey: kubernetes.io/hostname
+
+# --- Member Web ---
+memberWeb:
+  name: member-web
+  enabled: true
+  image:
+    repository: loyalty-platform/member-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  port: 3000
+  health:
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+    startupDelay: 5
+    startupFailureThreshold: 30
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  hpa:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    cpuUtilization: 70
+    memoryUtilization: 80
+  config:
+    NODE_ENV: production
+    NEXT_PUBLIC_API_URL: https://api.loyalty.example.com/api/v1
+    API_URL: http://api-gateway.loyalty-platform.svc.cluster.local:3001/api/v1
+    NEXT_PUBLIC_WS_URL: wss://api.loyalty.example.com
+    PORT: "3000"
+  lifecycle:
+    preStopSleepSeconds: 15
+  secrets:
+    - name: API_URL
+      key: API_URL
+    - name: NEXT_PUBLIC_API_URL
+      key: NEXT_PUBLIC_API_URL
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - member-web
+            topologyKey: kubernetes.io/hostname

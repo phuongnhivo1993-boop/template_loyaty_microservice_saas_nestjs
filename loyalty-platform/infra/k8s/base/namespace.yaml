@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loyalty-platform
+  labels:
+    name: loyalty-platform
+    environment: base
+    app.kubernetes.io/name: loyalty-platform
+    app.kubernetes.io/part-of: loyalty-platform

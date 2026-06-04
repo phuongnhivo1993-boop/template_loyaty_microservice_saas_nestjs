@@ -96,6 +96,7 @@ export default function HomeScreen() {
           { label: 'Tiers', icon: '📊', screen: 'TierProgress' },
           { label: 'KYC', icon: '✅', screen: 'KYCUpload' },
           { label: 'Settings', icon: '⚙️', screen: 'Settings' },
+          { label: 'Gift Cards', icon: '🎴', screen: 'GiftCards' },
           { label: 'Profile', icon: '👤', screen: 'Profile' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>

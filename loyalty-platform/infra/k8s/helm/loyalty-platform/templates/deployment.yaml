@@ -1,0 +1,95 @@
+{{- range $componentKey, $component := dict "api-gateway" .Values.apiGateway "admin-web" .Values.adminWeb "member-web" .Values.memberWeb }}
+{{- if $component.enabled }}
+{{- $port := $component.port }}
+{{- $name := $component.name }}
+{{- $healthPath := $component.health.path }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "loyalty-platform.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  replicas: {{ $component.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "loyalty-platform.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "loyalty-platform.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $name }}
+      annotations:
+        checksum/config: {{ $component.config | toJson | sha256sum }}
+    spec:
+      terminationGracePeriodSeconds: {{ $component.lifecycle.preStopSleepSeconds | default 60 | add 45 }}
+      serviceAccountName: {{ $name }}
+      {{- include "loyalty-platform.securityContext" $ | nindent 6 }}
+      {{- if $.Values.global.priorityClassName }}
+      priorityClassName: {{ $.Values.global.priorityClassName }}
+      {{- end }}
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "5"
+          - name: single-request-reopen
+            value: "true"
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                        - {{ $name }}
+                topologyKey: kubernetes.io/hostname
+      {{- if $.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml $.Values.topologySpreadConstraints | nindent 8 }}
+      {{- end }}
+      {{- include "loyalty-platform.imagePullSecrets" $ | nindent 6 }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $component.image.repository }}:{{ $component.image.tag }}"
+          imagePullPolicy: {{ $component.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ $name }}-config
+          env:
+            {{- include "loyalty-platform.envFromSecrets" (dict "component" $component) | nindent 12 }}
+          resources:
+            requests:
+              cpu: {{ $component.resources.requests.cpu }}
+              memory: {{ $component.resources.requests.memory }}
+            limits:
+              cpu: {{ $component.resources.limits.cpu }}
+              memory: {{ $component.resources.limits.memory }}
+          {{- include "loyalty-platform.probes" (dict "component" $component "port" $port "path" $healthPath) | nindent 10 }}
+          {{- include "loyalty-platform.containerSecurityContext" $ | nindent 10 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep {{ $component.lifecycle.preStopSleepSeconds | default 15 }}
+{{- end }}
+{{- end }}

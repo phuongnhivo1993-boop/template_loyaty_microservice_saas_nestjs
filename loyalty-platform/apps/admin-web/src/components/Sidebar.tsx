@@ -70,7 +70,7 @@ const menuGroups = [
     ],
   },
   {
-    label: 'Hệ thống',
+    label: 'Hạ tầng',
     items: [
       { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
       { label: 'Audit Log', href: '/audit-log', icon: '📋' },

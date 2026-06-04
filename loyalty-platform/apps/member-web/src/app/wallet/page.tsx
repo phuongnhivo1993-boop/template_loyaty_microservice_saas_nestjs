@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getWallet, getTransactions } from '@/lib/api';
+
+const PAGE_SIZE = 10;
+
+const typeFilters = ['All', 'Earned', 'Burned'] as const;
+type TypeFilter = (typeof typeFilters)[number];
 
 export default function WalletPage() {
   const router = useRouter();
@@ -11,6 +16,8 @@ export default function WalletPage() {
   const [txs, setTxs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('All');
+  const [page, setPage] = useState(1);
 
   const loadData = () => {
     setError('');
@@ -26,6 +33,20 @@ export default function WalletPage() {
   }, []);
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+  const filtered = useMemo(() => {
+    if (typeFilter === 'All') return txs;
+    if (typeFilter === 'Earned') return txs.filter(tx => tx.amount > 0);
+    return txs.filter(tx => tx.amount < 0);
+  }, [txs, typeFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleTypeFilter = (f: TypeFilter) => {
+    setTypeFilter(f);
+    setPage(1);
+  };
 
   if (loading) {
     return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
@@ -62,26 +83,60 @@ export default function WalletPage() {
         </div>
       </div>
 
+      <div className="tab-bar">
+        {typeFilters.map(f => (
+          <button key={f} className={`tab ${typeFilter === f ? 'active' : ''}`} onClick={() => handleTypeFilter(f)}>
+            {f}
+          </button>
+        ))}
+      </div>
+
       <div className="card" style={{ fontWeight: 600, marginBottom: '12px' }}>Recent Transactions</div>
-      {txs.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📭</div>
           <div className="empty-text">No transactions yet</div>
         </div>
       ) : (
-        <div className="card" style={{ padding: '0 20px' }}>
-          {txs.map((tx: any) => (
-            <div key={tx.id} className="tx-item">
-              <div className="tx-left">
-                <div className="tx-reason">{tx.reason || tx.type}</div>
-                <div className="tx-date">{formatDate(tx.createdAt)}</div>
+        <>
+          <div className="card" style={{ padding: '0 20px' }}>
+            {paginated.map((tx: any) => (
+              <div key={tx.id} className="tx-item">
+                <div className="tx-left">
+                  <div className="tx-reason">{tx.reason || tx.type}</div>
+                  <div className="tx-date">{formatDate(tx.createdAt)}</div>
+                </div>
+                <div className={`tx-amount ${tx.amount > 0 ? 'tx-earn' : 'tx-burn'}`}>
+                  {tx.amount > 0 ? '+' : ''}{tx.amount?.toLocaleString()}
+                </div>
               </div>
-              <div className={`tx-amount ${tx.amount > 0 ? 'tx-earn' : 'tx-burn'}`}>
-                {tx.amount > 0 ? '+' : ''}{tx.amount?.toLocaleString()}
-              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+              <button
+                className="btn btn-sm btn-outline"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{ width: 'auto', opacity: page <= 1 ? 0.5 : 1 }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                {page} / {totalPages}
+              </span>
+              <button
+                className="btn btn-sm btn-outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{ width: 'auto', opacity: page >= totalPages ? 0.5 : 1 }}
+              >
+                Next
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </MemberLayout>
   );

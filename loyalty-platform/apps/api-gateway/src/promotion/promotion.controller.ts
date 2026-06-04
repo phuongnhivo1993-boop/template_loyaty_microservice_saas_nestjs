@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { PromotionService } from './promotion.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -14,33 +14,56 @@ export class PromotionController {
 
   @Post()
   @Roles('HOST', 'ADMIN')
+  @ApiBody({ type: CreatePromotionDto })
   @ApiOperation({ summary: 'Create a promotion rule' })
+  @ApiResponse({ status: 201, description: 'Promotion created' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreatePromotionDto) {
     return this.promotionService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
   }
 
   @Get()
   @ApiOperation({ summary: 'List promotion rules (with pagination & sort)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'sort', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'tenantId', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'List of promotions' })
   findAll(@Req() req: any, @Query() query: PromotionQueryDto) {
     return this.promotionService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort, query.status);
   }
 
   @Get(':id')
+  @ApiParam({ name: 'id', type: String, description: 'Promotion ID' })
   @ApiOperation({ summary: 'Get promotion rule' })
+  @ApiResponse({ status: 200, description: 'Promotion found' })
+  @ApiResponse({ status: 404, description: 'Promotion not found' })
   findOne(@Param('id') id: string) {
     return this.promotionService.findOne(id);
   }
 
   @Put(':id')
   @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Promotion ID' })
+  @ApiBody({ type: UpdatePromotionDto })
   @ApiOperation({ summary: 'Update promotion rule' })
+  @ApiResponse({ status: 200, description: 'Promotion updated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Promotion not found' })
   update(@Param('id') id: string, @Body() body: UpdatePromotionDto) {
     return this.promotionService.update(id, body);
   }
 
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Promotion ID' })
   @ApiOperation({ summary: 'Delete promotion rule' })
+  @ApiResponse({ status: 200, description: 'Promotion deleted' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Promotion not found' })
   remove(@Param('id') id: string) {
     return this.promotionService.remove(id);
   }

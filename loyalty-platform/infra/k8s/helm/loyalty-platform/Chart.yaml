@@ -1,0 +1,24 @@
+apiVersion: v2
+name: loyalty-platform
+description: A Helm chart for deploying the Loyalty Platform microservices on Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - loyalty
+  - microservices
+  - nestjs
+  - nextjs
+home: https://loyalty.example.com
+sources:
+  - https://github.com/your-org/loyalty-platform
+maintainers:
+  - name: DevOps Team
+    email: devops@loyalty.example.com
+    url: https://loyalty.example.com
+icon: https://loyalty.example.com/favicon.ico
+kubeVersion: ">=1.24.0-0"
+annotations:
+  artifacthub.io/changes: |
+    - Initial release
+  artifacthub.io/prerelease: "false"

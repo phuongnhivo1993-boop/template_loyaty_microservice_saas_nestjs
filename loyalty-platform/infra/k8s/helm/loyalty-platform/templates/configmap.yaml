@@ -1,0 +1,18 @@
+{{- range $componentKey, $component := dict "api-gateway" .Values.apiGateway "admin-web" .Values.adminWeb "member-web" .Values.memberWeb }}
+{{- if $component.enabled }}
+{{- $name := $component.name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-config
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "loyalty-platform.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+data:
+  {{- range $key, $value := $component.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

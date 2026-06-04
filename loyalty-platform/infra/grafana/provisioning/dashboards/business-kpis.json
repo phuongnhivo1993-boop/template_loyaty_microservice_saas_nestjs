@@ -1,0 +1,707 @@
+{
+  "__description": "Business KPIs Dashboard - Loyalty Platform",
+  "dashboard": {
+    "title": "Business KPIs",
+    "description": "Key business metrics and KPIs for the loyalty platform",
+    "tags": ["loyalty", "business-kpis", "microservices"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "1m",
+    "time": { "from": "now-30d", "to": "now" },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Members",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+        "description": "Cumulative total number of registered members",
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": { "calcs": ["lastNotNull"], "values": false, "fields": "" },
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "members_total",
+            "legendFormat": "Total Members",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 2,
+        "title": "Active Members",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+        "description": "Members with ACTIVE status",
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": { "calcs": ["lastNotNull"], "values": false, "fields": "" },
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "members_total{status=\"ACTIVE\"}",
+            "legendFormat": "Active Members",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 3,
+        "title": "Members by Status",
+        "type": "piechart",
+        "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+        "description": "Distribution of members by their account status",
+        "options": {
+          "displayLabels": ["name", "value", "percent"],
+          "legend": { "displayMode": "table", "placement": "right", "showLegend": true },
+          "pieType": "pie",
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+          "tooltip": { "mode": "single", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "members_total{tenant=~\"$tenant\"}",
+            "legendFormat": "{{ status }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 4,
+        "title": "Daily New Members",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 4 },
+        "description": "Number of new member registrations per day",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "members/day",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "bars",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 1,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(members_created_total[24h]))",
+            "legendFormat": "New Members",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 5,
+        "title": "Points Earned vs Burned (Daily)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 10 },
+        "description": "Daily points earned vs burned over time",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "points",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "bars",
+              "fillOpacity": 60,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 1,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(points_earned_total[24h]))",
+            "legendFormat": "Points Earned",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(points_burned_total[24h]))",
+            "legendFormat": "Points Burned",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 6,
+        "title": "Points Earned (30d Trend)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 10 },
+        "description": "30-day rolling trend of points earned by tier",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "points",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(points_earned_total[30d])) by (tier)",
+            "legendFormat": "{{ tier }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 7,
+        "title": "Points Distribution by Tier",
+        "type": "bargauge",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 10 },
+        "description": "Total points allocated per member tier",
+        "options": {
+          "displayMode": "gradient",
+          "legend": { "calcs": [], "displayMode": "hidden", "placement": "bottom", "showLegend": false },
+          "minVizHeight": 10,
+          "minVizWidth": 0,
+          "orientation": "horizontal",
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+          "showUnfilled": true,
+          "tooltip": { "mode": "single", "sort": "none" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "points_distribution_by_tier",
+            "legendFormat": "{{ tier }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 8,
+        "title": "Voucher Usage Rate",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+        "description": "Daily voucher usage (redeemed) vs created",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "vouchers",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(vouchers_redeemed_total[24h]))",
+            "legendFormat": "Redeemed",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(vouchers_created_total[24h]))",
+            "legendFormat": "Created",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 9,
+        "title": "Campaign Performance",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 12, "x": 8, "y": 16 },
+        "description": "Campaign counts by status",
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": { "calcs": ["lastNotNull"], "values": false, "fields": "" },
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "campaigns_total{status=\"ACTIVE\"}",
+            "legendFormat": "Active: {{ status }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          },
+          {
+            "expr": "campaigns_total{status=\"DRAFT\"}",
+            "legendFormat": "Draft: {{ status }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "B"
+          },
+          {
+            "expr": "campaigns_total{status=\"ENDED\"}",
+            "legendFormat": "Ended: {{ status }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "C"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 10,
+        "title": "Daily Order Volume",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 22 },
+        "description": "Number of orders processed per day",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "orders/day",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "bars",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 1,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(orders_total[24h]))",
+            "legendFormat": "Orders",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 11,
+        "title": "Referral Conversion Rate",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 22 },
+        "description": "Percentage of referrals that converted to active members",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "line" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 0.1 }, { "color": "green", "value": 0.3 }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(referrals_total{status=\"CONVERTED\"}[7d])) / sum(rate(referrals_total[7d]))",
+            "legendFormat": "Conversion Rate",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 12,
+        "title": "Daily Check-in Active Users",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 22 },
+        "description": "Number of unique daily active users who checked in",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "users",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "bars",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 1,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(checkins_total[24h]))",
+            "legendFormat": "Check-ins",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 13,
+        "title": "Top 10 Members by Points",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+        "description": "Top 10 members ranked by total points",
+        "options": {
+          "footer": { "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+          "frameIndex": 0,
+          "showHeader": true,
+          "sortBy": [{ "displayName": "Total Points", "desc": true }]
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "custom": {
+              "align": "auto",
+              "cellOptions": { "type": "auto" },
+              "inspect": false,
+              "minWidth": 100
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Total Points" },
+              "properties": [{ "id": "custom.cellOptions", "value": { "type": "color-text", "mode": "background" } }]
+            }
+          ]
+        },
+        "targets": [
+          {
+            "expr": "topk(10, members_total_points)",
+            "legendFormat": "{{ member }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "datasource": { "uid": "prometheus" },
+        "transformations": [
+          { "id": "organize", "options": { "excludeByName": {}, "indexByName": {}, "renameByName": { "Time": "", "member": "Member", "Value": "Total Points" } } }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Points Burned (30d Trend)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 12, "y": 28 },
+        "description": "30-day rolling trend of points burned by tier",
+        "options": {
+          "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "points",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(points_burned_total[30d])) by (tier)",
+            "legendFormat": "{{ tier }}",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      },
+      {
+        "id": 15,
+        "title": "Member Growth (Cumulative)",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 36 },
+        "description": "Cumulative member growth over time",
+        "options": {
+          "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+          "tooltip": { "mode": "multi", "sort": "desc" }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "members",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 3,
+              "scaleDistribution": { "type": "linear" },
+              "showPoints": "never",
+              "spanNulls": true,
+              "stacking": { "group": "A", "mode": "none" },
+              "thresholdsStyle": { "mode": "off" }
+            },
+            "mappings": [],
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(members_created_total[30d]))",
+            "legendFormat": "New Members (30d)",
+            "interval": "",
+            "intervalFactor": 1,
+            "refId": "A"
+          }
+        ],
+        "datasource": { "uid": "prometheus" }
+      }
+    ]
+  }
+}
