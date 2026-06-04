@@ -234,33 +234,16 @@ export const getVoucherStats = (params?: ListParams) =>
   api.getList('/analytics/voucher-stats', params);
 
 // Import / Export
-export const importCsv = (endpoint: string, file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return fetch(`${API_BASE}/${endpoint}/import/csv`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  }).then((r) => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  });
-};
+export const importCsv = (entity: string, csv: string, tenantId?: string) =>
+  api.create(`/import/${entity}`, { csv, tenantId });
 
-export const importExcel = (endpoint: string, file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return fetch(`${API_BASE}/${endpoint}/import/excel`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  }).then((r) => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  });
-};
+export const importExcel = (entity: string, fileBase64: string, tenantId?: string) =>
+  api.create(`/import/${entity}/excel`, { file: fileBase64, tenantId });
+
+// Tenant Settings / Branding
+export const getTenantSettings = (tenantId: string) => api.get(`/settings/tenant/${tenantId}`);
+export const updateTenantSettings = (tenantId: string, data: any) =>
+  api.update(`/settings/tenant/${tenantId}`, data);
 
 // Stores
 export const getStores = (params?: ListParams) => api.getList('/stores', params);
@@ -314,6 +297,41 @@ export const getFeedback = (id: string) => api.get(`/feedback/${id}`);
 export const createFeedback = (data: any) => api.create('/feedback', data);
 export const updateFeedback = (id: string, data: any) => api.update(`/feedback/${id}`, data);
 export const deleteFeedback = (id: string) => api.delete(`/feedback/${id}`);
+
+// Products
+export const getProducts = (params?: ListParams) => api.getList('/products', params);
+export const getProduct = (id: string) => api.get(`/products/${id}`);
+export const createProduct = (data: any) => api.create('/products', data);
+export const updateProduct = (id: string, data: any) => api.update(`/products/${id}`, data);
+export const deleteProduct = (id: string) => api.delete(`/products/${id}`);
+
+// Product Categories
+export const getProductCategories = (params?: ListParams) => api.getList('/product-categories', params);
+export const getProductCategory = (id: string) => api.get(`/product-categories/${id}`);
+export const createProductCategory = (data: any) => api.create('/product-categories', data);
+export const updateProductCategory = (id: string, data: any) => api.update(`/product-categories/${id}`, data);
+export const deleteProductCategory = (id: string) => api.delete(`/product-categories/${id}`);
+
+// Orders
+export const getOrders = (params?: ListParams) => api.getList('/orders', params);
+export const getOrder = (id: string) => api.get(`/orders/${id}`);
+export const createOrder = (data: any) => api.create('/orders', data);
+export const updateOrderStatus = (id: string, data: any) => api.update(`/orders/${id}/status`, data);
+export const getOrderTimeline = (id: string) => api.get(`/orders/${id}/timeline`);
+
+// Member Segmentation
+export const getMemberSegmentation = (params?: ListParams) => api.getList('/member-segmentation', params);
+export const getSegmentationSummary = () => api.get('/member-segmentation/summary');
+export const getMemberRFM = (memberId: string) => api.get(`/member-segmentation/${memberId}`);
+
+// Coupons
+export const getCoupons = (params?: ListParams) => api.getList('/coupons', params);
+export const getCoupon = (id: string) => api.get(`/coupons/${id}`);
+export const createCoupon = (data: any) => api.create('/coupons', data);
+export const updateCoupon = (id: string, data: any) => api.update(`/coupons/${id}`, data);
+export const deleteCoupon = (id: string) => api.delete(`/coupons/${id}`);
+export const validateCoupon = (data: any) => api.post('/coupons/validate', data);
+export const applyCoupon = (data: any) => api.post('/coupons/apply', data);
 
 export const exportCsv = (endpoint: string, params?: ListParams) => {
   const q = buildQuery(params);

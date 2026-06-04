@@ -158,6 +158,32 @@ export class MemberSelfService {
     return notifications;
   }
 
+  async getTierProgress(memberId: string) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      include: { tier: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    const currentTier = member.tier as any;
+    const allTiers = await this.prisma.tier.findMany({
+      where: { tenantId: member.tenantId },
+      orderBy: { minPoints: 'asc' },
+    });
+    const currentIndex = allTiers.findIndex(t => t.id === currentTier?.id);
+    const nextTier = currentIndex >= 0 && currentIndex < allTiers.length - 1 ? allTiers[currentIndex + 1] : null;
+    const progress = nextTier
+      ? Math.min(100, Math.max(0, ((member.availablePoints - (currentTier?.minPoints || 0)) / (nextTier.minPoints - (currentTier?.minPoints || 0))) * 100))
+      : 100;
+    return {
+      currentTier: currentTier ? { id: currentTier.id, name: currentTier.name, minPoints: currentTier.minPoints, color: currentTier.color } : null,
+      nextTier: nextTier ? { id: nextTier.id, name: nextTier.name, minPoints: nextTier.minPoints, color: nextTier.color } : null,
+      currentPoints: member.availablePoints,
+      progress: Math.round(progress),
+      pointsToNext: nextTier ? Math.max(0, nextTier.minPoints - member.availablePoints) : 0,
+      allTiers: allTiers.map(t => ({ id: t.id, name: t.name, minPoints: t.minPoints, color: t.color })),
+    };
+  }
+
   async updateProfile(memberId: string, data: { fullName?: string; phone?: string }) {
     const member = await this.prisma.member.findUnique({
       where: { id: memberId },
@@ -321,6 +347,28 @@ export class MemberSelfService {
 
   async createFeedback(memberId: string, data: { entityType: string; entityId: string; rating: number; content?: string }) {
     return this.prisma.memberFeedback.create({ data: { ...data, memberId } });
+  }
+
+  async getOrders(memberId: string, status?: string, page = 1, limit = 20) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const where: any = { memberId };
+    if (status) where.status = status;
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: { items: true, store: { select: { name: true } } },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getFeedback(memberId: string) {

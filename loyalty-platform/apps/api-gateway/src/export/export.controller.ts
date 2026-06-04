@@ -80,6 +80,30 @@ const entityConfig: Record<string, { model: string; columns: { key: string; labe
       { key: 'createdAt', label: 'Created At' },
     ],
   },
+  coupons: {
+    model: 'coupon',
+    columns: [
+      { key: 'code', label: 'Code' },
+      { key: 'type', label: 'Type' },
+      { key: 'value', label: 'Value' },
+      { key: 'usedCount', label: 'Used Count' },
+      { key: 'maxUsage', label: 'Max Usage' },
+      { key: 'status', label: 'Status' },
+      { key: 'startDate', label: 'Start Date' },
+      { key: 'endDate', label: 'End Date' },
+      { key: 'createdAt', label: 'Created At' },
+    ],
+  },
+  coupon_usages: {
+    model: 'couponUsage',
+    columns: [
+      { key: 'couponId', label: 'Coupon ID' },
+      { key: 'memberId', label: 'Member ID' },
+      { key: 'orderId', label: 'Order ID' },
+      { key: 'discountAmount', label: 'Discount Amount' },
+      { key: 'createdAt', label: 'Used At' },
+    ],
+  },
 };
 
 @ApiTags('Export')

@@ -27,30 +27,38 @@ export class CacheService implements OnModuleDestroy {
     });
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  private tenantPrefix(tenantId: string | undefined): string {
+    return tenantId ? `tenant:${tenantId}:` : '';
+  }
+
+  async get<T>(key: string, tenantId?: string): Promise<T | null> {
     try {
-      const val = await this.client.get(key);
+      const prefixed = `${this.tenantPrefix(tenantId)}${key}`;
+      const val = await this.client.get(prefixed);
       if (val) return JSON.parse(val) as T;
     } catch {}
     return null;
   }
 
-  async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+  async set(key: string, value: any, ttlSeconds?: number, tenantId?: string): Promise<void> {
     try {
+      const prefixed = `${this.tenantPrefix(tenantId)}${key}`;
       const ttl = ttlSeconds ?? this.defaultTtl;
-      await this.client.set(key, JSON.stringify(value), 'EX', ttl);
+      await this.client.set(prefixed, JSON.stringify(value), 'EX', ttl);
     } catch {}
   }
 
-  async del(key: string): Promise<void> {
+  async del(key: string, tenantId?: string): Promise<void> {
     try {
-      await this.client.del(key);
+      const prefixed = `${this.tenantPrefix(tenantId)}${key}`;
+      await this.client.del(prefixed);
     } catch {}
   }
 
-  async delPattern(pattern: string): Promise<void> {
+  async delPattern(pattern: string, tenantId?: string): Promise<void> {
     try {
-      const keys = await this.client.keys(pattern);
+      const prefixed = `${this.tenantPrefix(tenantId)}${pattern}`;
+      const keys = await this.client.keys(prefixed);
       if (keys.length > 0) {
         await this.client.del(...keys);
       }

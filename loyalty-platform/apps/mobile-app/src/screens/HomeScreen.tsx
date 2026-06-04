@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } 
 import { useNavigation } from '@react-navigation/native';
 import { members, analytics } from '../services/api';
 import { useAuthStore } from '../services/authStore';
+import { useWsStore } from '../services/wsStore';
 import { auth } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import type { Member, Wallet } from '../services/types';
@@ -17,6 +18,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
+
+  const wsStatus = useWsStore(s => s.status);
 
   const handleLogout = async () => {
     await auth.logout();
@@ -54,7 +57,15 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, {profile?.fullName || 'Member'}</Text>
-        <View style={{ flexDirection: 'row', gap: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+          <View style={[styles.wsDot,
+            wsStatus === 'connected' ? styles.wsConnected :
+            wsStatus === 'reconnecting' ? styles.wsReconnecting :
+            styles.wsDisconnected
+          ]} />
+          <TouchableOpacity onPress={() => navigation.navigate('CreateOrder')}>
+            <Text style={styles.createOrderIcon}>🛒</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.notifIcon}>🔔</Text>
           </TouchableOpacity>
@@ -122,6 +133,11 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 20, fontWeight: '700', color: 'white' },
   logout: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
   notifIcon: { fontSize: 20 },
+  createOrderIcon: { fontSize: 20 },
+  wsDot: { width: 10, height: 10, borderRadius: 5 },
+  wsConnected: { backgroundColor: '#22c55e' },
+  wsReconnecting: { backgroundColor: '#f59e0b' },
+  wsDisconnected: { backgroundColor: '#ef4444' },
   pointsCard: { margin: 16, padding: 24, backgroundColor: '#2563eb', borderRadius: 16, alignItems: 'center' },
   pointsLabel: { fontSize: 14, color: '#bfdbfe' },
   pointsValue: { fontSize: 36, fontWeight: '800', color: 'white', marginVertical: 4 },

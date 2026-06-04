@@ -10,6 +10,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { SkipTenantCheck } from './skip-tenant.decorator';
 import { LoginDto, RegisterHostDto } from '../common/dto/common.dto';
 
 @ApiTags('Auth')
@@ -18,12 +19,14 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('host/register')
+  @SkipTenantCheck()
   @ApiOperation({ summary: 'Register a new host (super admin)' })
   registerHost(@Body() body: RegisterHostDto) {
     return this.authService.registerHost(body.email, body.password, body.name);
   }
 
   @Post('host/login')
+  @SkipTenantCheck()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login as host' })
   loginHost(@Body() body: LoginDto) {
@@ -31,6 +34,7 @@ export class AuthController {
   }
 
   @Post('tenant/login')
+  @SkipTenantCheck()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login as tenant admin/user' })
   loginTenant(@Body() body: LoginDto & { tenantId?: string }) {
@@ -42,6 +46,7 @@ export class AuthController {
   }
 
   @Post('member/login')
+  @SkipTenantCheck()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login as member' })
   loginMember(@Body() body: LoginDto) {
@@ -65,6 +70,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @SkipTenantCheck()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset (sends email with reset token)' })
   forgotPassword(@Body() body: { email: string }) {
@@ -72,7 +78,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
+  @SkipTenantCheck()
   @ApiOperation({ summary: 'Reset password using reset token' })
   resetPassword(@Body() body: { token: string; newPassword: string }) {
     return this.authService.resetPassword(body.token, body.newPassword);

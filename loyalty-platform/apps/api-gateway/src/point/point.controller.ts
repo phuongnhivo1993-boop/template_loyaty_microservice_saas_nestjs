@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PointService } from './point.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -40,8 +40,8 @@ export class PointController {
 
   @Get('transactions')
   @ApiOperation({ summary: 'List point transactions (paginated)' })
-  getTransactions(@Query() query: PointTransactionQueryDto) {
-    return this.pointService.getTransactions(query.memberId, query.page, query.limit, query.type, query.tenantId, query.search, query.sort);
+  getTransactions(@Req() req: any, @Query() query: PointTransactionQueryDto) {
+    return this.pointService.getTransactions(query.memberId, query.page, query.limit, query.type, req.tenantId ?? query.tenantId, query.search, query.sort);
   }
 
   @Post('adjust')

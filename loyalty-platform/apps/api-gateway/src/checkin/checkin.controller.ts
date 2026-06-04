@@ -32,7 +32,7 @@ export class CheckinController {
   @Get('admin/stats')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Admin: check-in analytics (streaks, trends)' })
-  getAdminStats(@Query('tenantId') tenantId?: string) {
-    return this.checkinService.getAdminStats(tenantId);
+  getAdminStats(@Req() req: any, @Query('tenantId') tenantId?: string) {
+    return this.checkinService.getAdminStats(req.tenantId ?? tenantId);
   }
 }

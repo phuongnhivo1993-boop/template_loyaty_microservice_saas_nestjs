@@ -196,6 +196,56 @@ const entityConfigs: Record<string, ImportConfig> = {
       tenantId: row.tenantId || undefined,
     }),
   },
+  products: {
+    requiredFields: ['name', 'slug', 'price'],
+    optionalFields: ['description', 'compareAtPrice', 'costPrice', 'imageUrl', 'unit', 'stock', 'sku', 'barcode', 'status', 'categoryId'],
+    transform: (row) => ({
+      name: row.name,
+      slug: row.slug,
+      description: row.description || undefined,
+      price: parseFloat(row.price),
+      compareAtPrice: row.compareAtPrice ? parseFloat(row.compareAtPrice) : undefined,
+      costPrice: row.costPrice ? parseFloat(row.costPrice) : undefined,
+      imageUrl: row.imageUrl || undefined,
+      unit: row.unit || 'piece',
+      stock: row.stock ? parseInt(row.stock, 10) : 0,
+      sku: row.sku || undefined,
+      barcode: row.barcode || undefined,
+      status: (row.status || 'ACTIVE').toUpperCase(),
+      categoryId: row.categoryId || undefined,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  product_categories: {
+    requiredFields: ['name', 'slug'],
+    optionalFields: ['description', 'icon', 'sortOrder'],
+    transform: (row) => ({
+      name: row.name,
+      slug: row.slug,
+      description: row.description || undefined,
+      icon: row.icon || undefined,
+      sortOrder: row.sortOrder ? parseInt(row.sortOrder, 10) : 0,
+      tenantId: row.tenantId || undefined,
+    }),
+  },
+  coupons: {
+    requiredFields: ['code', 'type', 'value'],
+    optionalFields: ['minAmount', 'maxDiscount', 'maxUsage', 'maxUsagePerMember', 'description', 'startDate', 'endDate', 'status'],
+    transform: (row) => ({
+      code: row.code,
+      type: (row.type || 'PERCENTAGE').toUpperCase(),
+      value: parseFloat(row.value),
+      minAmount: row.minAmount ? parseFloat(row.minAmount) : undefined,
+      maxDiscount: row.maxDiscount ? parseFloat(row.maxDiscount) : undefined,
+      maxUsage: row.maxUsage ? parseInt(row.maxUsage, 10) : undefined,
+      maxUsagePerMember: row.maxUsagePerMember ? parseInt(row.maxUsagePerMember, 10) : undefined,
+      description: row.description || undefined,
+      startDate: row.startDate ? new Date(row.startDate) : undefined,
+      endDate: row.endDate ? new Date(row.endDate) : undefined,
+      status: (row.status || 'ACTIVE').toUpperCase(),
+      tenantId: row.tenantId || undefined,
+    }),
+  },
 };
 
 @Injectable()
@@ -244,7 +294,10 @@ export class ImportService {
   entity === 'notification_templates' ? 'notificationTemplate' :
   entity === 'member_vouchers' ? 'memberVoucher' :
   entity === 'point_transactions' ? 'pointTransaction' :
-  entity === 'audit_logs' ? 'auditLog' : entity
+  entity === 'audit_logs' ? 'auditLog' :
+  entity === 'products' ? 'product' :
+  entity === 'product_categories' ? 'productCategory' :
+  entity === 'coupons' ? 'coupon' : entity
 ];
 
     for (let i = 0; i < parsed.rows.length; i++) {

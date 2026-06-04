@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,14 +15,14 @@ export class CampaignController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a campaign' })
-  create(@Body() body: CreateCampaignDto) {
-    return this.campaignService.create(body);
+  create(@Req() req: any, @Body() body: CreateCampaignDto) {
+    return this.campaignService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
   }
 
   @Get()
   @ApiOperation({ summary: 'List campaigns (with pagination & sort)' })
-  findAll(@Query() query: CampaignQueryDto) {
-    return this.campaignService.findAll(query.tenantId, query.page, query.limit, query.status, query.search, query.sort);
+  findAll(@Req() req: any, @Query() query: CampaignQueryDto) {
+    return this.campaignService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.status, query.search, query.sort);
   }
 
   @Get(':id')

@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { MulterModule } from '@nestjs/platform-express';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RolesGuard } from './auth/roles.guard';
+import { TenantGuard } from './auth/tenant.guard';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -38,6 +39,12 @@ import { PartnershipModule } from './partnership/partnership.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { GiftCardModule } from './gift-card/gift-card.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { ProductModule } from './product/product.module';
+import { ProductCategoryModule } from './product-category/product-category.module';
+import { OrderModule } from './order/order.module';
+import { MemberSegmentationModule } from './member-segmentation/member-segmentation.module';
+import { CouponModule } from './coupon/coupon.module';
+import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -76,12 +83,19 @@ import { FeedbackModule } from './feedback/feedback.module';
     WebhookModule,
     GiftCardModule,
     FeedbackModule,
+    ProductModule,
+    ProductCategoryModule,
+    OrderModule,
+    MemberSegmentationModule,
+    CouponModule,
+    WebSocketModule,
   ],
   controllers: [ApiGatewayController],
   providers: [
     ApiGatewayService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: TenantGuard },
   ],
 })
 export class ApiGatewayModule {}

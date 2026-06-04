@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import TenantSwitcher from './TenantSwitcher';
 
 const menuGroups = [
   {
@@ -35,6 +36,7 @@ const menuGroups = [
       { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
       { label: 'Member Vouchers', href: '/member-vouchers', icon: '🎫' },
       { label: 'Promotions', href: '/promotions', icon: '⚡' },
+      { label: 'Coupons', href: '/coupons', icon: '🏷️' },
     ],
   },
   {
@@ -50,6 +52,9 @@ const menuGroups = [
   {
     label: 'Kinh doanh',
     items: [
+      { label: 'Products', href: '/products', icon: '📦' },
+      { label: 'Product Categories', href: '/product-categories', icon: '📂' },
+      { label: 'Orders', href: '/orders', icon: '🛒' },
       { label: 'Stores', href: '/stores', icon: '🏪' },
       { label: 'Cashback', href: '/cashback', icon: '💵' },
       { label: 'Gift Cards', href: '/gift-cards', icon: '💳' },
@@ -59,6 +64,7 @@ const menuGroups = [
   {
     label: 'Phân tích',
     items: [
+      { label: 'Member Segmentation', href: '/member-segmentation', icon: '🎯' },
       { label: 'Voucher Analytics', href: '/voucher-analytics', icon: '📊' },
       { label: 'Check-in Analytics', href: '/checkin-analytics', icon: '📅' },
     ],
@@ -69,6 +75,7 @@ const menuGroups = [
       { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
       { label: 'Audit Log', href: '/audit-log', icon: '📋' },
       { label: 'Settings', href: '/settings', icon: '⚙️' },
+      { label: 'Branding', href: '/settings/branding', icon: '🎨' },
     ],
   },
 ];
@@ -77,6 +84,23 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [tenantId, setTenantId] = useState<string>('');
+  const [role, setRole] = useState<string>('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setTenantId(payload.tenantId || '');
+      setRole(payload.role || '');
+    } catch {}
+  }, []);
+
+  const handleTenantSwitch = (newTenantId: string) => {
+    localStorage.setItem('activeTenantId', newTenantId);
+    window.location.reload();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -106,6 +130,15 @@ export default function Sidebar() {
         <div className="sidebar-header">
           <h1 className="sidebar-title">Loyalty Admin</h1>
         </div>
+
+        {role === 'HOST' && (
+          <div style={{ padding: '8px 12px' }}>
+            <TenantSwitcher
+              currentTenantId={tenantId}
+              onSwitch={handleTenantSwitch}
+            />
+          </div>
+        )}
 
         <nav className="sidebar-nav">
           {menuGroups.map((group) => (

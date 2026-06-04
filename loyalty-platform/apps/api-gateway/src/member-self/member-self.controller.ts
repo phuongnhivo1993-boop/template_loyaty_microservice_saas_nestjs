@@ -132,6 +132,14 @@ export class MemberSelfController {
     return this.memberSelfService.getGiftCards(req.user.id);
   }
 
+  @Get('tier-progress')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get tier progress (current tier, next tier, points to next)' })
+  getTierProgress(@Req() req: any) {
+    return this.memberSelfService.getTierProgress(req.user.id);
+  }
+
   @Get('stores')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -146,6 +154,19 @@ export class MemberSelfController {
   @ApiOperation({ summary: 'Submit feedback/review' })
   createFeedback(@Req() req: any, @Body() body: { entityType: string; entityId: string; rating: number; content?: string }) {
     return this.memberSelfService.createFeedback(req.user.id, body);
+  }
+
+  @Get('orders')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own orders' })
+  getOrders(
+    @Req() req: any,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.memberSelfService.getOrders(req.user.id, status, page || 1, limit || 20);
   }
 
   @Get('feedback')

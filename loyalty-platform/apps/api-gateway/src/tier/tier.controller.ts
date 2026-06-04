@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TierService } from './tier.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,9 +15,10 @@ export class TierController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a tier' })
-  create(@Body() body: CreateTierDto) {
+  create(@Req() req: any, @Body() body: CreateTierDto) {
     return this.tierService.create({
       ...body,
+      tenantId: req.tenantId ?? body.tenantId,
       minPoints: body.minPoints ?? 0,
       maxPoints: body.maxPoints ?? 999999,
     });
@@ -25,8 +26,8 @@ export class TierController {
 
   @Get()
   @ApiOperation({ summary: 'List tiers (with pagination & sort)' })
-  findAll(@Query() query: TierQueryDto) {
-    return this.tierService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
+  findAll(@Req() req: any, @Query() query: TierQueryDto) {
+    return this.tierService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')

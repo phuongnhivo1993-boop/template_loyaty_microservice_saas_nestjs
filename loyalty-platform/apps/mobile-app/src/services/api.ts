@@ -134,6 +134,22 @@ export const feedback = {
   getPublic: (entityType: string, entityId: string) => api.get(`/feedback/${entityType}/${entityId}`),
 };
 
+export const orders = {
+  create: (data: { items: { productId: string; quantity: number }[]; storeId?: string; couponCode?: string; pointsUsed?: number }) =>
+    api.post('/orders', data),
+  list: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/me/orders', { params }),
+  getById: (id: string) => api.get(`/orders/${id}`),
+  cancel: (id: string, data?: { cancelReason?: string }) =>
+    api.put(`/orders/${id}/cancel`, data),
+};
+
+export const products = {
+  list: (params?: { search?: string; categoryId?: string; page?: number; limit?: number }) =>
+    api.get('/products', { params }),
+  getById: (id: string) => api.get(`/products/${id}`),
+};
+
 export const analytics = {
   leaderboard: (limit = 10) => api.get('/analytics/leaderboard', { params: { limit } }),
 };

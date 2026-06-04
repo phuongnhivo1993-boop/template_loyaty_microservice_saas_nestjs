@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VoucherService } from './voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,14 +15,14 @@ export class VoucherController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a voucher' })
-  create(@Body() body: CreateVoucherDto) {
-    return this.voucherService.create(body);
+  create(@Req() req: any, @Body() body: CreateVoucherDto) {
+    return this.voucherService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
   }
 
   @Get()
   @ApiOperation({ summary: 'List vouchers (with pagination & sort)' })
-  findAll(@Query() query: VoucherQueryDto) {
-    return this.voucherService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
+  findAll(@Req() req: any, @Query() query: VoucherQueryDto) {
+    return this.voucherService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')

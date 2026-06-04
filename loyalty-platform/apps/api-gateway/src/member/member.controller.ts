@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberService } from './member.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { SkipTenantCheck } from '../auth/skip-tenant.decorator';
 import { CreateMemberDto, UpdateMemberDto, MemberQueryDto, RegisterMemberDto } from './dto/create-member.dto';
 
 @ApiTags('Members')
@@ -11,6 +12,7 @@ export class MemberController {
   constructor(private memberService: MemberService) {}
 
   @Post('register')
+  @SkipTenantCheck()
   @ApiOperation({ summary: 'Public member self-registration' })
   async register(@Body() body: RegisterMemberDto) {
     let { tenantId } = body;
@@ -26,16 +28,16 @@ export class MemberController {
   @UseGuards(JwtAuthGuard)
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Admin: register a new member' })
-  create(@Body() body: CreateMemberDto) {
-    return this.memberService.create(body);
+  create(@Req() req: any, @Body() body: CreateMemberDto) {
+    return this.memberService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
   }
 
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'List members (with pagination & filtering)' })
-  findAll(@Query() query: MemberQueryDto) {
-    return this.memberService.findAll(query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
+  findAll(@Req() req: any, @Query() query: MemberQueryDto) {
+    return this.memberService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
   }
 
   @Get(':id')

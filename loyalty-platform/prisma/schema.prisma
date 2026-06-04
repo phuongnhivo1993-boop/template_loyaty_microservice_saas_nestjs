@@ -44,6 +44,7 @@ model Tenant {
   id        String       @id @default(uuid())
   name      String
   domain    String       @unique
+  subdomain String?      @unique
   email     String
   phone     String?
   address   String?
@@ -71,6 +72,10 @@ model Tenant {
   partnerBrands        PartnerBrand[]
   webhookEndpoints     WebhookEndpoint[]
   giftCards            GiftCard[]
+  productCategories    ProductCategory[]
+  products             Product[]
+  orders               Order[]
+  coupons              Coupon[]
 
   @@map("tenants")
 }
@@ -137,6 +142,8 @@ model Member {
   cashbackTransactions CashbackTransaction[]
   memberGiftCards    MemberGiftCard[]
   feedback           MemberFeedback[]
+  orders             Order[]
+  couponUsages       CouponUsage[]
 
   @@index([tenantId])
   @@index([status])
@@ -397,6 +404,16 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
 enum StoreStatus {
   ACTIVE
   INACTIVE
@@ -420,6 +437,7 @@ model Store {
   updatedAt      DateTime    @updatedAt
 
   storeStaff StoreStaff[]
+  orders     Order[]
 
   @@index([tenantId])
   @@index([code])
@@ -563,6 +581,21 @@ model WebhookEventLog {
   @@map("webhook_event_logs")
 }
 
+model WebSocketEventLog {
+  id        String   @id @default(uuid())
+  event     String
+  room      String?
+  payload   Json?
+  memberId  String?
+  tenantId  String?
+  createdAt DateTime @default(now())
+
+  @@index([room, createdAt])
+  @@index([memberId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("websocket_event_logs")
+}
+
 model GiftCard {
   id          String   @id @default(uuid())
   code        String   @unique
@@ -612,4 +645,157 @@ model MemberFeedback {
   @@index([entityType, entityId])
   @@index([rating])
   @@map("member_feedback")
+}
+
+model ProductCategory {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String
+  description String?
+  icon      String?
+  sortOrder Int       @default(0)
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+
+  @@unique([slug, tenantId])
+  @@index([tenantId])
+  @@map("product_categories")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  price       Float
+  compareAtPrice Float?
+  costPrice   Float?
+  imageUrl    String?
+  unit        String    @default("piece")
+  stock       Int       @default(0)
+  sku         String?
+  barcode     String?
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK
+  categoryId  String?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orderItems OrderItem[]
+
+  @@unique([slug, tenantId])
+  @@unique([sku, tenantId])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  orderCode     String      @unique
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id])
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  storeId       String?
+  store         Store?      @relation(fields: [storeId], references: [id])
+  status        OrderStatus @default(PENDING)
+  subtotal      Float
+  discount      Float       @default(0)
+  shippingFee   Float       @default(0)
+  tax           Float       @default(0)
+  total         Float
+  pointsEarned  Int         @default(0)
+  pointsUsed    Int         @default(0)
+  couponCode    String?
+  notes         String?
+  shippingAddress Json?
+  paymentMethod String?
+  paidAt        DateTime?
+  deliveredAt   DateTime?
+  cancelledAt   DateTime?
+  cancelReason  String?
+  statusHistory Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  items OrderItem[]
+  couponUsages CouponUsage[]
+
+  @@index([memberId])
+  @@index([tenantId])
+  @@index([orderCode])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String  // snapshot of product name at time of order
+  price     Float   // snapshot of unit price
+  quantity  Int
+  subtotal  Float
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Coupon {
+  id          String   @id @default(uuid())
+  code        String
+  type        String   // PERCENTAGE, FIXED
+  value       Float    // discount % (10 = 10%) or fixed amount (50000 = 50k VND)
+  minAmount   Float?   // minimum order total to apply
+  maxDiscount Float?   // max discount for percentage type
+  maxUsage    Int?     // max total uses (null = unlimited)
+  usedCount   Int      @default(0)
+  maxUsagePerMember Int? @default(1) // max uses per member (null = unlimited)
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String   @default("ACTIVE") // ACTIVE, DISABLED, EXPIRED
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usages CouponUsage[]
+
+  @@unique([code, tenantId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([code])
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id             String   @id @default(uuid())
+  couponId       String
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  memberId       String
+  member         Member   @relation(fields: [memberId], references: [id])
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id])
+  discountAmount Float
+  createdAt      DateTime @default(now())
+
+  @@index([couponId])
+  @@index([memberId])
+  @@index([orderId])
+  @@map("coupon_usages")
 }

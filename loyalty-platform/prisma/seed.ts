@@ -31,6 +31,7 @@ async function main() {
     create: {
       name: 'Sunshine Real Estate',
       domain: 'sunshine.loyalty.vn',
+      subdomain: 'sunshine',
       email: 'admin@sunshine.vn',
       phone: '0909123456',
       address: '123 Nguyen Hue, Q1, HCMC',
@@ -252,6 +253,86 @@ async function main() {
     },
   });
   console.log('  ✓ Sample mission created');
+
+  const category = await prisma.productCategory.upsert({
+    where: { slug_tenantId: { slug: 'thuc-pham-do-uong', tenantId: tenant.id } },
+    update: {},
+    create: { name: 'Thực phẩm & Đồ uống', slug: 'thuc-pham-do-uong', description: 'Đồ ăn, thức uống, snack', tenantId: tenant.id },
+  });
+  await prisma.productCategory.upsert({
+    where: { slug_tenantId: { slug: 'thoi-trang', tenantId: tenant.id } },
+    update: {},
+    create: { name: 'Thời trang', slug: 'thoi-trang', description: 'Quần áo, phụ kiện', icon: '👕', tenantId: tenant.id },
+  });
+  await prisma.productCategory.upsert({
+    where: { slug_tenantId: { slug: 'dien-tu', tenantId: tenant.id } },
+    update: {},
+    create: { name: 'Điện tử', slug: 'dien-tu', description: 'Điện thoại, laptop, phụ kiện', icon: '📱', tenantId: tenant.id },
+  });
+  console.log('  ✓ Product categories created');
+
+  await prisma.product.createMany({
+    data: [
+      { name: 'Cà phê sữa đá', slug: 'ca-phe-sua-da', price: 35000, costPrice: 12000, unit: 'ly', stock: 200, sku: 'CF-001', categoryId: category.id, tenantId: tenant.id },
+      { name: 'Bánh mì thịt nướng', slug: 'banh-mi-thit-nuong', price: 25000, costPrice: 10000, unit: 'cái', stock: 100, sku: 'BM-001', categoryId: category.id, tenantId: tenant.id },
+      { name: 'Trà sữa trân châu', slug: 'tra-sua-tran-chau', price: 45000, compareAtPrice: 55000, costPrice: 15000, unit: 'ly', stock: 150, sku: 'TS-001', categoryId: category.id, tenantId: tenant.id },
+      { name: 'Nước suối 500ml', slug: 'nuoc-suoi-500ml', price: 10000, costPrice: 4000, unit: 'chai', stock: 500, sku: 'NS-001', categoryId: category.id, tenantId: tenant.id },
+      { name: 'Snack khoai tây', slug: 'snack-khoai-tay', price: 15000, costPrice: 7000, unit: 'gói', stock: 300, sku: 'SN-001', categoryId: category.id, tenantId: tenant.id },
+    ],
+  });
+  console.log('  ✓ Sample products created');
+
+  await prisma.pointEarningRule.create({
+    data: {
+      name: 'Mặc định 1%',
+      description: '1 point cho mỗi 1,000 VND',
+      pointsPerUnit: 0.001,
+      minAmount: 0,
+      status: 'ACTIVE',
+      tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Default earning rule created');
+
+  // Seed coupons
+  const coupon1 = await prisma.coupon.upsert({
+    where: { code_tenantId: { code: 'WELCOME10', tenantId: tenant.id } },
+    update: {},
+    create: {
+      code: 'WELCOME10', type: 'PERCENTAGE', value: 10,
+      minAmount: 50000, maxDiscount: 50000,
+      maxUsage: 1000, maxUsagePerMember: 1,
+      description: '10% off welcome discount (max 50,000 VND)',
+      status: 'ACTIVE', tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Coupon created:', coupon1.code);
+
+  const coupon2 = await prisma.coupon.upsert({
+    where: { code_tenantId: { code: 'FLAT50K', tenantId: tenant.id } },
+    update: {},
+    create: {
+      code: 'FLAT50K', type: 'FIXED', value: 50000,
+      minAmount: 200000, maxUsage: 500, maxUsagePerMember: 2,
+      description: '50,000 VND off for orders over 200,000 VND',
+      status: 'ACTIVE', tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Coupon created:', coupon2.code);
+
+  const coupon3 = await prisma.coupon.upsert({
+    where: { code_tenantId: { code: 'SUMMER20', tenantId: tenant.id } },
+    update: {},
+    create: {
+      code: 'SUMMER20', type: 'PERCENTAGE', value: 20,
+      minAmount: 100000, maxDiscount: 100000,
+      maxUsage: 200, maxUsagePerMember: 1,
+      description: '20% off summer special (max 100,000 VND)',
+      startDate: new Date('2026-06-01'), endDate: new Date('2026-08-31'),
+      status: 'ACTIVE', tenantId: tenant.id,
+    },
+  });
+  console.log('  ✓ Coupon created:', coupon3.code);
 
   console.log('\n✅ Seeding complete!');
   console.log('   Host: host@loyalty.vn / Host@123456');

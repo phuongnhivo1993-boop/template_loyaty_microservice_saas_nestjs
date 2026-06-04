@@ -175,6 +175,53 @@ export interface Feedback {
   createdAt: string;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  categoryId?: string;
+  categoryName?: string;
+  imageUrl?: string;
+  stock: number;
+}
+
+export interface OrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Order {
+  id: string;
+  orderCode: string;
+  memberId: string;
+  memberName?: string;
+  items: OrderItem[];
+  total: number;
+  pointsEarned?: number;
+  pointsUsed?: number;
+  couponCode?: string;
+  discount?: number;
+  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
+  cancelReason?: string;
+  storeId?: string;
+  storeName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type WsConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+
+export interface WsState {
+  socket: any | null;
+  status: WsConnectionStatus;
+  lastEvent: string | null;
+  connect: (token: string) => void;
+  disconnect: () => void;
+}
+
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
@@ -202,4 +249,7 @@ export type RootStackParamList = {
   Cashback: undefined;
   Stores: undefined;
   Feedback: undefined;
+  QRScanner: undefined;
+  CreateOrder: undefined;
+  CancelOrder: { orderId: string };
 };

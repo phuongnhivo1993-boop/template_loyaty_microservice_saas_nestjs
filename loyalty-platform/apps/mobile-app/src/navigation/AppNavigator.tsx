@@ -25,6 +25,9 @@ import SettingsScreen from '../screens/SettingsScreen';
 import CashbackScreen from '../screens/CashbackScreen';
 import StoresScreen from '../screens/StoresScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
+import QRScannerScreen from '../screens/QRScannerScreen';
+import CreateOrderScreen from '../screens/CreateOrderScreen';
+import CancelOrderScreen from '../screens/CancelOrderScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
@@ -58,6 +61,9 @@ export default function AppNavigator() {
           <Stack.Screen name="Cashback" component={CashbackScreen} />
           <Stack.Screen name="Stores" component={StoresScreen} />
           <Stack.Screen name="Feedback" component={FeedbackScreen} />
+          <Stack.Screen name="QRScanner" component={QRScannerScreen} />
+          <Stack.Screen name="CreateOrder" component={CreateOrderScreen} />
+          <Stack.Screen name="CancelOrder" component={CancelOrderScreen} />
         </>
       ) : (
         <>

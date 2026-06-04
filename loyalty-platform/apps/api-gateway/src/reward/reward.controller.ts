@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardService } from './reward.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,14 +15,14 @@ export class RewardController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a reward' })
-  create(@Body() body: CreateRewardDto) {
-    return this.rewardService.create(body);
+  create(@Req() req: any, @Body() body: CreateRewardDto) {
+    return this.rewardService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
   }
 
   @Get()
   @ApiOperation({ summary: 'List rewards (with pagination & sort & type filter)' })
-  findAll(@Query() query: RewardQueryDto) {
-    return this.rewardService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort, query.type);
+  findAll(@Req() req: any, @Query() query: RewardQueryDto) {
+    return this.rewardService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort, query.type);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberVoucherService } from './member-voucher.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -20,7 +20,7 @@ export class MemberVoucherController {
 
   @Get()
   @ApiOperation({ summary: 'List member-voucher assignments' })
-  findAll(@Query('memberId') memberId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
+  findAll(@Req() req: any, @Query('memberId') memberId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
     return this.memberVoucherService.findAll(memberId, page, limit, search);
   }
 
