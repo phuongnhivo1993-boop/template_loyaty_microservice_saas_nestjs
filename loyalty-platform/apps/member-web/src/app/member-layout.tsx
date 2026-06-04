@@ -41,6 +41,13 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     }
   }, [refreshing]);
 
+  const toggleTheme = () => {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
+  };
+
   return (
     <div className="container" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {refreshing && (
@@ -48,6 +55,19 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
           Refreshing...
         </div>
       )}
+      <button
+        onClick={toggleTheme}
+        style={{
+          position: 'fixed', top: 12, right: 12, zIndex: 100,
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: '50%', width: 36, height: 36,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, cursor: 'pointer',
+        }}
+        aria-label="Toggle theme"
+      >
+        🌙
+      </button>
       <div className="content">
         {children}
       </div>

@@ -226,6 +226,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  Main: undefined;
   Home: undefined;
   Wallet: undefined;
   Rewards: undefined;
@@ -252,4 +253,6 @@ export type RootStackParamList = {
   QRScanner: undefined;
   CreateOrder: undefined;
   CancelOrder: { orderId: string };
+  Orders: undefined;
+  OrderDetail: { orderId: string };
 };

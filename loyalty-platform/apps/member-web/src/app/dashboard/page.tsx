@@ -12,14 +12,20 @@ export default function DashboardPage() {
   const [checkin, setCheckin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadData = () => {
+    setError('');
+    Promise.all([
+      getProfile().then(setProfile).catch((e) => setError(e?.message || 'Failed to load data')),
+      getWallet().then(setWallet).catch((e) => setError(e?.message || 'Failed to load data')),
+      getCheckinStatus().then(setCheckin).catch((e) => setError(e?.message || 'Failed to load data')),
+    ]).finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
-    Promise.all([
-      getProfile().then(setProfile).catch(() => {}),
-      getWallet().then(setWallet).catch(() => {}),
-      getCheckinStatus().then(setCheckin).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    loadData();
   }, []);
 
   const handleCheckin = async () => {
@@ -27,7 +33,7 @@ export default function DashboardPage() {
     try {
       const result = await doCheckin();
       setCheckin(result);
-    } catch {}
+    } catch (e: any) { setError(e?.message || 'Check-in failed'); }
     setCheckinLoading(false);
   };
 
@@ -40,6 +46,12 @@ export default function DashboardPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">Hi, {profile?.fullName || 'Member'}! 👋</div>

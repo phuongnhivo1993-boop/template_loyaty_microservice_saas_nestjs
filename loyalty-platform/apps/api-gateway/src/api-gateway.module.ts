@@ -45,6 +45,10 @@ import { OrderModule } from './order/order.module';
 import { MemberSegmentationModule } from './member-segmentation/member-segmentation.module';
 import { CouponModule } from './coupon/coupon.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { CommonModule } from './common/common.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { Customer360Module } from './customer360/customer360.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -89,6 +93,10 @@ import { WebSocketModule } from './websocket/websocket.module';
     MemberSegmentationModule,
     CouponModule,
     WebSocketModule,
+    CommonModule,
+    SubscriptionModule,
+    Customer360Module,
+    HealthModule,
   ],
   controllers: [ApiGatewayController],
   providers: [

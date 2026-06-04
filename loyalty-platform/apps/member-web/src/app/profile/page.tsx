@@ -13,13 +13,19 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('');
   const [pwMessage, setPwMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
+  const loadData = () => {
+    setError('');
     getProfile().then((p: any) => {
       setProfile(p);
       setForm({ fullName: p.fullName || '', phone: p.phone || '' });
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => setError(e?.message || 'Failed to load data')).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
+    loadData();
   }, []);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -50,6 +56,12 @@ export default function ProfilePage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">👤 Profile</div>

@@ -1,4 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -28,9 +30,47 @@ import FeedbackScreen from '../screens/FeedbackScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import CreateOrderScreen from '../screens/CreateOrderScreen';
 import CancelOrderScreen from '../screens/CancelOrderScreen';
+import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+  const icons: Record<string, string> = {
+    Home: '🏠',
+    Rewards: '🎁',
+    Orders: '📋',
+    Profile: '👤',
+    More: '📱',
+  };
+  return (
+    <Text style={{ fontSize: focused ? 24 : 20, opacity: focused ? 1 : 0.6 }}>
+      {icons[label] || '📌'}
+    </Text>
+  );
+}
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#E5E7EB', paddingBottom: 4, height: 56 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="Rewards" component={RewardsScreen} options={{ tabBarLabel: 'Rewards' }} />
+      <Tab.Screen name="Orders" component={OrdersScreen} options={{ tabBarLabel: 'Orders' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+    </Tab.Navigator>
+  );
+}
 
 export default function AppNavigator() {
   const token = useAuthStore((s) => s.token);
@@ -39,9 +79,8 @@ export default function AppNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {token ? (
         <>
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="Wallet" component={WalletScreen} />
-          <Stack.Screen name="Rewards" component={RewardsScreen} />
           <Stack.Screen name="RewardDetail" component={RewardDetailScreen} />
           <Stack.Screen name="Referrals" component={ReferralsScreen} />
           <Stack.Screen name="Badges" component={BadgesScreen} />
@@ -49,7 +88,6 @@ export default function AppNavigator() {
           <Stack.Screen name="VoucherDetail" component={VoucherDetailScreen} />
           <Stack.Screen name="Missions" component={MissionsScreen} />
           <Stack.Screen name="Password" component={PasswordScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Notifications" component={NotificationCenterScreen} />
           <Stack.Screen name="Checkin" component={CheckinScreen} />
           <Stack.Screen name="PointsHistory" component={PointsHistoryScreen} />
@@ -64,6 +102,7 @@ export default function AppNavigator() {
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
           <Stack.Screen name="CreateOrder" component={CreateOrderScreen} />
           <Stack.Screen name="CancelOrder" component={CancelOrderScreen} />
+          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
         </>
       ) : (
         <>

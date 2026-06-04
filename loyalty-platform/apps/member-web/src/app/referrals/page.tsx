@@ -11,17 +11,23 @@ export default function ReferralsPage() {
   const [refCode, setRefCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
+  const loadData = () => {
+    setError('');
     getReferrals()
       .then((res: any) => {
         const data = res?.data || res || {};
         setReferrals(data.referrals || []);
         setRefCode(data.referralCode || '');
       })
-      .catch(() => {})
+      .catch((e) => setError(e?.message || 'Failed to load data'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
+    loadData();
   }, []);
 
   const handleCopy = () => {
@@ -38,6 +44,12 @@ export default function ReferralsPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">🔗 Referrals</div>

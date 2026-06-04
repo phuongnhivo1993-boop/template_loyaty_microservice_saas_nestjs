@@ -14,13 +14,19 @@ export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = () => {
+    setError('');
+    getMyOrders({ limit: 50 })
+      .then((res: any) => setOrders(res?.data || res || []))
+      .catch((e) => setError(e?.message || 'Failed to load data'))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
-    getMyOrders({ limit: 50 })
-      .then((res: any) => setOrders(res?.data || res || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    loadData();
   }, []);
 
   if (loading) {
@@ -29,6 +35,12 @@ export default function OrdersPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">🛒 My Orders</div>

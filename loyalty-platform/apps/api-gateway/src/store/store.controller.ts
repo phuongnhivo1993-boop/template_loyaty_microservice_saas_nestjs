@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StoreService } from './store.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateStoreDto, UpdateStoreDto, AddStaffDto, UpdateStaffDto } from './dto/store.dto';
 
 @ApiTags('Stores')
 @ApiBearerAuth()
@@ -14,7 +15,7 @@ export class StoreController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a store/outlet' })
-  create(@Body() body: any) {
+  create(@Body() body: CreateStoreDto) {
     return this.storeService.create(body);
   }
 
@@ -33,7 +34,7 @@ export class StoreController {
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update store' })
-  update(@Param('id') id: string, @Body() body: any) {
+  update(@Param('id') id: string, @Body() body: UpdateStoreDto) {
     return this.storeService.update(id, body);
   }
 
@@ -47,7 +48,7 @@ export class StoreController {
   @Post(':id/staff')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Add staff to store' })
-  addStaff(@Param('id') id: string, @Body() body: any) {
+  addStaff(@Param('id') id: string, @Body() body: AddStaffDto) {
     return this.storeService.addStaff(id, body);
   }
 
@@ -60,7 +61,7 @@ export class StoreController {
   @Put('staff/:staffId')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update store staff' })
-  updateStaff(@Param('staffId') staffId: string, @Body() body: any) {
+  updateStaff(@Param('staffId') staffId: string, @Body() body: UpdateStaffDto) {
     return this.storeService.updateStaff(staffId, body);
   }
 

@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
+import { MailService } from './mail.service';
 import { CreateNotificationTemplateDto, UpdateNotificationTemplateDto } from './dto/template.dto';
 import { SendNotificationDto, BroadcastDto } from './dto/send.dto';
 
 @Injectable()
 export class NotificationServiceService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationServiceService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   async createTemplate(dto: CreateNotificationTemplateDto) {
     return this.prisma.notificationTemplate.create({ data: dto });
@@ -54,18 +60,34 @@ export class NotificationServiceService {
 
     const { content, subject } = this.replaceVariables(tmpl.content, tmpl.subject, dto.variables || {});
 
-    return this.prisma.notificationLog.create({
+    const log = await this.prisma.notificationLog.create({
       data: {
         templateId: dto.templateId,
         recipient: dto.recipient,
         channel: dto.channel,
         subject,
         content,
-        status: 'SENT',
+        status: 'PENDING',
         sentAt: new Date(),
         tenantId: dto.tenantId || tmpl.tenantId,
       },
     });
+
+    let deliverySuccess = false;
+    if (dto.channel === 'email') {
+      deliverySuccess = await this.mailService.sendEmail({
+        to: dto.recipient,
+        subject,
+        html: content,
+      });
+    }
+
+    await this.prisma.notificationLog.update({
+      where: { id: log.id },
+      data: { status: deliverySuccess ? 'SENT' : 'FAILED' },
+    });
+
+    return { id: log.id, status: deliverySuccess ? 'SENT' : 'FAILED', recipient: dto.recipient };
   }
 
   async broadcast(dto: BroadcastDto) {
@@ -81,24 +103,46 @@ export class NotificationServiceService {
       throw new BadRequestException('No active members found for broadcast');
     }
 
-    const logs = members.map((m) => {
+    let sent = 0;
+    let failed = 0;
+
+    for (const m of members) {
       const recipient = dto.channel === 'email' ? m.email : m.phone;
       const memberVars = { ...(dto.variables || {}), memberName: m.fullName, memberId: m.id };
       const { content, subject } = this.replaceVariables(tmpl.content, tmpl.subject, memberVars);
-      return {
-        templateId: dto.templateId,
-        recipient: recipient || m.email,
-        channel: dto.channel,
-        subject,
-        content,
-        status: 'SENT',
-        sentAt: new Date(),
-        tenantId: dto.tenantId,
-      };
-    });
 
-    await this.prisma.notificationLog.createMany({ data: logs });
-    return { sent: logs.length };
+      const log = await this.prisma.notificationLog.create({
+        data: {
+          templateId: dto.templateId,
+          recipient: recipient || m.email,
+          channel: dto.channel,
+          subject,
+          content,
+          status: 'PENDING',
+          sentAt: new Date(),
+          tenantId: dto.tenantId,
+        },
+      });
+
+      let success = false;
+      if (dto.channel === 'email' && recipient?.includes('@')) {
+        success = await this.mailService.sendEmail({
+          to: recipient,
+          subject,
+          html: content,
+        });
+      }
+
+      await this.prisma.notificationLog.update({
+        where: { id: log.id },
+        data: { status: success ? 'SENT' : 'FAILED' },
+      });
+
+      if (success) sent++;
+      else failed++;
+    }
+
+    return { sent, failed, total: members.length };
   }
 
   async getLogs(tenantId?: string, status?: string, channel?: string, page = 1, limit = 20) {

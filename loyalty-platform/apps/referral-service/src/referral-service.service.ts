@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class ReferralServiceService {
-  private readonly REFERRAL_POINTS = 100;
+  private readonly REFERRAL_POINTS = 500;
 
   constructor(private readonly prisma: PrismaService) {}
 

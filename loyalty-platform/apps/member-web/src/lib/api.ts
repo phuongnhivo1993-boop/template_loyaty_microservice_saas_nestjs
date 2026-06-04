@@ -26,6 +26,8 @@ export const api = {
 // Auth
 export const memberLogin = (email: string, password: string) =>
   api.post('/auth/member/login', { email, password });
+export const memberRegister = (data: { email: string; fullName: string; phone?: string; password: string; tenantDomain?: string }) =>
+  api.post('/members/register', data);
 export const forgotPassword = (email: string) =>
   api.post('/auth/forgot-password', { email });
 export const resetPassword = (token: string, newPassword: string) =>

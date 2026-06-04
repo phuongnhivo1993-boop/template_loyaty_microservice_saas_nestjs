@@ -37,12 +37,30 @@ export class AuditLogInterceptor implements NestInterceptor {
     const modelName = ENTITY_MODEL_MAP[entityType];
     const prisma = this.prisma;
 
+    const SENSITIVE_PATHS = ['password', 'token', 'secret', 'pinCode', 'authorization'];
+
+    function sanitize(obj: any): any {
+      if (!obj || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(sanitize);
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (SENSITIVE_PATHS.includes(key.toLowerCase())) {
+          sanitized[key] = '[REDACTED]';
+        } else if (typeof value === 'object' && value !== null) {
+          sanitized[key] = sanitize(value);
+        } else {
+          sanitized[key] = value;
+        }
+      }
+      return sanitized;
+    }
+
     async function fetchOldValue() {
       if (!entityId || !modelName || method === 'POST') return null;
       try {
         const model = (prisma as any)[modelName];
         if (model?.findUnique) {
-          return await model.findUnique({ where: { id: entityId } });
+          return sanitize(await model.findUnique({ where: { id: entityId } }));
         }
       } catch {}
       return null;
@@ -61,8 +79,8 @@ export class AuditLogInterceptor implements NestInterceptor {
                 action: method === 'POST' ? 'CREATE' : method === 'DELETE' ? 'DELETE' : 'UPDATE',
                 userId: user?.id || user?.sub || null,
                 userEmail: user?.email || null,
-                oldValue: method !== 'POST' && oldValue ? oldValue : null,
-                newValue: method !== 'DELETE' ? responseBody : null,
+                oldValue: method !== 'POST' && oldValue ? sanitize(oldValue) : null,
+                newValue: method !== 'DELETE' ? sanitize(responseBody) : null,
                 ipAddress: ip,
               },
             }).catch(() => {});

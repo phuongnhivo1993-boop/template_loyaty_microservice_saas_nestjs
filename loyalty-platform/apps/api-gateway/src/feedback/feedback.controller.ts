@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FeedbackService } from './feedback.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateFeedbackDto, UpdateFeedbackDto } from './dto/feedback.dto';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -14,8 +15,8 @@ export class FeedbackController {
   @Post()
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Create feedback/review' })
-  create(@Body() body: any) {
-    return this.feedbackService.create(body);
+  create(@Body() createFeedbackDto: CreateFeedbackDto) {
+    return this.feedbackService.create(createFeedbackDto);
   }
 
   @Get()
@@ -34,8 +35,8 @@ export class FeedbackController {
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update feedback status' })
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.feedbackService.update(id, body);
+  update(@Param('id') id: string, @Body() updateFeedbackDto: UpdateFeedbackDto) {
+    return this.feedbackService.update(id, updateFeedbackDto);
   }
 
   @Delete(':id')

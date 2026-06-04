@@ -37,6 +37,7 @@ model Host {
 
   tenants Tenant[]
 
+  @@index([email])
   @@map("hosts")
 }
 
@@ -75,8 +76,10 @@ model Tenant {
   productCategories    ProductCategory[]
   products             Product[]
   orders               Order[]
-  coupons              Coupon[]
+  subscriptions Subscription[]
 
+  @@index([hostId])
+  @@index([status])
   @@map("tenants")
 }
 
@@ -254,6 +257,7 @@ model NotificationTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("notification_templates")
 }
 
@@ -270,6 +274,8 @@ model NotificationLog {
   tenant     Tenant?  @relation(fields: [tenantId], references: [id])
   createdAt  DateTime @default(now())
 
+  @@index([templateId])
+  @@index([tenantId])
   @@map("notification_logs")
 }
 
@@ -286,6 +292,7 @@ model Promotion {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("promotions")
 }
 
@@ -319,6 +326,7 @@ model Badge {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("badges")
 }
 
@@ -335,7 +343,102 @@ model Mission {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("missions")
+}
+
+enum PlanType {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  tenantId      String             @unique @map("tenant_id")
+  tenant        Tenant             @relation(fields: [tenantId], references: [id])
+  plan          PlanType           @default(FREE)
+  status        SubscriptionStatus @default(TRIAL)
+  startDate     DateTime           @default(now()) @map("start_date")
+  endDate       DateTime?          @map("end_date")
+  trialEndDate  DateTime?          @map("trial_end_date")
+  autoRenew     Boolean            @default(true) @map("auto_renew")
+  maxMembers    Int                @default(100)
+  maxCampaigns  Int                @default(2)
+  maxRewards    Int                @default(5)
+  maxTiers      Int                @default(3)
+  maxVouchers   Int                @default(50)
+  maxStores     Int                @default(1)
+  features      Json               @default("{\"referral\":false,\"gamification\":false,\"apiAccess\":false,\"customDomain\":false,\"whiteLabel\":false,\"advancedAnalytics\":false}")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  invoices Invoice[]
+
+  @@index([status])
+  @@index([plan])
+  @@map("subscriptions")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+model Invoice {
+  id              String         @id @default(uuid())
+  subscriptionId  String         @map("subscription_id")
+  subscription    Subscription   @relation(fields: [subscriptionId], references: [id])
+  amount          Float
+  currency        String         @default("VND")
+  status          InvoiceStatus  @default(PENDING)
+  paymentMethod   String?        @map("payment_method")
+  paidAt          DateTime?      @map("paid_at")
+  dueDate         DateTime       @map("due_date")
+  description     String?
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model UsageRecord {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  metric    String   // MEMBER_COUNT, API_CALLS, STORAGE_MB, CAMPAIGN_COUNT, VOUCHER_COUNT, POINTS_EARNED
+  value     Int      @default(0)
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  @@index([tenantId, metric, recordedAt])
+  @@map("usage_records")
+}
+
+model LoginAttempt {
+  id         String   @id @default(uuid())
+  identifier String   // email or phone
+  ipAddress  String?  @map("ip_address")
+  success    Boolean  @default(false)
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([identifier, createdAt])
+  @@index([ipAddress])
+  @@map("login_attempts")
 }
 
 model Settings {
@@ -498,6 +601,7 @@ model CashbackTransaction {
   @@index([memberId])
   @@index([type])
   @@index([createdAt])
+  @@index([tenantId])
   @@map("cashback_transactions")
 }
 
@@ -542,6 +646,7 @@ model PartnerReward {
   updatedAt      DateTime @updatedAt
 
   @@index([brandId])
+  @@index([status])
   @@map("partner_rewards")
 }
 
@@ -626,6 +731,7 @@ model MemberGiftCard {
   createdAt  DateTime @default(now())
 
   @@index([memberId])
+  @@index([giftCardId])
   @@map("member_gift_cards")
 }
 

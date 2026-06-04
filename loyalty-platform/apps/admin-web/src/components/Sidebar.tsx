@@ -162,6 +162,18 @@ export default function Sidebar() {
         </nav>
 
         <div className="sidebar-footer">
+          <button
+            onClick={() => {
+              const html = document.documentElement;
+              const current = html.getAttribute('data-theme');
+              html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+              localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
+            }}
+            className="sidebar-logout"
+            style={{ color: '#94a3b8', marginBottom: '4px' }}
+          >
+            <span>🌙</span> Dark Mode
+          </button>
           <button onClick={handleLogout} className="sidebar-logout">
             <span>🚪</span> Logout
           </button>

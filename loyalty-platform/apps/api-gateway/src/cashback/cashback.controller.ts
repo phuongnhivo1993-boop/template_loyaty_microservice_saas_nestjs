@@ -3,6 +3,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CashbackService } from './cashback.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import {
+  CreateCashbackConfigDto,
+  UpdateCashbackConfigDto,
+  EarnCashbackDto,
+  RedeemCashbackDto,
+} from './dto/cashback.dto';
 
 @ApiTags('Cashback')
 @ApiBearerAuth()
@@ -14,7 +20,7 @@ export class CashbackController {
   @Post('configs')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create cashback config' })
-  createConfig(@Body() body: any) {
+  createConfig(@Body() body: CreateCashbackConfigDto) {
     return this.cashbackService.createConfig(body);
   }
 
@@ -35,7 +41,7 @@ export class CashbackController {
   @Put('configs/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update cashback config' })
-  updateConfig(@Param('id') id: string, @Body() body: any) {
+  updateConfig(@Param('id') id: string, @Body() body: UpdateCashbackConfigDto) {
     return this.cashbackService.updateConfig(id, body);
   }
 
@@ -49,14 +55,14 @@ export class CashbackController {
   @Post('earn')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Earn cashback for member' })
-  earn(@Body() body: any) {
+  earn(@Body() body: EarnCashbackDto) {
     return this.cashbackService.earn(body.memberId, body.amount, body.description, body.referenceId);
   }
 
   @Post('redeem')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem cashback for member' })
-  redeem(@Body() body: any) {
+  redeem(@Body() body: RedeemCashbackDto) {
     return this.cashbackService.redeem(body.memberId, body.amount, body.description);
   }
 

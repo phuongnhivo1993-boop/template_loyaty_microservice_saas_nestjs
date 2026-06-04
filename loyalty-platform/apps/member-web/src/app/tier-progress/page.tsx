@@ -9,13 +9,19 @@ export default function TierProgressPage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = () => {
+    setError('');
+    getTierProgress()
+      .then(setData)
+      .catch((e) => setError(e?.message || 'Failed to load data'))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
-    getTierProgress()
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    loadData();
   }, []);
 
   if (loading) {
@@ -24,6 +30,12 @@ export default function TierProgressPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">🏆 Tier Progress</div>

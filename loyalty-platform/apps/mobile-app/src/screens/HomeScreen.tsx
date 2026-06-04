@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members, analytics } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -53,6 +53,7 @@ export default function HomeScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
+    <SafeAreaView style={styles.container}>
     <ScrollView style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.header}>

@@ -6,18 +6,26 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
 import { TenantGuard } from './tenant.guard';
+import { TokenBlacklistService } from './token-blacklist.service';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret:
-        process.env.JWT_SECRET || 'loyalty_jwt_secret_key_change_in_production',
-      signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '24h') as any },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+          throw new Error('JWT_SECRET environment variable is required');
+        }
+        return {
+          secret: jwtSecret,
+          signOptions: { expiresIn: process.env.JWT_EXPIRATION || '24h' },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RolesGuard, TenantGuard],
-  exports: [AuthService, JwtModule, RolesGuard, TenantGuard],
+  providers: [AuthService, JwtStrategy, RolesGuard, TenantGuard, TokenBlacklistService],
+  exports: [AuthService, JwtModule, RolesGuard, TenantGuard, TokenBlacklistService],
 })
 export class AuthModule {}

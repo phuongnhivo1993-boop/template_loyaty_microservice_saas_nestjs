@@ -50,6 +50,7 @@ export default function LoginPage() {
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
         <Link href="/forgot-password" className="login-link">Forgot password?</Link>
+        <Link href="/register" className="login-link" style={{ marginTop: '8px' }}>Don't have an account? Register</Link>
       </form>
     </div>
   );

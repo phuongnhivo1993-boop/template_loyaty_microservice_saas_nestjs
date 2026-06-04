@@ -19,12 +19,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // Security middleware
+  const isProduction = process.env.NODE_ENV === 'production';
   app.use(helmet.default({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: isProduction ? undefined : false,
+    crossOriginEmbedderPolicy: isProduction ? undefined : false,
   }));
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || (isProduction ? [] : '*'),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

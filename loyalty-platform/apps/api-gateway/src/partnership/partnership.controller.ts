@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PartnershipService } from './partnership.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreatePartnerBrandDto, UpdatePartnerBrandDto, CreatePartnerRewardDto, UpdatePartnerRewardDto, RedeemPartnerRewardDto } from './dto/partnership.dto';
 
 @ApiTags('Partnership')
 @ApiBearerAuth()
@@ -14,8 +15,8 @@ export class PartnershipController {
   @Post('brands')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create partner brand' })
-  createBrand(@Body() body: any) {
-    return this.partnershipService.createBrand(body);
+  createBrand(@Body() dto: CreatePartnerBrandDto) {
+    return this.partnershipService.createBrand(dto);
   }
 
   @Get('brands')
@@ -35,8 +36,8 @@ export class PartnershipController {
   @Put('brands/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update partner brand' })
-  updateBrand(@Param('id') id: string, @Body() body: any) {
-    return this.partnershipService.updateBrand(id, body);
+  updateBrand(@Param('id') id: string, @Body() dto: UpdatePartnerBrandDto) {
+    return this.partnershipService.updateBrand(id, dto);
   }
 
   @Delete('brands/:id')
@@ -49,8 +50,8 @@ export class PartnershipController {
   @Post('brands/:brandId/rewards')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create partner reward' })
-  createReward(@Param('brandId') brandId: string, @Body() body: any) {
-    return this.partnershipService.createReward(brandId, body);
+  createReward(@Param('brandId') brandId: string, @Body() dto: CreatePartnerRewardDto) {
+    return this.partnershipService.createReward(brandId, dto);
   }
 
   @Get('brands/:brandId/rewards')
@@ -63,8 +64,8 @@ export class PartnershipController {
   @Put('rewards/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update partner reward' })
-  updateReward(@Param('id') id: string, @Body() body: any) {
-    return this.partnershipService.updateReward(id, body);
+  updateReward(@Param('id') id: string, @Body() dto: UpdatePartnerRewardDto) {
+    return this.partnershipService.updateReward(id, dto);
   }
 
   @Delete('rewards/:id')
@@ -77,7 +78,7 @@ export class PartnershipController {
   @Post('redeem')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem partner reward with member points' })
-  redeemReward(@Body() body: any) {
-    return this.partnershipService.redeemReward(body.memberId, body.rewardId, body.quantity);
+  redeemReward(@Body() dto: RedeemPartnerRewardDto) {
+    return this.partnershipService.redeemReward(dto.memberId, dto.rewardId, dto.quantity);
   }
 }

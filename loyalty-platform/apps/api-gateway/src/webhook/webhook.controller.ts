@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WebhookService } from './webhook.service';
+import { CreateWebhookEndpointDto, UpdateWebhookEndpointDto } from './dto/webhook.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
@@ -14,8 +15,8 @@ export class WebhookController {
   @Post('endpoints')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create webhook endpoint' })
-  createEndpoint(@Body() body: any) {
-    return this.webhookService.createEndpoint(body);
+  createEndpoint(@Body() dto: CreateWebhookEndpointDto) {
+    return this.webhookService.createEndpoint(dto);
   }
 
   @Get('endpoints')
@@ -35,8 +36,8 @@ export class WebhookController {
   @Put('endpoints/:id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update webhook endpoint' })
-  updateEndpoint(@Param('id') id: string, @Body() body: any) {
-    return this.webhookService.updateEndpoint(id, body);
+  updateEndpoint(@Param('id') id: string, @Body() dto: UpdateWebhookEndpointDto) {
+    return this.webhookService.updateEndpoint(id, dto);
   }
 
   @Delete('endpoints/:id')

@@ -15,15 +15,20 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = () => {
+    if (!id) return;
+    setError('');
+    api.get(`/orders/${id}`)
+      .then(setOrder)
+      .catch((e) => setError(e?.message || 'Failed to load data'))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
-    if (id) {
-      api.get(`/orders/${id}`)
-        .then(setOrder)
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    }
+    loadData();
   }, [id]);
 
   if (loading) {
@@ -36,6 +41,12 @@ export default function OrderDetailPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <button className="btn btn-outline btn-sm" onClick={() => router.back()} style={{ width: 'auto' }}>← Back</button>
       </div>

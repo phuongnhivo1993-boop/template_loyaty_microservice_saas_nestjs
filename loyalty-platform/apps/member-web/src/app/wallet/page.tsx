@@ -10,13 +10,19 @@ export default function WalletPage() {
   const [wallet, setWallet] = useState<any>(null);
   const [txs, setTxs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = () => {
+    setError('');
+    Promise.all([
+      getWallet().then(setWallet).catch((e) => setError(e?.message || 'Failed to load data')),
+      getTransactions({ limit: 50 }).then((res: any) => setTxs(res?.data || res || [])).catch((e) => setError(e?.message || 'Failed to load data')),
+    ]).finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
-    Promise.all([
-      getWallet().then(setWallet).catch(() => {}),
-      getTransactions({ limit: 50 }).then((res: any) => setTxs(res?.data || res || [])).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    loadData();
   }, []);
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -27,6 +33,12 @@ export default function WalletPage() {
 
   return (
     <MemberLayout>
+      {error && (
+        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+          ⚠️ {error}
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+        </div>
+      )}
       <div className="header">
         <div>
           <div className="header-title">💰 Wallet</div>

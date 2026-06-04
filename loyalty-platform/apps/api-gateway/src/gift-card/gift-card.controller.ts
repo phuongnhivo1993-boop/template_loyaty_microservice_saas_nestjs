@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GiftCardService } from './gift-card.service';
+import { CreateGiftCardDto, UpdateGiftCardDto, AssignGiftCardDto, RedeemGiftCardDto } from './dto/gift-card.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
@@ -14,8 +15,8 @@ export class GiftCardController {
   @Post()
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a gift card' })
-  create(@Body() body: any) {
-    return this.giftCardService.create(body);
+  create(@Body() dto: CreateGiftCardDto) {
+    return this.giftCardService.create(dto);
   }
 
   @Get()
@@ -35,15 +36,15 @@ export class GiftCardController {
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update gift card' })
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.giftCardService.update(id, body);
+  update(@Param('id') id: string, @Body() dto: UpdateGiftCardDto) {
+    return this.giftCardService.update(id, dto);
   }
 
   @Post(':id/assign')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Assign gift card to member' })
-  assign(@Param('id') id: string, @Body() body: any) {
-    return this.giftCardService.assign(id, body.memberId);
+  assign(@Param('id') id: string, @Body() dto: AssignGiftCardDto) {
+    return this.giftCardService.assign(id, dto.memberId);
   }
 
   @Get('member/:memberId')
@@ -55,7 +56,7 @@ export class GiftCardController {
   @Post(':id/redeem')
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Redeem gift card balance' })
-  redeem(@Param('id') id: string, @Body() body: any) {
-    return this.giftCardService.redeem(id, body.memberId, body.amount);
+  redeem(@Param('id') id: string, @Body() dto: RedeemGiftCardDto) {
+    return this.giftCardService.redeem(id, dto.memberId, dto.amount);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { TENANT_SKIP_KEY } from './skip-tenant.decorator';
@@ -18,7 +18,6 @@ export class TenantGuard implements CanActivate {
       context.getClass(),
     ]);
     if (skip) {
-      this.logger.debug('TenantCheck skipped via @SkipTenantCheck()');
       return true;
     }
 
@@ -34,39 +33,26 @@ export class TenantGuard implements CanActivate {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         try {
           const token = authHeader.slice(7);
-          const payload: any = this.jwtService.decode(token);
+          const payload: any = this.jwtService.verify(token);
           userTenantId = payload?.tenantId;
         } catch {
-          this.logger.warn('Failed to decode JWT in TenantGuard');
+          throw new UnauthorizedException('Invalid or expired token');
         }
       }
     }
 
-    this.logger.debug(`TenantGuard: userTenantId=${userTenantId}`);
-
     if (!userTenantId) {
-      this.logger.debug('No tenantId in token or user, allowing');
-      return true;
+      throw new ForbiddenException('Tenant context required');
     }
-
-    const reqTenantId =
-      req.tenantId || req.query?.tenantId || req.body?.tenantId || req.params?.tenantId;
 
     const userRole = user?.role || '';
 
     if (userRole === 'HOST') {
-      req.tenantId = reqTenantId || userTenantId;
-      this.logger.debug(`HOST access: req.tenantId=${req.tenantId}`);
+      req.tenantId = userTenantId;
       return true;
     }
 
-    if (reqTenantId && reqTenantId !== userTenantId) {
-      this.logger.warn(`Cross-tenant access denied: user=${userTenantId}, requested=${reqTenantId}`);
-      throw new ForbiddenException('Cross-tenant access denied');
-    }
-
     req.tenantId = userTenantId;
-    this.logger.debug(`Auto-scoped to tenant: ${req.tenantId}`);
     return true;
   }
 }
