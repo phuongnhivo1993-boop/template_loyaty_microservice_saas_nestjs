@@ -1,325 +1,411 @@
-# Gap Analysis — Loyalty Platform
+# Gap Analysis — Loyalty Platform (Real Audit)
 
-> **Project state**: Scaffold only. All 12 microservices have only `GET /` returning `"Hello World!"`.
-> **Frontend**: Not started (NextJS Admin, NextJS Portal, Expo Mobile).
-> **Database**: No Prisma schema defined.
-
----
-
-## 1. BACKEND — CRUD Endpoints NOT Implemented
-
-| # | Service | Expected Endpoints | Status |
-|---|---------|------------------|--------|
-| | **Auth (API Gateway)** | | |
-| 1 | Host Register | `POST /auth/host/register` | ❌ Missing |
-| 2 | Host Login | `POST /auth/host/login` | ❌ Missing |
-| 3 | Tenant Admin Register | `POST /auth/tenant/register` | ❌ Missing |
-| 4 | Tenant Admin Login | `POST /auth/tenant/login` | ❌ Missing |
-| 5 | Token Refresh | `POST /auth/refresh` | ❌ Missing |
-| | **Tenant Management** | | |
-| 6 | Create Tenant | `POST /tenants` | ❌ Missing |
-| 7 | List Tenants | `GET /tenants` | ❌ Missing |
-| 8 | Get Tenant | `GET /tenants/:id` | ❌ Missing |
-| 9 | Update Tenant | `PUT /tenants/:id` | ❌ Missing |
-| 10 | Delete Tenant | `DELETE /tenants/:id` | ❌ Missing |
-| | **User Management** | | |
-| 11 | Create User | `POST /users` | ❌ Missing |
-| 12 | List Users | `GET /users` | ❌ Missing |
-| 13 | Get User | `GET /users/:id` | ❌ Missing |
-| 14 | Update User | `PUT /users/:id` | ❌ Missing |
-| 15 | Delete User | `DELETE /users/:id` | ❌ Missing |
-| | **Membership Service** | | |
-| 16 | Register Member | `POST /members` | ❌ Missing |
-| 17 | KYC Verification | `POST /members/:id/kyc` | ❌ Missing |
-| 18 | List Members | `GET /members` | ❌ Missing |
-| 19 | Get Member | `GET /members/:id` | ❌ Missing |
-| 20 | Update Member | `PUT /members/:id` | ❌ Missing |
-| 21 | Lock/Unlock Member | `PATCH /members/:id/status` | ❌ Missing |
-| 22 | Delete Member | `DELETE /members/:id` | ❌ Missing |
-| 23 | Transaction History | `GET /members/:id/history` | ❌ Missing |
-| 24 | Create Tier | `POST /tiers` | ❌ Missing |
-| 25 | List Tiers | `GET /tiers` | ❌ Missing |
-| 26 | Update Tier | `PUT /tiers/:id` | ❌ Missing |
-| 27 | Delete Tier | `DELETE /tiers/:id` | ❌ Missing |
-| 28 | Get Member Tier | `GET /members/:id/tier` | ❌ Missing |
-| 29 | Tier Rules | `GET /tier-rules` | ❌ Missing |
-| | **Loyalty Point Service** | | |
-| 30 | Get Point Wallet | `GET /point-wallets/:memberId` | ❌ Missing |
-| 31 | Earn Points | `POST /points/earn` | ❌ Missing |
-| 32 | Burn Points | `POST /points/burn` | ❌ Missing |
-| 33 | List Transactions | `GET /points/transactions` | ❌ Missing |
-| 34 | List Expirations | `GET /points/expirations` | ❌ Missing |
-| 35 | Get Balance | `GET /points/balance/:memberId` | ❌ Missing |
-| | **Campaign Service** | | |
-| 36 | Create Campaign | `POST /campaigns` | ❌ Missing |
-| 37 | List Campaigns | `GET /campaigns` | ❌ Missing |
-| 38 | Get Campaign | `GET /campaigns/:id` | ❌ Missing |
-| 39 | Update Campaign | `PUT /campaigns/:id` | ❌ Missing |
-| 40 | Delete Campaign | `DELETE /campaigns/:id` | ❌ Missing |
-| 41 | Campaign Rules | `POST /campaigns/:id/rules` | ❌ Missing |
-| 42 | Campaign KPIs | `GET /campaigns/:id/analytics` | ❌ Missing |
-| 43 | Campaign Status | `PATCH /campaigns/:id/status` | ❌ Missing |
-| | **Reward Service** | | |
-| 44 | Create Reward | `POST /rewards` | ❌ Missing |
-| 45 | List Rewards | `GET /rewards` | ❌ Missing |
-| 46 | Get Reward | `GET /rewards/:id` | ❌ Missing |
-| 47 | Update Reward | `PUT /rewards/:id` | ❌ Missing |
-| 48 | Delete Reward | `DELETE /rewards/:id` | ❌ Missing |
-| 49 | Reward Inventory | `GET /rewards/:id/inventory` | ❌ Missing |
-| 50 | Redeem Reward | `POST /rewards/:id/redeem` | ❌ Missing |
-| 51 | Approve Redemption | `POST /rewards/:id/approve` | ❌ Missing |
-| 52 | Reject Redemption | `POST /rewards/:id/reject` | ❌ Missing |
-| 53 | List Orders | `GET /rewards/orders` | ❌ Missing |
-| 54 | Update Delivery | `PUT /rewards/orders/:id/delivery` | ❌ Missing |
-| | **Referral Service** | | |
-| 55 | Create Referral Link | `POST /referral-links` | ❌ Missing |
-| 56 | List Referral Links | `GET /referral-links` | ❌ Missing |
-| 57 | Create Referral | `POST /referrals` | ❌ Missing |
-| 58 | List Referrals | `GET /referrals` | ❌ Missing |
-| 59 | Get Referral | `GET /referrals/:id` | ❌ Missing |
-| 60 | Referral Stats | `GET /referrals/stats` | ❌ Missing |
-| 61 | Award Referral Reward | `POST /referral-rewards` | ❌ Missing |
-| | **Voucher Service** | | |
-| 62 | Create Voucher | `POST /vouchers` | ❌ Missing |
-| 63 | List Vouchers | `GET /vouchers` | ❌ Missing |
-| 64 | Get Voucher | `GET /vouchers/:id` | ❌ Missing |
-| 65 | Update Voucher | `PUT /vouchers/:id` | ❌ Missing |
-| 66 | Delete Voucher | `DELETE /vouchers/:id` | ❌ Missing |
-| 67 | Create Voucher Series | `POST /voucher-series` | ❌ Missing |
-| 68 | List Voucher Series | `GET /voucher-series` | ❌ Missing |
-| 69 | Claim Voucher | `POST /vouchers/:id/claim` | ❌ Missing |
-| 70 | Redeem Voucher | `POST /vouchers/:id/redeem` | ❌ Missing |
-| 71 | Expire Voucher | `POST /vouchers/:id/expire` | ❌ Missing |
-| | **Promotion Service** | | |
-| 72 | Create Promotion | `POST /promotions` | ❌ Missing |
-| 73 | List Promotions | `GET /promotions` | ❌ Missing |
-| 74 | Get Promotion | `GET /promotions/:id` | ❌ Missing |
-| 75 | Update Promotion | `PUT /promotions/:id` | ❌ Missing |
-| 76 | Delete Promotion | `DELETE /promotions/:id` | ❌ Missing |
-| 77 | Add Condition | `POST /promotions/:id/conditions` | ❌ Missing |
-| 78 | Add Action | `POST /promotions/:id/actions` | ❌ Missing |
-| 79 | Update Priority | `PUT /promotions/:id/priority` | ❌ Missing |
-| 80 | Create Version | `POST /promotions/:id/version` | ❌ Missing |
-| | **Gamification Service** | | |
-| 81 | Create Badge | `POST /badges` | ❌ Missing |
-| 82 | List Badges | `GET /badges` | ❌ Missing |
-| 83 | Update Badge | `PUT /badges/:id` | ❌ Missing |
-| 84 | Delete Badge | `DELETE /badges/:id` | ❌ Missing |
-| 85 | Create Mission | `POST /missions` | ❌ Missing |
-| 86 | List Missions | `GET /missions` | ❌ Missing |
-| 87 | Update Mission | `PUT /missions/:id` | ❌ Missing |
-| 88 | Delete Mission | `DELETE /missions/:id` | ❌ Missing |
-| 89 | Get Achievements | `GET /achievements/:memberId` | ❌ Missing |
-| 90 | Award Achievement | `POST /achievements` | ❌ Missing |
-| | **Notification Service** | | |
-| 91 | Send Notification | `POST /notifications/send` | ❌ Missing |
-| 92 | Create Template | `POST /notifications/templates` | ❌ Missing |
-| 93 | List Templates | `GET /notifications/templates` | ❌ Missing |
-| 94 | Update Template | `PUT /notifications/templates/:id` | ❌ Missing |
-| 95 | Notification History | `GET /notifications/history` | ❌ Missing |
-| 96 | Configure Channel | `POST /notifications/channels` | ❌ Missing |
-| | **Analytics Service** | | |
-| 97 | Dashboard | `GET /analytics/dashboard` | ❌ Missing |
-| 98 | Member Analytics | `GET /analytics/members` | ❌ Missing |
-| 99 | Point Analytics | `GET /analytics/points` | ❌ Missing |
-| 100 | Campaign Analytics | `GET /analytics/campaigns` | ❌ Missing |
-| 101 | Referral Analytics | `GET /analytics/referrals` | ❌ Missing |
-| 102 | Voucher Analytics | `GET /analytics/vouchers` | ❌ Missing |
-| 103 | Retention Report | `GET /analytics/retention` | ❌ Missing |
-| 104 | LTV Report | `GET /analytics/ltv` | ❌ Missing |
-| | **Customer 360 Service** | | |
-| 105 | Customer Profile | `GET /customer360/:memberId` | ❌ Missing |
-| 106 | Customer Activity | `GET /customer360/:memberId/activity` | ❌ Missing |
-| 107 | Customer Summary | `GET /customer360/:memberId/summary` | ❌ Missing |
-
-> **Total: 107+ API endpoints missing. Only `GET /` (Hello World) exists.**
+> **Audit Date**: 2026-06-05
+> **Role**: Product Owner + UX Lead + QA Lead + Solution Architect
+> **Methodology**: Full source code review across all 15 apps, 34 DB models, 150+ API endpoints, 60+ admin pages, 32 mobile screens
 
 ---
 
-## 2. ADMIN WEB (NextJS) — Screens NOT Implemented
+## EXECUTIVE SUMMARY
 
-| # | Screen | Description | Status |
-|---|--------|-------------|--------|
-| | **Auth** | | |
-| 1 | Host Login Page | Login form for host/super-admin | ❌ Missing |
-| 2 | Tenant Admin Login | Login form for tenant admin | ❌ Missing |
-| | **Dashboard** | | |
-| 3 | Host Dashboard | Overview of all tenants, platform metrics | ❌ Missing |
-| 4 | Tenant Dashboard | Tenant-specific KPIs, charts | ❌ Missing |
-| | **Tenant Management** | | |
-| 5 | Tenant List | CRUD table for tenants (host only) | ❌ Missing |
-| 6 | Tenant Detail | View/edit tenant settings | ❌ Missing |
-| 7 | Tenant Create Form | New tenant registration | ❌ Missing |
-| | **User Management** | | |
-| 8 | User List | CRUD table for users within tenant | ❌ Missing |
-| 9 | User Detail | View/edit user profile | ❌ Missing |
-| 10 | User Create Form | New user creation | ❌ Missing |
-| | **Membership** | | |
-| 11 | Member List | Table of all members with search/filter | ❌ Missing |
-| 12 | Member Detail | Full member profile, history, points | ❌ Missing |
-| 13 | Member Create | Register new member form | ❌ Missing |
-| 14 | KYC Review | Approve/reject KYC submissions | ❌ Missing |
-| 15 | Tier Management | CRUD for membership tiers | ❌ Missing |
-| 16 | Tier Rule Builder | Configure tier upgrade rules | ❌ Missing |
-| | **Loyalty Points** | | |
-| 17 | Point Wallet View | Member point balance & history | ❌ Missing |
-| 18 | Point Transactions | List all point transactions with filter | ❌ Missing |
-| 19 | Point Expiration | View/manage expiring points | ❌ Missing |
-| 20 | Manual Point Adjustment | Add/deduct points manually | ❌ Missing |
-| | **Campaign** | | |
-| 21 | Campaign List | CRUD table for campaigns | ❌ Missing |
-| 22 | Campaign Detail | Campaign settings, rules, budget | ❌ Missing |
-| 23 | Campaign Create | New campaign wizard | ❌ Missing |
-| 24 | Campaign Analytics | KPI charts per campaign | ❌ Missing |
-| | **Reward** | | |
-| 25 | Reward Catalog | CRUD grid/list of rewards | ❌ Missing |
-| 26 | Reward Detail | Edit reward settings | ❌ Missing |
-| 27 | Reward Create | New reward form | ❌ Missing |
-| 28 | Inventory Management | Stock levels per reward | ❌ Missing |
-| 29 | Redemption Queue | Approve/reject pending redemptions | ❌ Missing |
-| 30 | Order Management | Track delivery status | ❌ Missing |
-| | **Referral** | | |
-| 31 | Referral Links | Generate & manage referral links | ❌ Missing |
-| 32 | Referral List | Table of all referrals | ❌ Missing |
-| 33 | Referral Analytics | Conversion stats, charts | ❌ Missing |
-| | **Voucher** | | |
-| 34 | Voucher List | CRUD table of vouchers | ❌ Missing |
-| 35 | Voucher Create | New voucher form | ❌ Missing |
-| 36 | Voucher Series | Manage series/groups | ❌ Missing |
-| 37 | Voucher Claims | Claim history | ❌ Missing |
-| 38 | Voucher Redemptions | Redeem history | ❌ Missing |
-| | **Promotion** | | |
-| 39 | Promotion Rules | List of rules with drag priority | ❌ Missing |
-| 40 | Rule Builder | IF-THEN rule editor | ❌ Missing |
-| 41 | Rule Version History | Version comparison | ❌ Missing |
-| | **Gamification** | | |
-| 42 | Badge Management | CRUD badges & icons | ❌ Missing |
-| 43 | Mission Management | CRUD missions & rewards | ❌ Missing |
-| 44 | Achievement Board | Member achievements view | ❌ Missing |
-| 45 | Leaderboard | Top members ranking | ❌ Missing |
-| | **Notification** | | |
-| 46 | Template Management | Email/SMS/Zalo templates | ❌ Missing |
-| 47 | Send Notification | Compose & send ad-hoc | ❌ Missing |
-| 48 | Notification History | Sent log with status | ❌ Missing |
-| 49 | Channel Config | SMTP, SMS gateway setup | ❌ Missing |
-| | **Analytics / Reports** | | |
-| 50 | Dashboard | MAU, retention, churn, LTV charts | ❌ Missing |
-| 51 | Member Reports | Cohort analysis, growth trends | ❌ Missing |
-| 52 | Point Reports | Earn/burn patterns | ❌ Missing |
-| 53 | Campaign Reports | ROl, conversion | ❌ Missing |
-| 54 | Export | CSV/PDF export for reports | ❌ Missing |
-| | **Settings** | | |
-| 55 | Tenant Settings | Branding, domain, config | ❌ Missing |
-| 56 | API Keys | Manage integration keys | ❌ Missing |
-| 57 | Audit Log | Admin action history | ❌ Missing |
+**State**: The platform is substantially built with real business logic across all layers. This is **NOT** a scaffold — it is a production-grade implementation with 85-90% of promised features delivered. However, there are critical gaps in security, performance, and specific feature areas that must be resolved before Production Ready sign-off.
 
-> **Total: 57 admin screens missing. Zero frontend code exists.**
+### Overall Readiness: **78%** (details in §16)
+
+| Layer | Completeness | Status |
+|-------|-------------|--------|
+| Backend API (API Gateway) | 90% | ✅ Feature-rich with 38 domain modules |
+| Backend Microservices | 85% | ✅ Real logic, thin but functional |
+| Database Schema (Prisma) | 100% | ✅ 34 models + extras, exceeds spec |
+| Auth & Authorization | 90% | ✅ JWT, roles, tenant isolation, guards |
+| Admin Web (NextJS) | 85% | ✅ 38 routes, full CRUD UI |
+| Member Portal (NextJS) | 80% | ✅ 18 routes, mobile-optimized |
+| Mobile App (Expo) | 85% | ✅ 32 screens, Zustand + React Query |
+| Infrastructure (Docker) | 95% | ✅ Full stack, K8s + Helm |
+| Tests | 25% | ⚠️ Only service tests, no E2E, no UI tests |
+| Security Hardening | 40% | ⚠️ .env committed, demo creds, N+1 |
 
 ---
 
-## 3. MOBILE (Expo) — Screens NOT Implemented
+## 1. UI (Giao diện)
 
-| # | Screen | Description | Status |
-|---|--------|-------------|--------|
-| | **Auth** | | |
-| 1 | Login | User login with email/phone | ❌ Missing |
-| 2 | Register | New user registration | ❌ Missing |
-| 3 | Forgot Password | Password reset flow | ❌ Missing |
-| | **Home / Dashboard** | | |
-| 4 | Home Feed | Points balance, quick actions | ❌ Missing |
-| 5 | Profile | User profile & settings | ❌ Missing |
-| | **Membership** | | |
-| 6 | My Membership Card | Digital membership card | ❌ Missing |
-| 7 | My Tier | Current tier, progress to next | ❌ Missing |
-| 8 | KYC Upload | Submit identity documents | ❌ Missing |
-| | **Points** | | |
-| 9 | Point Wallet | Balance, earn/burn history | ❌ Missing |
-| 10 | Point Transactions | Full transaction list | ❌ Missing |
-| 11 | Earn Points | Available actions to earn | ❌ Missing |
-| | **Referral** | | |
-| 12 | My Referral Code | Share referral code/link/QR | ❌ Missing |
-| 13 | Referral History | List of referrals & rewards | ❌ Missing |
-| | **Rewards** | | |
-| 14 | Reward Catalog | Browse available rewards | ❌ Missing |
-| 15 | Reward Detail | Description, points needed | ❌ Missing |
-| 16 | Redeem | Confirm redemption | ❌ Missing |
-| 17 | My Orders | Redemption history & status | ❌ Missing |
-| | **Vouchers** | | |
-| 18 | My Vouchers | List of owned vouchers | ❌ Missing |
-| 19 | Voucher Detail | Code, expiry, usage | ❌ Missing |
-| 20 | Redeem Voucher | Use voucher at store | ❌ Missing |
-| | **Campaigns** | | |
-| 21 | Campaign List | Active campaigns | ❌ Missing |
-| 22 | Campaign Detail | Rules, rewards, progress | ❌ Missing |
-| | **Gamification** | | |
-| 23 | My Badges | Earned badges collection | ❌ Missing |
-| 24 | Missions | Available missions & progress | ❌ Missing |
-| 25 | Leaderboard | Ranking among peers | ❌ Missing |
-| | **Notifications** | | |
-| 26 | Notification List | In-app notification history | ❌ Missing |
-| 27 | Notification Settings | Push/email preferences | ❌ Missing |
-| | **Events** | | |
-| 28 | Event List | Upcoming events/workshops | ❌ Missing |
-| 29 | Event Detail | Register, check-in | ❌ Missing |
-| 30 | QR Check-in | Scan QR at event | ❌ Missing |
-
-> **Total: 30 mobile screens missing. Zero mobile code exists.**
+| Check | Status | Detail |
+|-------|--------|--------|
+| Giao diện hoàn thiện 100%? | ⚠️ 85% | Admin-web: OK. Member-web: basic CSS, no component system. Mobile: OK with StyleSheet. |
+| Màn hình placeholder? | ❌ Không | No placeholders found in any app |
+| Màn hình chưa có dữ liệu mẫu? | ❌ Không | Seed data exists (`prisma/seed.ts`, `seed-data.ts`) |
+| Layout vỡ trên màn hình nhỏ? | ⚠️ Nhẹ | Admin-web sidebar may overflow on <1024px. Member-web is mobile-first (480px max-width). Mobile: OK. |
+| Responsive Desktop/Tablet/Mobile? | ⚠️ Thiếu | Admin-web: desktop-first, tablet chưa tối ưu. Member-web: mobile-first (tốt). Mobile: native OK. |
+| Dark mode hoạt động? | ⚠️ Một phần | Admin-web: ✅ (`data-theme` attribute). Member-web: ⚠️ CSS vars có dark mode nhưng chưa toggle hoàn chỉnh. Mobile: ❌ chưa có. |
+| Font, spacing, màu sắc đồng nhất? | ⚠️ Trung bình | Admin-web: dùng Tailwind, nhất quán. Member-web: tự viết CSS, thiếu component chuẩn. Mobile: OK. |
+| Màn hình giống admin mặc định? | ❌ Không | All pages have custom UI |
 
 ---
 
-## 4. INFRASTRUCTURE — NOT Configured
+## 2. UX (Trải nghiệm người dùng)
 
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| Prisma Schema | Database models for all 12 services | ❌ Missing |
-| PostgreSQL | Primary database (per-service DB in SaaS model) | ❌ Not configured |
-| Redis | Caching, Bull job queues, session store | ❌ Not configured |
-| Kafka | Event bus between microservices | ❌ Not configured |
-| Keycloak | SSO / Identity management (Host, Admin, Tenant, User roles) | ❌ Not configured |
-| Elasticsearch | Full-text search for members, transactions | ❌ Not configured |
-| MinIO | S3-compatible object storage (KYC docs, reward images) | ❌ Not configured |
-| ClickHouse | Time-series analytics database | ❌ Not configured |
-| Prometheus + Grafana | Monitoring & alerting | ❌ Not configured |
-| Docker Compose | Local development orchestration | ❌ Missing |
-| Environment Config | `.env` files for each service | ❌ Missing |
-
----
-
-## 5. SHARED LIBRARIES — Empty
-
-| Library | Purpose | Status |
-|---------|---------|--------|
-| `libs/common` | Shared DTOs, decorators, guards, interceptors | Empty skeleton |
-| `libs/database` | Prisma service, DB connection management | Empty skeleton |
-| `libs/messaging` | Kafka/RabbitMQ client wrappers | Empty skeleton |
+| Check | Status | Detail |
+|-------|--------|--------|
+| Người dùng mới hiểu ngay? | ⚠️ Cần cải thiện | Không có tour guide, không có tooltip hướng dẫn |
+| Thao tác dư thừa? | ⚠️ Nhẹ | Member-web cần vào dashboard trước khi vào wallet |
+| Giảm số click? | ⚠️ Có thể | Thêm quick actions trên dashboard |
+| Form quá dài? | ❌ Không | Forms được chia nhỏ theo modal |
+| Tooltip/hướng dẫn? | ❌ Không có | Không có tooltip, helper text, hay empty-state guide |
+| Loading state? | ✅ Có | `LoadingSkeleton.tsx`, `TableSkeleton`, `DetailSkeleton` |
+| Empty state? | ✅ Có | `EmptyState` component trong mobile-app |
+| Success state? | ⚠️ Có nhưng thiếu | Toast có success nhưng không có success page |
+| Error state? | ✅ Có | `ErrorState` component, global exception filter |
+| Confirm trước khi xóa? | ✅ Có | `ConfirmModal.tsx` + `BulkActionsToolbar` |
 
 ---
 
-## 6. CURRENT STATE SUMMARY
+## 3. CRUD Completeness
 
-| Layer | Progress |
-|-------|----------|
-| **Backend scaffold** | 100% (12 microservices created) |
-| **Backend business logic** | 0% (all return "Hello World!") |
-| **Database schema** | 0% |
-| **Authentication & Authorization** | 0% |
-| **Admin Web (NextJS)** | 0% |
-| **Loyalty Portal (NextJS)** | 0% |
-| **Mobile App (Expo)** | 0% |
-| **Infrastructure** | 0% |
-| **Tests (business logic)** | 0% |
-| **CI/CD** | 0% |
+| Module | Create | List | Detail | Update | Delete | Restore | Bulk Delete | Duplicate |
+|--------|--------|------|--------|--------|--------|---------|-------------|-----------|
+| Tenant | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| User | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Member | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Tier | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Campaign | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Reward | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Voucher | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Promotion | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Referral | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Badge | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Mission | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Notification Template | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Product | ✅ | ✅ | ✅ | ✅ | ✅ (soft) | ❌ | ✅ | ❌ |
+| Product Category | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Order | ✅ | ✅ | ✅ | ✅ (status) | ❌ (cancel) | ❌ | ❌ | ❌ |
+| Coupon | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Store | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Cashback Config | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Gift Card | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Partner Brand | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Earning Rule | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Webhook Endpoint | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+> **Gaps**: No module has **Restore** (soft delete not implemented anywhere except Product). **Duplicate** is missing everywhere. **Bulk Delete** only on Member, Product, Coupon.
 
 ---
 
-## 7. HOW TO USE THE TEST SCRIPT
+## 4. Tìm kiếm dữ liệu
 
-The test script at `apps/api-gateway/test/api-flow.e2e-spec.ts` defines the **expected API contracts** for the entire platform flow:
+| Check | Status | Detail |
+|-------|--------|--------|
+| Search? | ✅ Có | Hầu hết list endpoints có search query param |
+| Filter? | ✅ Có | Filter by status, date range, category, etc. |
+| Sort? | ✅ Có | `sortBy` + `sortOrder` query params |
+| Pagination? | ✅ Có | `page` + `limit` + `total` + `totalPages` |
+| Lưu điều kiện tìm kiếm? | ❌ Không | Search/filter params không được persist khi reload |
 
-```bash
-# Run the test script (all tests skipped/todo since endpoints don't exist yet)
-npx nest build api-gateway
-npx jest --config ./apps/api-gateway/test/jest-e2e.json --testPathPatterns "api-flow"
-```
+---
 
-As each endpoint is implemented, remove the `.skip` or `.todo` to validate it.
+## 5. Chức năng bị thiếu
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Màn hình không truy cập được? | ❌ Không | All routes accessible |
+| Nút chưa hoạt động? | ⚠️ Một số | WebSocket admin event log panel UI chưa có |
+| Menu chưa hoàn thiện? | ❌ Không | Sidebar đầy đủ |
+| API chưa tích hợp? | ❌ Không | All implemented APIs are wired |
+| Tính năng mô tả nhưng chưa triển khai? | ⚠️ Có | Xem §Missing Features bên dưới |
+
+### Missing Features (Critical)
+
+| # | Feature | Area | Impact |
+|---|---------|------|--------|
+| 1 | **Push notifications** (FR-014) | Member Portal / Mobile | Không thông báo real-time cho member |
+| 2 | **Keycloak SSO integration** | Auth | Keycloak provisioned but NOT wired in code |
+| 3 | **SMTP email delivery** | Infrastructure | Configs missing in .env, email không gửi được |
+| 4 | **Coupon stacking** | Coupon Engine | Không dùng nhiều coupon cùng lúc |
+| 5 | **Campaign suggestions from RFM** | RFM | Chưa auto-target campaign theo segment |
+| 6 | **Order notes/attachments** | Product Order | Thiếu ghi chú đơn hàng |
+| 7 | **Product change history** | Product Order | Không audit trail cho sản phẩm |
+| 8 | **WebSocket rate limiting** | WebSocket | Không giới hạn message rate |
+| 9 | **Per-tenant rate limiting** | Multi-Tenancy | Tenant có thể ảnh hưởng lẫn nhau |
+| 10 | **Restore (soft-delete undoing)** | All CRUD | Không có undelete cho bất kỳ module nào |
+| 11 | **Duplicate function** | All CRUD | Không có duplicate cho bất kỳ module nào |
+| 12 | **Language switch (vi/en)** | Member Portal | Chỉ hỗ trợ tiếng Việt |
+
+---
+
+## 6. Web và Mobile
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Mobile đầy đủ như Web? | ⚠️ 75% | Mobile có 32 screens, thiếu so với 38 admin screens |
+| Khác biệt có lý do hợp lý? | ✅ Có | Mobile tập trung member-facing features |
+| Navigation Mobile dễ dùng? | ✅ Có | Bottom tabs + stack navigation |
+| Form Mobile nhập liệu thuận tiện? | ✅ Có | TextInput component, validation |
+
+---
+
+## 7. Dữ liệu (Validation)
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Validate toàn bộ field? | ⚠️ 85% | class-validator trên DTOs, nhưng thiếu frontend validation |
+| Kiểm tra dữ liệu trùng? | ⚠️ Một phần | Email unique check có, nhưng thiếu slug/code duplicate check |
+| Xử lý dữ liệu rỗng? | ✅ Có | Empty state components, null checks |
+| Xử lý dữ liệu quá dài? | ⚠️ Thiếu | Không có maxLength validation trên nhiều field |
+| Xử lý ký tự đặc biệt? | ⚠️ Thiếu | Không có sanitize, dễ bị XSS nếu render HTML |
+
+---
+
+## 8. Phân quyền
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Mỗi role chỉ thấy chức năng được phép? | ✅ Có | RolesGuard + @Roles() decorator |
+| Chặn API trái quyền? | ✅ Có | Global JWT guard + RolesGuard |
+| Chặn truy cập URL trực tiếp? | ⚠️ Thiếu | Frontend chỉ check localStorage token, không verify role ở mỗi page |
+| Kiểm tra tenant isolation? | ✅ Có | TenantGuard global + tenantId filter trên mọi query |
+
+---
+
+## 9. Workflow
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Luồng nghiệp vụ hoàn chỉnh? | ✅ Có | Order status workflow, point earn/burn, coupon apply |
+| Trạng thái thiếu? | ⚠️ Nhẹ | Member workflow: ACTIVE/LOCKED, Order: PENDING→CONFIRMED→PROCESSING→SHIPPED→DELIVERED |
+| Chuyển trạng thái sai? | ✅ Không | Status transitions validated |
+| Rollback workflow? | ⚠️ Một phần | Order cancel có point reversal, coupon không refund |
+
+---
+
+## 10. Thông báo
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Email hoạt động? | ❌ Chưa | SMTP config không có trong .env |
+| Push notification? | ❌ Chưa | Chưa implement |
+| In-app notification? | ⚠️ Một phần | WebSocket real-time notification có, nhưng admin UI event log panel chưa có |
+| Nội dung thông báo rõ ràng? | ✅ Có | Notification templates có variable replacement |
+
+---
+
+## 11. Dashboard và Báo cáo
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Dashboard đủ KPI? | ⚠️ 70% | Admin dashboard có stats cơ bản, thiếu charts nâng cao |
+| Dashboard hữu ích? | ✅ Có | Member count, points, campaigns, vouchers stats |
+| Báo cáo còn thiếu? | ⚠️ Có | Retention cohort, LTV prediction, churn analysis |
+| Export Excel/PDF? | ⚠️ Một phần | CSV export có, Excel export API implemented, PDF chưa có |
+
+---
+
+## 12. Hiệu năng
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| 10.000 bản ghi ổn định? | ⚠️ Chưa test | RFM segmentation có N+1 query, sẽ crash với >1000 members |
+| N+1 query? | 🔴 Có (Critical) | `member-segmentation.service.ts` N+1 trên mỗi member |
+| Cache cần thiết? | ⚠️ Thiếu | Chỉ dashboard có cache, list endpoints không cache |
+| API phản hồi chậm? | ⚠️ Có nguy cơ | Dashboard làm ~18 queries đồng thời, RFM không phân trang ở DB layer |
+
+---
+
+## 13. Bảo mật
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Lộ dữ liệu nhạy cảm? | 🔴 Có (Critical) | **`.env` committed với secrets thật**: DB passwords, JWT secret, MinIO keys, Keycloak secret |
+| Kiểm tra XSS? | ⚠️ Thiếu | Không có CSP mạnh, không sanitize output |
+| Kiểm tra SQL Injection? | ✅ An toàn | Tất cả queries qua Prisma (parameterized) |
+| Kiểm tra CSRF? | ❌ Chưa | Không có CSRF token |
+| Log audit? | ✅ Có | AuditLogInterceptor + AuditLogService |
+
+### Security Findings (Critical)
+
+| # | Issue | Severity |
+|---|-------|----------|
+| 1 | **`.env` file committed with real secrets** (DB passwords, JWT secret, MinIO, Keycloak) | 🔴 CRITICAL |
+| 2 | **Hardcoded demo credentials** in admin-web login page (`host@loyalty.vn` / `Host@123456`) | 🔴 CRITICAL |
+| 3 | **JWT secret is weak**: `loyalty_jwt_secret_key_change_in_production` | 🔴 CRITICAL |
+| 4 | **No CSRF protection** | 🟠 HIGH |
+| 5 | **Forgot password leaks reset token** in dev mode UI | 🟠 HIGH |
+| 6 | **WebSocket CORS allows all origins** | 🟡 MEDIUM |
+| 7 | **No input sanitization** on rich text fields | 🟡 MEDIUM |
+| 8 | **Race condition** in coupon apply flow (OrderService.create) | 🟠 HIGH |
+
+---
+
+## 14. Chất lượng mã nguồn
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Code trùng lặp? | ⚠️ Trung bình | Auth validation logic lặp lại, account lockout tự viết thay vì dùng thư viện |
+| Component tái sử dụng? | ✅ Có (admin-web) | 14 components reusable. Member-web: ❌ 0 components. |
+| Hardcode? | ⚠️ Một số | Demo credentials, JWT secret, CORS origin |
+| Cấu hình qua environment? | ✅ Có | Hầu hết config qua .env |
+| Logging đầy đủ? | ✅ Có | LoggingInterceptor, audit logs |
+| Typo directory? | 🟡 `libs/databse/` | Thư mục `libs/databse/` là typo của `libs/database/` — dead code |
+
+---
+
+## 15. Production Readiness
+
+| Check | Status | Detail |
+|-------|--------|--------|
+| Deploy production ngay? | ❌ Chưa | Security issues (.env committed, demo creds, weak JWT) + performance (N+1) + email chưa hoạt động |
+| Tài liệu API? | ✅ Có | Swagger tại `/api/docs`, docs/ directory có 30+ files |
+| Tài liệu cài đặt? | ✅ Có | README.md, docker-compose.yml |
+| Migration database? | ✅ Có | Prisma migrations đã tạo |
+| Backup strategy? | ❌ Chưa có | Không có script backup tự động (có `scripts/backup.sh` nhưng chưa verify) |
+| Monitoring? | ✅ Có | Prometheus + Grafana provisioned |
+
+---
+
+## 16. Gap Analysis (Bắt buộc - AI tự trả lời)
+
+### 1. Tôi phát hiện những chức năng còn thiếu nào?
+
+| # | Chức năng thiếu | Lý do cần có |
+|---|----------------|--------------|
+| 1 | **Push notification (mobile + web)** | Member không được thông báo khi có điểm, voucher, hay order mới |
+| 2 | **Keycloak SSO tích hợp** | Keycloak đã được provisioned trong docker-compose nhưng chưa tích hợp vào code — auth hoàn toàn dựa vào JWT tự quản lý |
+| 3 | **Coupon stacking** | Không thể áp dụng nhiều coupon cho một đơn hàng |
+| 4 | **Campaign suggestion từ RFM** | RFM segmentation có nhưng không auto-suggest campaign cho từng segment |
+| 5 | **Restore (soft-delete)** | Không có undelete cho bất kỳ module nào (Product có soft-delete nhưng không restore) |
+| 6 | **Duplicate function** | Admin không thể duplicate một campaign/reward/voucher để tạo nhanh |
+| 7 | **Order notes & attachments** | Không ghi chú được trên đơn hàng |
+| 8 | **Language switch (vi/en)** | Chỉ hỗ trợ tiếng Việt |
+| 9 | **CSRF protection** | Thiếu bảo vệ CSRF trên API |
+| 10 | **SMTP email delivery** | Không gửi được email (quên mật khẩu, thông báo) vì thiếu SMTP config |
+
+### 2. Tôi phát hiện những màn hình còn thiếu nào?
+
+| # | Màn hình thiếu | App |
+|---|---------------|-----|
+| 1 | **Admin WebSocket event log panel** | admin-web |
+| 2 | **Member push notification preferences** | member-web + mobile |
+| 3 | **Mobile: Campaign list/detail** | mobile-app |
+| 4 | **Mobile: Event list/detail** | mobile-app |
+| 5 | **Member-web: Point earning rules display** | member-web |
+| 6 | **Monthly check-in calendar view** | member-web |
+| 7 | **Mobile: Re-order from history** | mobile-app |
+| 8 | **Mobile: Product barcode scanner** | mobile-app |
+
+### 3. Tôi phát hiện những API còn thiếu nào?
+
+| # | API thiếu | Ghi chú |
+|---|-----------|---------|
+| 1 | `POST/PUT /settings/notifications` | Push notification preferences |
+| 2 | `POST /coupons/stack` | Coupon stacking endpoint |
+| 3 | `GET /campaigns/suggestions/{segmentId}` | RFM-based campaign suggestions |
+| 4 | `POST /{entity}/:id/restore` | Soft-delete restore cho tất cả entities |
+| 5 | `POST /{entity}/:id/duplicate` | Duplicate cho tất cả entities |
+| 6 | `GET/POST /audit-logs/{entityType}/{entityId}` | Audit log chi tiết theo entity |
+
+### 4. Tôi phát hiện những vấn đề UX nào?
+
+| # | Vấn đề UX | Severity |
+|---|-----------|----------|
+| 1 | **Không có tour guide cho người dùng mới** | Medium |
+| 2 | **Không có tooltip/helper text** trên form phức tạp | Medium |
+| 3 | **Member-web không có reusable component system** (0 components) | High |
+| 4 | **Admin-web sidebar không responsive** trên màn hình nhỏ | Medium |
+| 5 | **Search/filter không được persist** khi refresh trang | Low |
+| 6 | **Forgot password leak reset token** trong UI development | High |
+| 7 | **Dashboard thiếu charts trực quan** (chỉ có số liệu text) | Medium |
+
+### 5. Tôi phát hiện những vấn đề UI nào?
+
+| # | Vấn đề UI | Severity |
+|---|-----------|----------|
+| 1 | **Member-web không có component library**, CSS viết inline trong page | High |
+| 2 | **Mobile-app thiếu dark mode** | Medium |
+| 3 | **Admin-web mobile (<1024px) sidebar bị tràn** | Low |
+| 4 | **Không có loading skeleton cho mọi page** (chỉ có DataTable) | Low |
+| 5 | **Font/spacing không đồng nhất giữa admin-web và member-web** | Low |
+
+### 6. Tôi phát hiện những rủi ro bảo mật nào?
+
+| # | Rủi ro | Severity | Hành động |
+|---|--------|----------|-----------|
+| 1 | **`.env` committed với credentials thật** | 🔴 CRITICAL | Add `.env` to `.gitignore`, rotate all secrets ngay lập tức |
+| 2 | **Hardcoded demo credentials trong admin-web** | 🔴 CRITICAL | Remove default useState values, dùng env variable |
+| 3 | **JWT secret quá yếu** | 🔴 CRITICAL | Generate strong secret (64+ chars), add to CI/CD pipeline |
+| 4 | **Không có CSRF protection** | 🟠 HIGH | Add csurf/CORS double-submit pattern |
+| 5 | **WebSocket CORS allow all origins** | 🟠 HIGH | Restrict to known origins |
+| 6 | **No rate limiting per tenant** | 🟠 HIGH | Add per-tenant rate limit middleware |
+| 7 | **Race condition coupon apply** | 🟠 HIGH | Use distributed lock (Redis) |
+| 8 | **No input sanitization** | 🟡 MEDIUM | Use sanitize-html cho rich text |
+
+### 7. Tôi phát hiện những vấn đề hiệu năng nào?
+
+| # | Vấn đề | Severity | Detail |
+|---|--------|----------|--------|
+| 1 | **N+1 query trong RFM segmentation** | 🔴 CRITICAL | `findAll()` và `getSegmentSummary()` làm 1 query per member — sẽ crash với >1000 members |
+| 2 | **In-memory pagination thay vì DB pagination** | 🟠 HIGH | `member-segmentation.service.ts` load ALL members rồi slice |
+| 3 | **Dashboard làm 18+ queries đồng thời** | 🟡 MEDIUM | OK với cache 120s, nhưng vẫn nặng |
+| 4 | **Cache chỉ dùng cho dashboard, không cho list endpoints** | 🟡 MEDIUM | Products, Members, Orders, Vouchers không được cache |
+| 5 | **Coupon performance stats không pagination** | 🟢 LOW | Sẽ chậm với nhiều coupons |
+
+### 8. Tôi đề xuất những cải tiến nào?
+
+| # | Cải tiến | Priority | Effort |
+|---|----------|----------|--------|
+| 1 | **Fix .env committed & rotate secrets** | 🔴 P0 | 1 giờ |
+| 2 | **Fix N+1 queries trong RFM service** (dùng aggregate query thay vì loop) | 🔴 P0 | 4 giờ |
+| 3 | **Add CSRF protection** | 🟠 P1 | 2 giờ |
+| 4 | **Add Redis cache cho list endpoints** (products, members, orders) | 🟠 P1 | 8 giờ |
+| 5 | **Xây dựng component library cho member-web** (hiện tại 0 components) | 🟠 P1 | 16 giờ |
+| 6 | **Add per-tenant rate limiting** | 🟠 P1 | 4 giờ |
+| 7 | **Add Restore endpoint cho soft-delete entities** | 🟡 P2 | 8 giờ |
+| 8 | **Add Duplicate endpoint cho entities chính** (campaign, reward, voucher, coupon) | 🟡 P2 | 8 giờ |
+| 9 | **Add push notification via Firebase/OneSignal** | 🟡 P2 | 24 giờ |
+| 10 | **Add Keycloak SSO integration** (OpenID Connect) | 🟡 P2 | 40 giờ |
+| 11 | **Add campaign suggestions từ RFM segments** | 🟢 P3 | 16 giờ |
+| 12 | **Add coupon stacking** (atomic multi-coupon apply) | 🟢 P3 | 8 giờ |
+| 13 | **Add language switch (i18n) cho member-web** | 🟢 P3 | 24 giờ |
+| 14 | **Add dark mode cho mobile-app** | 🟢 P3 | 8 giờ |
+| 15 | **Remove libs/databse typo directory** | 🟢 P3 | 0.5 giờ |
+
+### 9. Nếu là tôi làm Product Owner, tôi sẽ bổ sung tính năng gì?
+
+Ngoài các tính năng đã có, tôi sẽ bổ sung các tính năng **tạo khác biệt cạnh tranh** cho một Loyalty Platform trong hệ sinh thái Bất động sản:
+
+| # | Tính năng | Lý do |
+|---|-----------|-------|
+| 1 | **Partner Loyalty Module** — Quản lý loyalty cho agent, môi giới, đại lý phân phối riêng (khác với member thông thường) | 70-80% doanh đến từ kênh đối tác |
+| 2 | **Multi-level referral (MLM)** — Thưởng giới thiệu đa cấp (A giới thiệu B, B giới thiệu C → A vẫn được thưởng) | Tăng viral growth trong BĐS |
+| 3 | **Coalition Loyalty** — Nhiều brand/partner cùng tham gia hệ thống điểm chung | Tăng giá trị điểm, giảm churn |
+| 4 | **AI-powered next-best-action** — Gợi ý hành động tiếp theo cho member dựa trên hành vi | Tăng engagement 15-30% |
+| 5 | **Dynamic pricing với loyalty points** — Thanh toán hỗn hợp tiền + điểm cho bất kỳ sản phẩm nào | Tăng utility của điểm |
+| 6 | **Scheduled loyalty campaign** — Auto campaign theo ngày sinh nhật, kỷ niệm, theo mùa | Personalized marketing |
+| 7 | **Member churn prediction** — ML model dự đoán member sắp rời bỏ và trigger campaign giữ chân | Giảm churn rate |
+| 8 | **Wallet-sharing / Family Pool** — Gộp điểm giữa các thành viên trong gia đình | Tăng stickiness |
+| 9 | **Gamified onboarding** — Quest cho member mới hoàn thành hồ sơ, KYC, check-in đầu tiên | Tăng activation rate |
+| 10 | **White-label mobile app** — Cho phép tenant tự customize app với brand riêng | Tăng giá trị SaaS |
+
+### 10. Sản phẩm hiện tại đã đạt mức Production Ready (%) là bao nhiêu?
+
+| Tiêu chí | Weight | Score | Weighted |
+|----------|--------|-------|----------|
+| Backend API functionality | 20% | 90% | 18.0% |
+| Database & Data Model | 10% | 100% | 10.0% |
+| Frontend Web (admin + member) | 15% | 82% | 12.3% |
+| Mobile App | 10% | 85% | 8.5% |
+| Auth & Authorization | 10% | 88% | 8.8% |
+| Testing Coverage | 5% | 25% | 1.3% |
+| Security Hardening | 10% | 40% | 4.0% |
+| Performance Optimization | 5% | 50% | 2.5% |
+| Infrastructure & DevOps | 10% | 90% | 9.0% |
+| Documentation | 5% | 85% | 4.3% |
+| **TOTAL** | **100%** | | **78.7%** |
+
+### **Kết luận: Sản phẩm đạt ~78% Production Ready.**
+
+**Chưa thể Go-Live** vì 3 blockers:
+1. 🔴 `.env` committed với secrets — phải xử lý ngay
+2. 🔴 N+1 queries trong RFM — crash với dữ liệu lớn
+3. 🔴 Không gửi được email (thiếu SMTP) — forgot password & notification không hoạt động
+
+**Sau khi fix 3 blockers + security hardening**: ~90%
+**Sau khi thêm push notification + tests**: ~95%
+**Sau khi thêm tất cả minor gaps**: ~98%+
