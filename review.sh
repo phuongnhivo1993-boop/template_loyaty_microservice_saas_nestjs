@@ -70,8 +70,6 @@ do
 
         opencode run --model "$MODEL" "$PROMPT"
 
-        exit 0
-
     done
 
     echo "❌ ALL MODELS FAILED"
