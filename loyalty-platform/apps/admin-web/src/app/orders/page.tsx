@@ -8,7 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getOrders } from '@/lib/api';
+import { getOrders, duplicateEntity } from '@/lib/api';
 
 const statusColors: Record<string, string> = {
   PENDING: '#f59e0b', CONFIRMED: '#3b82f6', PROCESSING: '#8b5cf6',
@@ -63,7 +63,10 @@ export default function OrdersPage() {
     )},
     { key: 'createdAt', label: 'Date', render: (o: any) => <span className="text-muted" style={{ fontSize: '12px' }}>{new Date(o.createdAt).toLocaleString()}</span> },
     { key: 'actions', label: 'Actions', render: (o: any) => (
-      <button onClick={() => router.push(`/orders/${o.id}`)} className="btn-primary btn-sm">View</button>
+      <>
+        <button onClick={async () => { try { await duplicateEntity('orders', o.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
+        <button onClick={() => router.push(`/orders/${o.id}`)} className="btn-primary btn-sm">View</button>
+      </>
     )},
   ];
 

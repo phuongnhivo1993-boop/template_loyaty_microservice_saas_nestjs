@@ -10,7 +10,9 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { api } from '@/lib/api';
+import { api, duplicateEntity } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 const typeColors: Record<string, string> = {
   PERCENTAGE: '#7c3aed', FIXED: '#0891b2',
@@ -48,6 +50,7 @@ export default function CouponsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleExportCsv = async () => {
     try {
@@ -172,6 +175,7 @@ export default function CouponsPage() {
     )},
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('coupons', c.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => openEdit(c)} className="btn-secondary btn-sm">Edit</button>
         <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
       </>
@@ -202,7 +206,18 @@ export default function CouponsPage() {
           <button onClick={handleExportCsv} className="btn-secondary btn-sm">📥 Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={coupons} emptyMessage="No coupons found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa coupons',
+              onClick: async (ids) => { for (const id of ids) await api.delete(`/coupons/${id}`); },
+            },
+          ]} />
+        <DataTable columns={columns} data={coupons} emptyMessage="No coupons found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Coupon' : 'New Coupon'} onClose={() => setShowModal(false)}>

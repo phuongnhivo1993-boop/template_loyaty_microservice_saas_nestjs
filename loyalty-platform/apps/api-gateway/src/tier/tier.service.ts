@@ -85,6 +85,34 @@ export class TierService {
     }
   }
 
+  async getStats(tenantId: string) {
+    const tiers = await this.prisma.tier.findMany({
+      where: { tenantId },
+      include: {
+        _count: { select: { members: true } },
+      },
+    });
+
+    const memberAgg = await this.prisma.member.groupBy({
+      by: ['tierId'],
+      where: { tenantId, tierId: { not: null } },
+      _avg: { totalPoints: true },
+      _count: { id: true },
+    });
+
+    const aggMap = new Map(memberAgg.map(a => [a.tierId, { avgPoints: a._avg.totalPoints ?? 0, memberCount: a._count.id }]));
+
+    return tiers.map(t => ({
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      minPoints: t.minPoints,
+      maxPoints: t.maxPoints,
+      memberCount: aggMap.get(t.id)?.memberCount ?? t._count.members,
+      avgPoints: aggMap.get(t.id)?.avgPoints ?? 0,
+    }));
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async autoAssignTiers(): Promise<void> {
     this.logger.log('Running auto tier assignment...');

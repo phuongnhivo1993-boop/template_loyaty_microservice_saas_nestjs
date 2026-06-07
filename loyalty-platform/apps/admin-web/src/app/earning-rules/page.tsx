@@ -10,7 +10,9 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getEarningRules, createEarningRule, updateEarningRule, deleteEarningRule, calculateEarningRule } from '@/lib/api';
+import { getEarningRules, createEarningRule, updateEarningRule, deleteEarningRule, calculateEarningRule, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface RuleForm {
   name: string; description: string; pointsPerUnit: string; minAmount: string; maxAmount: string; category: string;
@@ -33,6 +35,7 @@ export default function EarningRulesPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [calcAmount, setCalcAmount] = useState('100000');
   const [calcResult, setCalcResult] = useState<any>(null);
 
@@ -100,7 +103,7 @@ export default function EarningRulesPage() {
       <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: r.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9', color: r.status === 'ACTIVE' ? '#16a34a' : '#64748b' }}>{r.status}</span>
     )},
     { key: 'actions', label: 'Actions', render: (r: any) => (
-      <><button onClick={() => openEdit(r)} className="btn-secondary btn-sm">Edit</button><button onClick={() => handleDelete(r.id)} className="btn-danger btn-sm">Delete</button></>
+      <><button onClick={async () => { try { await duplicateEntity('earning-rules', r.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button><button onClick={() => openEdit(r)} className="btn-secondary btn-sm">Edit</button><button onClick={() => handleDelete(r.id)} className="btn-danger btn-sm">Delete</button></>
     )},
   ];
 
@@ -131,7 +134,18 @@ export default function EarningRulesPage() {
           </div>
         </div>
 
-        <DataTable columns={columns} data={rules} emptyMessage="No earning rules configured" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa earning rules',
+              onClick: async (ids) => { for (const id of ids) await deleteEarningRule(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={rules} emptyMessage="No earning rules configured" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Earning Rule' : 'New Earning Rule'} onClose={() => setShowModal(false)}>

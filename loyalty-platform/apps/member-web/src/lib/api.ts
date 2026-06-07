@@ -90,3 +90,52 @@ export const getStores = (params?: any) => api.get('/stores');
 export const getMyFeedback = () => api.get('/me/feedback');
 export const submitFeedback = (data: { rating: number; comment?: string }) =>
   api.post('/me/feedback', data);
+
+// Rewards
+export const getRewards = () => api.get('/rewards');
+export const getReward = (id: string) => api.get(`/rewards/${id}`);
+export const redeemReward = (id: string, quantity?: number) =>
+  api.post(`/rewards/${id}/redeem`, { quantity });
+
+// Gift Cards
+export const getMyGiftCards = () => api.get('/me/gift-cards');
+
+// Cashback
+export const getMyCashback = () => api.get('/me/cashback');
+export const getCashbackTransactions = (params?: { page?: number; limit?: number; type?: string }) => {
+  const q = new URLSearchParams();
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.limit) q.set('limit', String(params.limit));
+  if (params?.type) q.set('type', params.type);
+  const s = q.toString();
+  return api.get(`/me/cashback/transactions${s ? `?${s}` : ''}`);
+};
+
+// Upload
+export const uploadFile = (file: File) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const formData = new FormData();
+  formData.append('file', file);
+  return fetch('/api/upload', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  }).then(async (res) => {
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `Error: ${res.status}`);
+    return json.data ?? json;
+  });
+};
+
+// Products
+export const getProducts = (params?: { page?: number; limit?: number; search?: string }) => {
+  const q = new URLSearchParams();
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.limit) q.set('limit', String(params.limit));
+  if (params?.search) q.set('search', params.search);
+  const s = q.toString();
+  return api.get(`/products${s ? `?${s}` : ''}`);
+};
+
+export const createOrder = (data: { items: { productId: string; quantity: number }[]; note?: string }) =>
+  api.post('/orders/member', data);

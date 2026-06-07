@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getMemberVouchers, assignVoucher, deleteMemberVoucher } from '@/lib/api';
+import { getMemberVouchers, assignVoucher, deleteMemberVoucher, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface AssignForm { memberId: string; voucherId: string; }
 
@@ -25,6 +27,7 @@ export default function MemberVouchersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState<AssignForm>({ memberId: '', voucherId: '' });
@@ -87,6 +90,7 @@ export default function MemberVouchersPage() {
     { key: 'createdAt', label: 'Assigned', render: (a: any) => <span className="text-muted">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '-'}</span> },
     { key: 'actions', label: 'Actions', render: (a: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('member-vouchers', a.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/member-vouchers/${a.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         {!a.redeemed && (
           <button onClick={() => handleUnassign(a.id)} className="btn-danger btn-sm">Unassign</button>
@@ -115,7 +119,18 @@ export default function MemberVouchersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={assignments} emptyMessage="No member voucher assignments found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa assignments',
+              onClick: async (ids) => { for (const id of ids) await deleteMemberVoucher(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={assignments} emptyMessage="No member voucher assignments found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="member_vouchers" entityLabel="member vouchers" onImportComplete={load} />

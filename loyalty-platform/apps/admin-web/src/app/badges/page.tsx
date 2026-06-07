@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getBadges, createBadge, updateBadge, deleteBadge } from '@/lib/api';
+import { getBadges, createBadge, updateBadge, deleteBadge, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface BadgeForm {
   name: string; description: string; iconUrl: string; criteria: string;
@@ -33,6 +35,7 @@ export default function BadgesPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -106,6 +109,7 @@ export default function BadgesPage() {
     { key: 'criteria', label: 'Criteria', render: (c: any) => <span className="text-muted" style={{ fontSize: '12px', fontFamily: 'monospace', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>{typeof c.criteria === 'object' ? JSON.stringify(c.criteria) : c.criteria || '{}'}</span> },
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('badges', c.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/badges/${c.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
@@ -133,7 +137,18 @@ export default function BadgesPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={badges} emptyMessage="No badges found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa badges',
+              onClick: async (ids) => { for (const id of ids) await deleteBadge(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={badges} emptyMessage="No badges found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Badge' : 'New Badge'} onClose={() => setShowModal(false)} width={520}>

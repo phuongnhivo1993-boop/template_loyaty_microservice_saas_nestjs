@@ -33,22 +33,27 @@ import CancelOrderScreen from '../screens/CancelOrderScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import GiftCardScreen from '../screens/GiftCardScreen';
+import StoreDetailScreen from '../screens/StoreDetailScreen';
 import { useAuthStore } from '../services/authStore';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Home: '🏠',
-    Rewards: '🎁',
-    Orders: '📋',
-    Profile: '👤',
-    More: '📱',
+  const icons: Record<string, { active: string; inactive: string; accessibilityLabel: string }> = {
+    Home: { active: '🏠', inactive: '🏠', accessibilityLabel: 'Home' },
+    Rewards: { active: '🎁', inactive: '🎁', accessibilityLabel: 'Rewards' },
+    Orders: { active: '📋', inactive: '📋', accessibilityLabel: 'Orders' },
+    Profile: { active: '👤', inactive: '👤', accessibilityLabel: 'Profile' },
   };
+  const icon = icons[label] || { active: '📌', inactive: '📌', accessibilityLabel: label };
   return (
-    <Text style={{ fontSize: focused ? 24 : 20, opacity: focused ? 1 : 0.6 }}>
-      {icons[label] || '📌'}
+    <Text
+      style={{ fontSize: focused ? 24 : 22, opacity: focused ? 1 : 0.5 }}
+      accessibilityLabel={icon.accessibilityLabel}
+      accessibilityRole="image"
+    >
+      {focused ? icon.active : icon.inactive}
     </Text>
   );
 }
@@ -105,6 +110,7 @@ export default function AppNavigator() {
           <Stack.Screen name="CancelOrder" component={CancelOrderScreen} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
           <Stack.Screen name="GiftCards" component={GiftCardScreen} />
+          <Stack.Screen name="StoreDetail" component={StoreDetailScreen} />
         </>
       ) : (
         <>

@@ -10,7 +10,9 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getCashbackConfigs, createCashbackConfig, updateCashbackConfig, deleteCashbackConfig } from '@/lib/api';
+import { getCashbackConfigs, createCashbackConfig, updateCashbackConfig, deleteCashbackConfig, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface ConfigForm {
   name: string; description: string; rate: string; minAmount: string; maxAmount: string; status: string;
@@ -99,6 +101,7 @@ export default function CashbackPage() {
     )},
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('cashback/configs', c.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
       </>
@@ -127,6 +130,17 @@ export default function CashbackPage() {
           <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
         </div>
 
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa cashback configs',
+              onClick: async (ids) => { for (const id of ids) await deleteCashbackConfig(id); },
+            },
+          ]} />
         <DataTable columns={columns} data={configs} emptyMessage="No cashback configs found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 

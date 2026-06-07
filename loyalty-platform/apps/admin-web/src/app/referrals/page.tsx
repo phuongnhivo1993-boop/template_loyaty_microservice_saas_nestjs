@@ -9,7 +9,9 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getReferrals, convertReferral, getReferralStats, api } from '@/lib/api';
+import { getReferrals, convertReferral, getReferralStats, api, duplicateEntity } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function ReferralsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
 
   const load = async () => {
@@ -85,6 +88,7 @@ export default function ReferralsPage() {
     { key: 'createdAt', label: 'Created', render: (r: any) => <span className="text-muted">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-'}</span> },
     { key: 'actions', label: 'Actions', render: (r: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('referrals', r.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/referrals/${r.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         {r.status !== 'CONVERTED' ? (
         <button onClick={() => handleConvert(r.id)} disabled={converting === r.id}
@@ -140,7 +144,22 @@ export default function ReferralsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={referrals} emptyMessage="No referrals found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xuất CSV', variant: 'primary', icon: '📥',
+              onClick: async () => {
+                const cols = ['code', 'status', 'createdAt'];
+                const rows = referrals.filter(r => selectedIds.includes(r.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+                const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+                const a = document.createElement('a'); a.href = url; a.download = 'selected-referrals.csv'; a.click(); URL.revokeObjectURL(url);
+              },
+            },
+          ]} />
+        <DataTable columns={columns} data={referrals} emptyMessage="No referrals found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="referrals" entityLabel="referrals" onImportComplete={load} />
       </main>

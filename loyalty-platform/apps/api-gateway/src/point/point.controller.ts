@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PointService } from './point.service';
+import { PointExpiryService } from './point-expiry.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { EarnPointsDto, BurnPointsDto, AdjustPointsDto, PointTransactionQueryDto } from './dto/point.dto';
@@ -10,7 +11,10 @@ import { EarnPointsDto, BurnPointsDto, AdjustPointsDto, PointTransactionQueryDto
 @UseGuards(JwtAuthGuard)
 @Controller('points')
 export class PointController {
-  constructor(private pointService: PointService) {}
+  constructor(
+    private pointService: PointService,
+    private pointExpiryService: PointExpiryService,
+  ) {}
 
   @Get('wallet/:memberId')
   @ApiOperation({ summary: 'Get member point wallet' })
@@ -49,5 +53,12 @@ export class PointController {
   @ApiOperation({ summary: 'Admin: adjust member points' })
   adjust(@Body() body: AdjustPointsDto) {
     return this.pointService.adjust(body.memberId, body.amount, body.reason);
+  }
+
+  @Post('trigger-expiry')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Manually trigger point expiry process' })
+  triggerExpiry() {
+    return this.pointExpiryService.processExpirations();
   }
 }

@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/api';
+import { getPromotions, createPromotion, updatePromotion, deletePromotion, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface PromotionForm {
   name: string; description: string; priority: string; conditions: string; actions: string; status: string;
@@ -34,6 +36,7 @@ export default function PromotionsPage() {
   const limit = 20;
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -113,6 +116,7 @@ export default function PromotionsPage() {
     { key: 'status', label: 'Status', render: (p: any) => <span className={`status-badge ${(p.status || 'DRAFT').toLowerCase()}`}>{p.status || 'DRAFT'}</span> },
     { key: 'actionsBtn', label: 'Actions', render: (p: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('promotions', p.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/promotions/${p.id}`)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(p)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(p.id)} className="btn-danger btn-sm">Delete</button>
@@ -144,7 +148,18 @@ export default function PromotionsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={promotions} emptyMessage="No promotion rules found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa promotions',
+              onClick: async (ids) => { for (const id of ids) await deletePromotion(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={promotions} emptyMessage="No promotion rules found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Rule' : 'New Rule'} onClose={() => setShowModal(false)} width={560}>

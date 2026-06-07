@@ -340,6 +340,9 @@ export const bulkRestore = (entity: string, ids: string[]) =>
 export const restoreItem = (entity: string, id: string) =>
   api.post('/bulk/restore', { entity, ids: [id] });
 
+export const duplicateEntity = (entity: string, id: string) =>
+  api.post(`/${entity}/${id}/duplicate`);
+
 // Bulk operations - Members
 export const bulkDeleteMembers = (ids: string[]) =>
   api.post('/members/bulk-delete', { ids });

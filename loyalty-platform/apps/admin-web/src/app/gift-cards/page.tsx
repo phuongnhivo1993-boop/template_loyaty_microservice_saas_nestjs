@@ -12,7 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getGiftCards, createGiftCard, updateGiftCard, assignGiftCard, getMembers } from '@/lib/api';
+import { getGiftCards, createGiftCard, updateGiftCard, assignGiftCard, getMembers, duplicateEntity } from '@/lib/api';
 
 interface GiftCardForm {
   code: string; initialValue: string; type: string; expiryDate: string; status: string;
@@ -145,6 +145,7 @@ export default function GiftCardsPage() {
     { key: 'expiryDate', label: 'Expiry', render: (c: any) => c.expiryDate ? <span className="text-muted" style={{ fontSize: '13px' }}>{new Date(c.expiryDate).toLocaleDateString()}</span> : <span className="text-muted">-</span> },
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('gift-cards', c.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => openAssign(c.id)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Assign</button>
         <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Deactivate</button>

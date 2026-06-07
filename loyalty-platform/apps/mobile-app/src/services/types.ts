@@ -226,6 +226,7 @@ export interface WsState {
 }
 
 export type RootStackParamList = {
+  StoreDetail: { store: Store };
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;

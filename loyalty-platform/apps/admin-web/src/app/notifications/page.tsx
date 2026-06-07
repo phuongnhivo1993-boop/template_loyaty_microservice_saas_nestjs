@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getNotificationTemplates, getNotificationLogs, createTemplate, updateTemplate, deleteTemplate, sendNotification } from '@/lib/api';
+import { getNotificationTemplates, getNotificationLogs, createTemplate, updateTemplate, deleteTemplate, sendNotification, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface TemplateForm { name: string; type: string; subject: string; content: string; variables: string; }
 
@@ -36,6 +38,7 @@ export default function NotificationsPage() {
   const limit = 20;
   const [sendForm, setSendForm] = useState({ templateId: '', recipient: '', channel: 'EMAIL', variables: '{}' });
   const [showSendModal, setShowSendModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
 
   const loadTemplates = async () => {
@@ -152,6 +155,7 @@ export default function NotificationsPage() {
     { key: 'subject', label: 'Subject', render: (t: any) => <span className="text-muted">{t.subject || '-'}</span> },
     { key: 'actions', label: 'Actions', render: (t: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('notifications/templates', t.id); showToast('Duplicated', 'success'); loadTemplates(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/notifications/${t.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(t)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(t.id)} className="btn-danger btn-sm">Delete</button>
@@ -222,7 +226,18 @@ export default function NotificationsPage() {
 
         {tab === 'templates' ? (
           <>
-            <DataTable columns={templateColumns} data={templates} emptyMessage="No templates found" />
+            <BulkActionsToolbar
+              selectedIds={selectedIds}
+              onClear={() => setSelectedIds([])}
+              onSuccess={loadTemplates}
+              actions={[
+                {
+                  label: 'Xóa', variant: 'danger', icon: '🗑️',
+                  confirmMessage: 'Xóa templates',
+                  onClick: async (ids) => { for (const id of ids) await deleteTemplate(id); },
+                },
+              ]} />
+            <DataTable columns={templateColumns} data={templates} emptyMessage="No templates found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>
         ) : (

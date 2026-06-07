@@ -8,7 +8,9 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getFeedbackList, updateFeedback, deleteFeedback } from '@/lib/api';
+import { getFeedbackList, updateFeedback, deleteFeedback, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 const ratingColors: Record<number, string> = {
   1: '#dc2626', 2: '#ea580c', 3: '#d97706', 4: '#16a34a', 5: '#2563eb',
@@ -27,6 +29,7 @@ export default function FeedbackPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -101,6 +104,7 @@ export default function FeedbackPage() {
     )},
     { key: 'actions', label: 'Actions', render: (f: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('feedback', f.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         {(f.status === 'PENDING' || f.status === 'HIDDEN') && (
           <button onClick={() => handleApprove(f.id)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>Approve</button>
         )}
@@ -149,7 +153,18 @@ export default function FeedbackPage() {
           <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
         </div>
 
-        <DataTable columns={columns} data={feedbacks} emptyMessage="No feedback found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa feedback',
+              onClick: async (ids) => { for (const id of ids) await deleteFeedback(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={feedbacks} emptyMessage="No feedback found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </main>
     </div>

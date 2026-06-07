@@ -14,7 +14,7 @@ import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/F
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
-import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api, bulkDeleteVouchers, bulkVouchersExpire } from '@/lib/api';
+import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api, bulkDeleteVouchers, bulkVouchersExpire, duplicateEntity } from '@/lib/api';
 
 interface VoucherForm {
   code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
@@ -129,6 +129,7 @@ export default function VouchersPage() {
     { key: 'expiresAt', label: 'Expires', render: (v: any) => <span className="text-muted">{v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : 'No expiry'}</span> },
     { key: 'actions', label: 'Actions', render: (v: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('vouchers', v.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/vouchers/${v.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(v)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(v.id)} className="btn-danger btn-sm">Delete</button>

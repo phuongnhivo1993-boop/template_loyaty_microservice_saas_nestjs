@@ -9,6 +9,10 @@ const navItems = [
   { label: 'Wallet', href: '/wallet', icon: '💰' },
   { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
   { label: 'Orders', href: '/orders', icon: '🛒' },
+  { label: 'Rewards', href: '/rewards', icon: '🎁' },
+  { label: 'Gift Cards', href: '/gift-cards', icon: '🎴' },
+  { label: 'Cashback', href: '/cashback', icon: '💵' },
+  { label: 'Membership Card', href: '/membership-card', icon: '💳' },
   { label: 'Badges', href: '/badges', icon: '🏅' },
   { label: 'Missions', href: '/missions', icon: '🎯' },
   { label: 'Referrals', href: '/referrals', icon: '🔗' },
@@ -17,6 +21,8 @@ const navItems = [
   { label: 'Feedback', href: '/feedback', icon: '💬' },
   { label: 'Stores', href: '/stores', icon: '🏪' },
   { label: 'Check-in', href: '/checkin', icon: '✅' },
+  { label: 'KYC', href: '/kyc', icon: '🪪' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
   { label: 'Profile', href: '/profile', icon: '👤' },
 ];
 

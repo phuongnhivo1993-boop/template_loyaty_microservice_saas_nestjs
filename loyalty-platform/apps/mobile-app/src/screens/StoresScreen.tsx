@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Linking, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { stores } from '../services/api';
 import type { Store } from '../services/types';
 import { LoadingState, ErrorState, EmptyState, Header } from '../components';
 
 export default function StoresScreen() {
+  const navigation = useNavigation<any>();
   const [items, setItems] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,7 +59,7 @@ export default function StoresScreen() {
         data={items}
         keyExtractor={(item: Store) => item.id}
         renderItem={({ item }: { item: Store }) => (
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => navigation.navigate('StoreDetail', { store: item })}>
             <View style={styles.cardHeader}>
               <Text style={styles.storeName}>{item.name}</Text>
               <View style={styles.mapPlaceholder}>
@@ -79,7 +81,7 @@ export default function StoresScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </View>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={<EmptyState message="No stores available" icon="🏪" />}
       />

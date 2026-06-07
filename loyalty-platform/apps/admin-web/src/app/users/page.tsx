@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getUsers, createUser, updateUser, deleteUser } from '@/lib/api';
+import { getUsers, createUser, updateUser, deleteUser, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface UserForm {
   email: string; fullName: string; phone: string; role: string;
@@ -36,6 +38,7 @@ export default function UsersPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -102,6 +105,7 @@ export default function UsersPage() {
     )},
     { key: 'actions', label: 'Actions', render: (u: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('users', u.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/users/${u.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(u)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(u.id)} className="btn-danger btn-sm">Delete</button>
@@ -134,7 +138,18 @@ export default function UsersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={users} emptyMessage="No users found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa users',
+              onClick: async (ids) => { for (const id of ids) await deleteUser(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={users} emptyMessage="No users found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit User' : 'New User'} onClose={() => setShowModal(false)}>

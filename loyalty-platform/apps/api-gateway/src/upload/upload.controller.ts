@@ -18,7 +18,7 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @Post()
-  @Roles('HOST', 'ADMIN', 'STAFF')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
   @UseInterceptors(FileInterceptor('file', {
     limits: { fileSize: MAX_SIZE },
     fileFilter: (_req, file, cb) => {

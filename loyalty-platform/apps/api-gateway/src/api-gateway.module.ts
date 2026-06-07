@@ -50,6 +50,8 @@ import { InvoiceModule } from './invoice/invoice.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { Customer360Module } from './customer360/customer360.module';
 import { HealthModule } from './health/health.module';
+import { ApiKeyModule } from './api-key/api-key.module';
+import { NotificationPreferenceModule } from './notification-preference/notification-preference.module';
 
 @Module({
   imports: [
@@ -99,6 +101,8 @@ import { HealthModule } from './health/health.module';
     SubscriptionModule,
     Customer360Module,
     HealthModule,
+    ApiKeyModule,
+    NotificationPreferenceModule,
   ],
   controllers: [ApiGatewayController],
   providers: [

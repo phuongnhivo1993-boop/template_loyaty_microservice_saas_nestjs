@@ -11,7 +11,9 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getTiers, createTier, updateTier, deleteTier } from '@/lib/api';
+import { getTiers, createTier, updateTier, deleteTier, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface TierForm {
   name: string; minPoints: number; maxPoints: number; benefits: string; color: string; status: string;
@@ -34,6 +36,7 @@ export default function TiersPage() {
   const limit = 20;
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -102,6 +105,7 @@ export default function TiersPage() {
     )},
     { key: 'actions', label: 'Actions', render: (t: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('tiers', t.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/tiers/${t.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(t)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(t.id)} className="btn-danger btn-sm">Delete</button>
@@ -135,7 +139,18 @@ export default function TiersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={tiers} emptyMessage="No tiers found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa tiers',
+              onClick: async (ids) => { for (const id of ids) await deleteTier(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={tiers} emptyMessage="No tiers found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Tier' : 'New Tier'} onClose={() => setShowModal(false)}>

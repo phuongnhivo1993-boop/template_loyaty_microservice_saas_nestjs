@@ -51,3 +51,12 @@ export class MissionQueryDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() search?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() sort?: string;
 }
+
+export class AssignBadgeDto {
+  @ApiProperty({ type: [String] }) @IsString({ each: true }) memberIds: string[];
+}
+
+export class UpdateMissionProgressDto {
+  @ApiProperty() @IsString() memberId: string;
+  @ApiProperty() @IsNumber() progress: number;
+}

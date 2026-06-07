@@ -12,7 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getRewards, createReward, updateReward, deleteReward } from '@/lib/api';
+import { getRewards, createReward, updateReward, deleteReward, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface RewardForm {
@@ -117,6 +117,7 @@ export default function RewardsPage() {
     { key: 'quantity', label: 'Stock', render: (r: any) => <span style={{ color: r.quantity > 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>{r.quantity}</span> },
     { key: 'actions', label: 'Actions', render: (r: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('rewards', r.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/rewards/${r.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(r)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(r.id)} className="btn-danger btn-sm">Delete</button>

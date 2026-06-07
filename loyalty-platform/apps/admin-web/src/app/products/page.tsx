@@ -11,7 +11,7 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, api, restoreItem } from '@/lib/api';
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, api, restoreItem, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface ProductForm {
@@ -123,6 +123,7 @@ export default function ProductsPage() {
     )},
     { key: 'actions', label: 'Actions', render: (p: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('products', p.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/products/${p.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(p)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         {p.deletedAt ? (

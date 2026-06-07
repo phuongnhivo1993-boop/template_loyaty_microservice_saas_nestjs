@@ -14,7 +14,7 @@ import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/F
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
-import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf, bulkDeleteCampaigns, bulkActivateCampaigns, restoreItem } from '@/lib/api';
+import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf, bulkDeleteCampaigns, bulkActivateCampaigns, restoreItem, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 import { validateForm } from '@/lib/validation';
 import type { ValidationSchema } from '@/lib/validation';
@@ -162,6 +162,7 @@ export default function CampaignsPage() {
     )},
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('campaigns', c.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/campaigns/${c.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         {c.deletedAt ? (

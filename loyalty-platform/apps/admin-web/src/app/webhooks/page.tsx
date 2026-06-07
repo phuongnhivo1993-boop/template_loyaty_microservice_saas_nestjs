@@ -10,7 +10,9 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint, deleteWebhookEndpoint, testWebhookEndpoint, getWebhookLogs } from '@/lib/api';
+import { getWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint, deleteWebhookEndpoint, testWebhookEndpoint, getWebhookLogs, duplicateEntity, api } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 
 interface WebhookForm {
   name: string; url: string; events: string; secret: string; active: string;
@@ -32,6 +34,7 @@ export default function WebhooksPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -128,6 +131,7 @@ export default function WebhooksPage() {
     )},
     { key: 'actions', label: 'Actions', render: (w: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('webhooks/endpoints', w.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => openEdit(w)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleTest(w.id)} disabled={testingId === w.id} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>
           {testingId === w.id ? 'Testing...' : 'Test'}
@@ -164,7 +168,18 @@ export default function WebhooksPage() {
           <button onClick={loadLogs} className="btn-secondary">View Event Logs</button>
         </div>
 
-        <DataTable columns={columns} data={webhooks} emptyMessage="No webhook endpoints found" />
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          onClear={() => setSelectedIds([])}
+          onSuccess={load}
+          actions={[
+            {
+              label: 'Xóa', variant: 'danger', icon: '🗑️',
+              confirmMessage: 'Xóa webhooks',
+              onClick: async (ids) => { for (const id of ids) await deleteWebhookEndpoint(id); },
+            },
+          ]} />
+        <DataTable columns={columns} data={webhooks} emptyMessage="No webhook endpoints found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Webhook Endpoint' : 'New Webhook Endpoint'} onClose={() => setShowModal(false)} width={520}>

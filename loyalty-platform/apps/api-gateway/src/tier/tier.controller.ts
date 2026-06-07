@@ -43,6 +43,13 @@ export class TierController {
     return this.tierService.update(id, body);
   }
 
+  @Get('stats')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Get tier statistics (member count, avg points)' })
+  getStats(@Req() req: any) {
+    return this.tierService.getStats(req.tenantId);
+  }
+
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete tier' })

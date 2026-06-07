@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 
@@ -48,6 +48,45 @@ export class GamificationService {
     return this.findOneBadge(id);
   }
 
+  async assignBadge(badgeId: string, memberIds: string[]) {
+    const badge = await this.findOneBadge(badgeId);
+    const members = await this.prisma.member.findMany({
+      where: { id: { in: memberIds }, tenantId: badge.tenantId },
+    });
+    if (members.length === 0) throw new BadRequestException('No valid members found');
+
+    await this.prisma.auditLog.create({
+      data: {
+        entityType: 'badge_assignment',
+        entityId: badgeId,
+        action: 'CREATE',
+        newValue: { badgeId, badgeName: badge.name, memberIds: members.map(m => ({ id: m.id, name: m.fullName })) },
+      },
+    });
+
+    return { message: `Badge assigned to ${members.length} member(s)`, badge };
+  }
+
+  async getMemberBadges(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+    const badges = await this.prisma.badge.findMany({ where: { tenantId: member.tenantId } });
+    return badges;
+  }
+
+  async unassignBadge(badgeId: string, memberId: string) {
+    const badge = await this.findOneBadge(badgeId);
+    await this.prisma.auditLog.create({
+      data: {
+        entityType: 'badge_assignment',
+        entityId: badgeId,
+        action: 'DELETE',
+        newValue: { badgeId, badgeName: badge.name, memberId },
+      },
+    });
+    return { message: 'Badge unassigned from member' };
+  }
+
   // Missions
   createMission(data: { name: string; description?: string; pointsReward?: number; criteria?: any; startDate?: string; endDate?: string; tenantId: string }) {
     return this.prisma.mission.create({
@@ -90,5 +129,43 @@ export class GamificationService {
   async removeMission(id: string) {
     await this.findOneMission(id);
     return this.prisma.mission.delete({ where: { id } });
+  }
+
+  async updateMissionProgress(missionId: string, memberId: string, progress: number) {
+    await this.findOneMission(missionId);
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const key = `mission_progress_${missionId}`;
+    const settings = await this.prisma.settings.findUnique({
+      where: { scope_scopeId_key: { scope: 'tenant', scopeId: member.tenantId, key } },
+    });
+    const entries = (settings?.value as any[]) ?? [];
+    const idx = entries.findIndex(e => e.memberId === memberId);
+    if (idx >= 0) {
+      entries[idx].progress = progress;
+      entries[idx].updatedAt = new Date().toISOString();
+    } else {
+      entries.push({ memberId, memberName: member.fullName, progress, updatedAt: new Date().toISOString() });
+    }
+
+    await this.prisma.settings.upsert({
+      where: { scope_scopeId_key: { scope: 'tenant', scopeId: member.tenantId, key } },
+      update: { value: entries },
+      create: { scope: 'tenant', scopeId: member.tenantId, key, value: entries },
+    });
+
+    return { message: 'Progress updated', progress };
+  }
+
+  async getMissionLeaderboard(missionId: string) {
+    const mission = await this.findOneMission(missionId);
+    const key = `mission_progress_${missionId}`;
+    const settings = await this.prisma.settings.findUnique({
+      where: { scope_scopeId_key: { scope: 'tenant', scopeId: mission.tenantId, key } },
+    });
+    const entries = (settings?.value as any[]) ?? [];
+    entries.sort((a, b) => b.progress - a.progress);
+    return entries;
   }
 }

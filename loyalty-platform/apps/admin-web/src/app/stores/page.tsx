@@ -12,7 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getStores, createStore, updateStore, deleteStore } from '@/lib/api';
+import { getStores, createStore, updateStore, deleteStore, duplicateEntity } from '@/lib/api';
 
 interface StoreForm {
   name: string; code: string; address: string; phone: string; email: string; openingHours: string; status: string;
@@ -112,6 +112,7 @@ export default function StoresPage() {
     )},
     { key: 'actions', label: 'Actions', render: (s: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('stores', s.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/stores/${s.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(s)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(s.id)} className="btn-danger btn-sm">Delete</button>

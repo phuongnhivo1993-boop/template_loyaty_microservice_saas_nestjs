@@ -14,10 +14,10 @@ const requiredStar: React.CSSProperties = { color: '#dc2626', marginLeft: '2px' 
 interface FormInputProps {
   label: string; value: string; onChange: (v: string) => void;
   required?: boolean; type?: string; placeholder?: string; error?: string; disabled?: boolean;
-  minLength?: number; maxLength?: number;
+  minLength?: number; maxLength?: number; helpText?: string;
 }
 
-export function FormInput({ label, value, onChange, required, type = 'text', placeholder, error, disabled, minLength, maxLength }: FormInputProps) {
+export function FormInput({ label, value, onChange, required, type = 'text', placeholder, error, disabled, minLength, maxLength, helpText }: FormInputProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <label style={labelStyle}>
@@ -37,6 +37,7 @@ export function FormInput({ label, value, onChange, required, type = 'text', pla
         onBlur={e => { if (!error) e.target.style.borderColor = '#cbd5e1'; }}
       />
       {error && <div style={errorStyle}>{error}</div>}
+      {helpText && <div style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '12px', marginTop: '4px' }}>{helpText}</div>}
     </div>
   );
 }
@@ -44,10 +45,10 @@ export function FormInput({ label, value, onChange, required, type = 'text', pla
 interface FormSelectProps {
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string }[];
-  required?: boolean; placeholder?: string; error?: string; disabled?: boolean;
+  required?: boolean; placeholder?: string; error?: string; disabled?: boolean; helpText?: string;
 }
 
-export function FormSelect({ label, value, onChange, options, required, placeholder, error, disabled }: FormSelectProps) {
+export function FormSelect({ label, value, onChange, options, required, placeholder, error, disabled, helpText }: FormSelectProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <label style={labelStyle}>
@@ -69,16 +70,17 @@ export function FormSelect({ label, value, onChange, options, required, placehol
         {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
       {error && <div style={errorStyle}>{error}</div>}
+      {helpText && <div style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '12px', marginTop: '4px' }}>{helpText}</div>}
     </div>
   );
 }
 
 interface FormTextareaProps {
   label: string; value: string; onChange: (v: string) => void;
-  required?: boolean; placeholder?: string; error?: string; rows?: number; disabled?: boolean;
+  required?: boolean; placeholder?: string; error?: string; rows?: number; disabled?: boolean; helpText?: string;
 }
 
-export function FormTextarea({ label, value, onChange, required, placeholder, error, rows = 3, disabled }: FormTextareaProps) {
+export function FormTextarea({ label, value, onChange, required, placeholder, error, rows = 3, disabled, helpText }: FormTextareaProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <label style={labelStyle}>
@@ -98,6 +100,7 @@ export function FormTextarea({ label, value, onChange, required, placeholder, er
         onBlur={e => { if (!error) e.target.style.borderColor = '#cbd5e1'; }}
       />
       {error && <div style={errorStyle}>{error}</div>}
+      {helpText && <div style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '12px', marginTop: '4px' }}>{helpText}</div>}
     </div>
   );
 }

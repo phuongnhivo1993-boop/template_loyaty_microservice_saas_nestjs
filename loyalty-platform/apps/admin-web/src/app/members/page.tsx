@@ -14,7 +14,7 @@ import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
-import { getMembers, createMember, updateMember, deleteMember, getTiers, bulkDeleteMembers, bulkActivateMembers, bulkDeactivateMembers, restoreItem } from '@/lib/api';
+import { getMembers, createMember, updateMember, deleteMember, getTiers, bulkDeleteMembers, bulkActivateMembers, bulkDeactivateMembers, restoreItem, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 import { validateForm } from '@/lib/validation';
 import type { ValidationSchema } from '@/lib/validation';
@@ -150,6 +150,7 @@ export default function MembersPage() {
     )) : <span className="text-muted" style={{ fontSize: '12px' }}>—</span> },
     { key: 'actions', label: 'Actions', render: (m: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('members', m.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => openEdit(m)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         {m.deletedAt ? (
           <button onClick={() => handleRestore(m.id)} className="btn-secondary btn-sm" style={{ borderColor: '#16a34a', color: '#16a34a' }}>Restore</button>

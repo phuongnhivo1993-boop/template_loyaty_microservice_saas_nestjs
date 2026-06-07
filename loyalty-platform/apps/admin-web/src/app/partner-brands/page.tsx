@@ -12,7 +12,7 @@ import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getPartnerBrands, createPartnerBrand, updatePartnerBrand, deletePartnerBrand } from '@/lib/api';
+import { getPartnerBrands, createPartnerBrand, updatePartnerBrand, deletePartnerBrand, duplicateEntity } from '@/lib/api';
 
 interface BrandForm {
   name: string; code: string; description: string; website: string; logoUrl: string; status: string;
@@ -116,6 +116,7 @@ export default function PartnerBrandsPage() {
     )},
     { key: 'actions', label: 'Actions', render: (b: any) => (
       <>
+        <button onClick={async () => { try { await duplicateEntity('partnership/brands', b.id); showToast('Duplicated', 'success'); load(); } catch { showToast('Network error', 'error'); }}} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>📋</button>
         <button onClick={() => router.push(`/partner-brands/${b.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
         <button onClick={() => openEdit(b)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
         <button onClick={() => handleDelete(b.id)} className="btn-danger btn-sm">Delete</button>

@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GamificationService } from './gamification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { CreateBadgeDto, UpdateBadgeDto, BadgeQueryDto, CreateMissionDto, UpdateMissionDto, MissionQueryDto } from './dto/create-gamification.dto';
+import { CreateBadgeDto, UpdateBadgeDto, BadgeQueryDto, CreateMissionDto, UpdateMissionDto, MissionQueryDto, AssignBadgeDto, UpdateMissionProgressDto } from './dto/create-gamification.dto';
 
 @ApiTags('Gamification')
 @ApiBearerAuth()
@@ -76,5 +76,38 @@ export class GamificationController {
   @ApiOperation({ summary: 'Delete mission' })
   removeMission(@Param('id') id: string) {
     return this.gamificationService.removeMission(id);
+  }
+
+  @Post('badges/:id/assign')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Assign badge to members' })
+  assignBadge(@Param('id') id: string, @Body() body: AssignBadgeDto) {
+    return this.gamificationService.assignBadge(id, body.memberIds);
+  }
+
+  @Get('members/:memberId/badges')
+  @ApiOperation({ summary: 'Get badges for a member' })
+  getMemberBadges(@Param('memberId') memberId: string) {
+    return this.gamificationService.getMemberBadges(memberId);
+  }
+
+  @Delete('badges/:id/unassign/:memberId')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Remove badge from member' })
+  unassignBadge(@Param('id') id: string, @Param('memberId') memberId: string) {
+    return this.gamificationService.unassignBadge(id, memberId);
+  }
+
+  @Post('missions/:id/progress')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
+  @ApiOperation({ summary: 'Update mission progress for member' })
+  updateMissionProgress(@Param('id') id: string, @Body() body: UpdateMissionProgressDto) {
+    return this.gamificationService.updateMissionProgress(id, body.memberId, body.progress);
+  }
+
+  @Get('missions/:id/leaderboard')
+  @ApiOperation({ summary: 'Get mission leaderboard' })
+  getMissionLeaderboard(@Param('id') id: string) {
+    return this.gamificationService.getMissionLeaderboard(id);
   }
 }

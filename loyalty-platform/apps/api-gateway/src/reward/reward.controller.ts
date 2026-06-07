@@ -46,7 +46,7 @@ export class RewardController {
   }
 
   @Post(':id/redeem')
-  @Roles('HOST', 'ADMIN', 'STAFF')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
   @ApiParam({ name: 'id', type: String, description: 'Reward ID' })
   @ApiBody({ type: RedeemRewardDto })
   @ApiOperation({ summary: 'Redeem reward with member points' })

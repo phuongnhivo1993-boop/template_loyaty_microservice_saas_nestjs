@@ -12,6 +12,22 @@ export class PointExpiryService {
     private settingsService: SettingsService,
   ) {}
 
+  async processExpirations(): Promise<{ expired: number }> {
+    this.logger.log('Manual point expiry triggered');
+    const before = await this.prisma.pointTransaction.aggregate({
+      where: { type: 'EXPIRE' },
+      _sum: { amount: true },
+    });
+    const beforeCount = Math.abs(before._sum.amount ?? 0);
+    await this.expireOldPoints();
+    const after = await this.prisma.pointTransaction.aggregate({
+      where: { type: 'EXPIRE' },
+      _sum: { amount: true },
+    });
+    const afterCount = Math.abs(after._sum.amount ?? 0);
+    return { expired: afterCount - beforeCount };
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async expireOldPoints(): Promise<void> {
     this.logger.log('Running point expiry check...');
