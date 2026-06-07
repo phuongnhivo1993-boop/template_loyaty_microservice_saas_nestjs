@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
@@ -19,16 +19,26 @@ const statusColors: Record<string, string> = {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'ALL');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const updateUrl = useCallback((params: Record<string, string | undefined>) => {
+    const sp = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([k, v]) => {
+      if (v && v !== 'ALL') sp.set(k, v);
+      else sp.delete(k);
+    });
+    router.replace(`?${sp.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   const load = async () => {
     setLoading(true);
@@ -81,7 +91,7 @@ export default function OrdersPage() {
       <main className="main-content">
         <PageHeader title="Orders" subtitle="Track and manage orders" />
         <div className="toolbar">
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="filter-select">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); updateUrl({ status: e.target.value, search }); }} className="filter-select">
             <option value="ALL">All Statuses</option>
             <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
@@ -91,7 +101,7 @@ export default function OrdersPage() {
             <option value="CANCELLED">Cancelled</option>
             <option value="REFUNDED">Refunded</option>
           </select>
-          <input type="text" placeholder="Search by order code..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <input type="text" placeholder="Search by order code..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); updateUrl({ search: e.target.value, status: statusFilter }); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
@@ -33,6 +33,7 @@ const formSchema: ValidationSchema = {
 
 export default function MembersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,21 +42,30 @@ export default function MembersPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<MemberForm>(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [search, setSearch] = useState('');
-  const [tierFilter, setTierFilter] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [tierFilter, setTierFilter] = useState(searchParams.get('tier') || '');
   const [tierOptions, setTierOptions] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [tagFilter, setTagFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState(searchParams.get('tags') || '');
   const [showTagModal, setShowTagModal] = useState(false);
   const [tagAction, setTagAction] = useState<'add' | 'remove'>('add');
   const [tagInput, setTagInput] = useState('');
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(searchParams.get('deleted') === 'true');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const updateUrl = useCallback((params: Record<string, string | undefined>) => {
+    const sp = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([k, v]) => {
+      if (v && v !== 'ALL' && v !== 'false') sp.set(k, v);
+      else sp.delete(k);
+    });
+    router.replace(`?${sp.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   const { confirmDelete: confirmDeleteMember, modal: deleteModal } = useConfirmDelete({
     title: 'Delete Member',
@@ -183,21 +193,21 @@ export default function MembersPage() {
         />
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); }} className="filter-select">
+          <select value={tierFilter} onChange={(e) => { setTierFilter(e.target.value); setPage(1); updateUrl({ tier: e.target.value, search, tags: tagFilter, deleted: showDeleted ? 'true' : undefined }); }} className="filter-select">
             <option value="">ALL TIERS</option>
             {tierOptions.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <select value={tagFilter} onChange={(e) => { setTagFilter(e.target.value); setPage(1); }} className="filter-select">
+          <select value={tagFilter} onChange={(e) => { setTagFilter(e.target.value); setPage(1); updateUrl({ tags: e.target.value, search, tier: tierFilter, deleted: showDeleted ? 'true' : undefined }); }} className="filter-select">
             <option value="">ALL TAGS</option>
             <option value="VIP">VIP</option>
             <option value="NEW">NEW</option>
             <option value="HIGH_SPENDER">HIGH_SPENDER</option>
             <option value="AT_RISK">AT_RISK</option>
           </select>
-          <input type="text" placeholder="Search name, email, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <input type="text" placeholder="Search name, email, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); updateUrl({ search: e.target.value, tier: tierFilter, tags: tagFilter, deleted: showDeleted ? 'true' : undefined }); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{total > 0 ? `${total} results` : ''}</span>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); }} />
+            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); updateUrl({ deleted: e.target.checked ? 'true' : undefined, search, tier: tierFilter, tags: tagFilter }); }} />
             Show deleted
           </label>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>

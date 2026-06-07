@@ -11,13 +11,17 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { setToken, setProfile } = useAuthStore();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
+    setEmailError('');
+    setPasswordError('');
+    let valid = true;
+    if (!email) { setEmailError('Email is required'); valid = false; }
+    if (!password) { setPasswordError('Password is required'); valid = false; }
+    if (!valid) return;
     setLoading(true);
     try {
       const res = await auth.login({ email, password, role: 'member' });
@@ -41,8 +45,8 @@ export default function LoginScreen() {
       <Text style={styles.title}>Loyalty Platform</Text>
       <Text style={styles.subtitle}>Member App</Text>
       <View style={styles.form}>
-        <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="Enter your email" required />
-        <TextInput label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="Enter your password" required />
+        <TextInput label="Email" value={email} onChangeText={(v) => { setEmail(v); setEmailError(''); }} keyboardType="email-address" placeholder="Enter your email" required error={emailError} />
+        <TextInput label="Password" value={password} onChangeText={(v) => { setPassword(v); setPasswordError(''); }} secureTextEntry placeholder="Enter your password" required error={passwordError} />
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>

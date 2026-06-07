@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
@@ -25,15 +25,16 @@ const TYPES = ['DISCOUNT', 'GIFT', 'FREE_SHIPPING', 'PERCENTAGE'];
 
 export default function VouchersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<VoucherForm>(emptyForm);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'ALL');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
@@ -43,6 +44,15 @@ export default function VouchersPage() {
   const [batchForm, setBatchForm] = useState({ prefix: '', count: '10', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '' });
   const [batchResult, setBatchResult] = useState<string[] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const updateUrl = useCallback((params: Record<string, string | undefined>) => {
+    const sp = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([k, v]) => {
+      if (v && v !== 'ALL') sp.set(k, v);
+      else sp.delete(k);
+    });
+    router.replace(`?${sp.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   const { confirmDelete: confirmDeleteVoucher, modal: deleteModal } = useConfirmDelete({
     title: 'Delete Voucher',
@@ -157,13 +167,13 @@ export default function VouchersPage() {
         />
 
         <div className="toolbar">
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="filter-select">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); updateUrl({ status: e.target.value, search }); }} className="filter-select">
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="EXPIRED">Expired</option>
             <option value="REDEEMED">Redeemed</option>
           </select>
-          <input type="text" placeholder="Search vouchers..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <input type="text" placeholder="Search vouchers..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); updateUrl({ search: e.target.value, status: statusFilter }); }} className="search-input" />
           <span className="text-muted">{total > 0 ? `${total} results` : ''}</span>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
           <button onClick={() => { setBatchResult(null); setShowBatch(true); }} className="btn-secondary">Batch Generate</button>

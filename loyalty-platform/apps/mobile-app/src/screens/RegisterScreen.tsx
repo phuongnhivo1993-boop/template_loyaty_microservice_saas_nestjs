@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { members } from '../services/api';
+import TextInput from '../components/TextInput';
 
 export default function RegisterScreen() {
   const navigation = useNavigation<any>();
@@ -10,12 +11,19 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [tenantDomain, setTenantDomain] = useState('sunshine.loyalty.vn');
   const [loading, setLoading] = useState(false);
+  const [fullNameError, setFullNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [tenantDomainError, setTenantDomainError] = useState('');
 
   const handleRegister = async () => {
-    if (!fullName || !email || !tenantDomain) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+    setFullNameError('');
+    setEmailError('');
+    setTenantDomainError('');
+    let valid = true;
+    if (!fullName) { setFullNameError('Full name is required'); valid = false; }
+    if (!email) { setEmailError('Email is required'); valid = false; }
+    if (!tenantDomain) { setTenantDomainError('Tenant domain is required'); valid = false; }
+    if (!valid) return;
     setLoading(true);
     try {
       await members.register({ email, fullName, phone: phone || undefined, tenantDomain });
@@ -33,10 +41,10 @@ export default function RegisterScreen() {
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Join our loyalty program</Text>
 
-        <TextInput style={styles.input} placeholder="Full Name *" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
-        <TextInput style={styles.input} placeholder="Email *" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        <TextInput style={styles.input} placeholder="Tenant Domain *" value={tenantDomain} onChangeText={setTenantDomain} autoCapitalize="none" />
+        <TextInput label="Full Name" value={fullName} onChangeText={(v) => { setFullName(v); setFullNameError(''); }} placeholder="Full Name *" required error={fullNameError} />
+        <TextInput label="Email" value={email} onChangeText={(v) => { setEmail(v); setEmailError(''); }} keyboardType="email-address" placeholder="Email *" required error={emailError} />
+        <TextInput label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="Phone" />
+        <TextInput label="Tenant Domain" value={tenantDomain} onChangeText={(v) => { setTenantDomain(v); setTenantDomainError(''); }} placeholder="Tenant Domain *" required error={tenantDomainError} />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
           {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Register</Text>}

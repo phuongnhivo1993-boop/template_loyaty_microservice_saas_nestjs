@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CouponService } from '../coupon/coupon.service';
 import { PointService } from '../point/point.service';
@@ -7,6 +7,8 @@ import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     private prisma: PrismaService,
     private couponService: CouponService,
@@ -44,7 +46,9 @@ export class OrderService {
           couponCode = data.couponCode;
           couponValidation = result;
         }
-      } catch { }
+      } catch (e) {
+        this.logger.error(`Coupon validation failed: ${e.message}`, e.stack);
+      }
     }
     const shippingFee = data.shippingFee ?? 0;
     const tax = data.tax ?? 0;
@@ -123,7 +127,9 @@ export class OrderService {
       if (data.couponCode) {
         this.wsGateway.emitCouponApplied(data.couponCode, data.memberId, discount, orderCode);
       }
-    } catch { }
+    } catch (e) {
+      this.logger.error(`WebSocket emit failed after order create: ${e.message}`, e.stack);
+    }
 
     return result;
   }
@@ -231,13 +237,15 @@ export class OrderService {
           ]);
         }
       } catch (err) {
-        // Log but don't fail the status update
+        this.logger.error(`Failed to reverse points for cancelled order ${order.orderCode}: ${err.message}`, err.stack);
       }
     }
 
     try {
       this.wsGateway.emitOrderStatusChanged(id, order.orderCode, status, order.memberId);
-    } catch {}
+    } catch (e) {
+      this.logger.error(`WebSocket emit failed for order status change: ${e.message}`, e.stack);
+    }
 
     return updated;
   }

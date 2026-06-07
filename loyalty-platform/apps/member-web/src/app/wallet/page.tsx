@@ -18,6 +18,7 @@ export default function WalletPage() {
   const [txs, setTxs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('All');
   const [page, setPage] = useState(1);
 
@@ -37,10 +38,15 @@ export default function WalletPage() {
   const formatDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   const filtered = useMemo(() => {
-    if (typeFilter === 'All') return txs;
-    if (typeFilter === 'Earned') return txs.filter(tx => tx.amount > 0);
-    return txs.filter(tx => tx.amount < 0);
-  }, [txs, typeFilter]);
+    let result = txs;
+    if (typeFilter === 'Earned') result = result.filter(tx => tx.amount > 0);
+    else if (typeFilter === 'Burned') result = result.filter(tx => tx.amount < 0);
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(tx => (tx.reason || tx.type || '').toLowerCase().includes(q));
+    }
+    return result;
+  }, [txs, typeFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -92,6 +98,8 @@ export default function WalletPage() {
           </button>
         ))}
       </div>
+
+      <input type="text" placeholder="Search transactions..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ marginBottom: '12px' }} />
 
       <div className="card" style={{ fontWeight: 600, marginBottom: '12px' }}>Recent Transactions</div>
       {filtered.length === 0 ? (

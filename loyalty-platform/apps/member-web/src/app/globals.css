@@ -67,6 +67,20 @@ body {
 
 .container { max-width: 480px; margin: 0 auto; padding: 16px; }
 
+@media (min-width: 768px) {
+  .container { max-width: 720px; }
+  .nav-bottom { display: none; }
+  .content { padding-bottom: 16px; }
+}
+
+@media (min-width: 1024px) {
+  .container { max-width: 960px; }
+}
+
+@media (max-width: 767px) {
+  .desktop-nav { display: none; }
+}
+
 .card {
   background: var(--card);
   border-radius: var(--radius);

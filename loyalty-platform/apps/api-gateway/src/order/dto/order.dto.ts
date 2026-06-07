@@ -19,8 +19,8 @@ export class CreateOrderDto {
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() @Min(0) discount?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() couponCode?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() paymentMethod?: string;
-  @ApiProperty({ required: false }) @IsOptional() notes?: string;
-  @ApiProperty({ required: false }) @IsOptional() shippingAddress?: any;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() notes?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() shippingAddress?: any;
 }
 
 export class UpdateOrderStatusDto {

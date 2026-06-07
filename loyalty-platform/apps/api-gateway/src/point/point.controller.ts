@@ -55,9 +55,16 @@ export class PointController {
     return this.pointService.adjust(body.memberId, body.amount, body.reason);
   }
 
-  @Post('trigger-expiry')
+  @Post('expire')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Manually trigger point expiry process' })
+  expire() {
+    return this.pointExpiryService.processExpirations();
+  }
+
+  @Post('trigger-expiry')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Manually trigger point expiry process (alias)' })
   triggerExpiry() {
     return this.pointExpiryService.processExpirations();
   }

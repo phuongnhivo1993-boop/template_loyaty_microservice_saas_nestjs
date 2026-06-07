@@ -162,6 +162,7 @@ export default function Sidebar() {
         onClick={() => setMobileOpen(!mobileOpen)}
         className="sidebar-toggle"
         aria-label="Toggle sidebar"
+        aria-expanded={mobileOpen}
       >
         <span>{mobileOpen ? '✕' : '☰'}</span>
       </button>
@@ -184,7 +185,7 @@ export default function Sidebar() {
           </div>
         )}
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" role="navigation" aria-label="Main navigation">
           {allowedMenuGroups.map((group) => (
             <div key={group.label ?? 'main'}>
               {group.label && <div className="sidebar-section-label">{group.label}</div>}

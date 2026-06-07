@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
@@ -33,6 +33,7 @@ const formSchema: ValidationSchema = {
 
 export default function CampaignsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,17 +41,26 @@ export default function CampaignsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<CampaignForm>(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'ALL');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [performances, setPerformances] = useState<Record<string, any>>({});
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(searchParams.get('deleted') === 'true');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const updateUrl = useCallback((params: Record<string, string | undefined>) => {
+    const sp = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([k, v]) => {
+      if (v && v !== 'ALL' && v !== 'false') sp.set(k, v);
+      else sp.delete(k);
+    });
+    router.replace(`?${sp.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   const { confirmDelete: confirmDeleteCampaign, modal: deleteModal } = useConfirmDelete({
     title: 'Delete Campaign',
@@ -187,17 +197,17 @@ export default function CampaignsPage() {
         />
 
         <div className="toolbar">
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="filter-select">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); updateUrl({ status: e.target.value, search, deleted: showDeleted ? 'true' : undefined }); }} className="filter-select">
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="PAUSED">Paused</option>
             <option value="ENDED">Ended</option>
             <option value="DRAFT">Draft</option>
           </select>
-          <input type="text" placeholder="Search campaigns..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
+          <input type="text" placeholder="Search campaigns..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); updateUrl({ search: e.target.value, status: statusFilter, deleted: showDeleted ? 'true' : undefined }); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); }} />
+            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); updateUrl({ deleted: e.target.checked ? 'true' : undefined, search, status: statusFilter }); }} />
             Show deleted
           </label>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>

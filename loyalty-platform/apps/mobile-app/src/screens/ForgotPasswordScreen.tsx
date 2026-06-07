@@ -8,12 +8,11 @@ export default function ForgotPasswordScreen() {
   const navigation = useNavigation<any>();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email');
-      return;
-    }
+    setEmailError('');
+    if (!email) { setEmailError('Email is required'); return; }
     setLoading(true);
     try {
       await auth.forgotPassword({ email });
@@ -33,7 +32,7 @@ export default function ForgotPasswordScreen() {
       <Text style={styles.title}>Reset Password</Text>
       <Text style={styles.subtitle}>Enter your email to receive a reset link</Text>
       <View style={styles.form}>
-        <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="Enter your email" required />
+        <TextInput label="Email" value={email} onChangeText={(v) => { setEmail(v); setEmailError(''); }} keyboardType="email-address" placeholder="Enter your email" required error={emailError} />
         <TouchableOpacity style={styles.button} onPress={handleForgotPassword} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Send Reset Link'}</Text>
         </TouchableOpacity>
