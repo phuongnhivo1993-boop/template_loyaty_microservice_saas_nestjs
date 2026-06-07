@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { auth } from '../services/api';
+import TextInput from '../components/TextInput';
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<any>();
@@ -32,14 +33,7 @@ export default function ForgotPasswordScreen() {
       <Text style={styles.title}>Reset Password</Text>
       <Text style={styles.subtitle}>Enter your email to receive a reset link</Text>
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="Enter your email" required />
         <TouchableOpacity style={styles.button} onPress={handleForgotPassword} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Send Reset Link'}</Text>
         </TouchableOpacity>
@@ -60,7 +54,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', color: 'white', textAlign: 'center' },
   subtitle: { fontSize: 16, color: '#94a3b8', textAlign: 'center', marginBottom: 40 },
   form: { gap: 14 },
-  input: { backgroundColor: '#334155', borderRadius: 8, padding: 14, fontSize: 16, color: 'white' },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });

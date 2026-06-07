@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, RefreshControl } from 'react-native';
+import { useEffect, useState } from 'react';
+import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { members } from '../services/api';
 import type { MemberVoucher } from '../services/types';
-import { LoadingState, ErrorState, EmptyState } from '../components';
+import { LoadingState, ErrorState, EmptyState, QRCode } from '../components';
 
 const TABS = ['ALL', 'ACTIVE', 'REDEEMED'];
 
@@ -78,7 +78,7 @@ export default function VouchersScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Voucher QR Code</Text>
             <View style={styles.qrPlaceholder}>
-              <Text style={styles.qrCode}>{selectedVoucher?.qrCode || selectedVoucher?.id}</Text>
+              <QRCode value={selectedVoucher?.id} size={180} />
             </View>
             <Text style={styles.qrLabel}>Show this code to the store staff</Text>
             <Text style={styles.qrSub}>Code: {selectedVoucher?.voucher?.code}</Text>
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: 'white', borderRadius: 20, padding: 32, alignItems: 'center', width: '85%' },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 20 },
   qrPlaceholder: { width: 200, height: 200, backgroundColor: '#f8fafc', borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#e2e8f0', marginBottom: 16 },
-  qrCode: { fontSize: 12, color: '#1e293b', fontFamily: 'monospace', textAlign: 'center', padding: 8 },
   qrLabel: { fontSize: 14, color: '#64748b', marginBottom: 8 },
   qrSub: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
   closeBtn: { marginTop: 20, paddingHorizontal: 32, paddingVertical: 12, backgroundColor: '#2563eb', borderRadius: 10 },

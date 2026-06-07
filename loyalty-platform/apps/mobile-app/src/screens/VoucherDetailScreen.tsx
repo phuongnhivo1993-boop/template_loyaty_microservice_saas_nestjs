@@ -3,7 +3,7 @@ import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity } fr
 import { useRoute } from '@react-navigation/native';
 import { members } from '../services/api';
 import type { MemberVoucher } from '../services/types';
-import { LoadingState, ErrorState } from '../components';
+import { LoadingState, ErrorState, QRCode } from '../components';
 
 export default function VoucherDetailScreen() {
   const route = useRoute<any>();
@@ -41,7 +41,7 @@ export default function VoucherDetailScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.qrSection}>
         <View style={styles.qrPlaceholder}>
-          <Text style={styles.qrCode}>{voucher.qrCode || voucher.id}</Text>
+          <QRCode value={voucher.id} size={180} />
         </View>
         <Text style={styles.qrLabel}>Show this code to the store staff</Text>
       </View>
@@ -94,7 +94,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', paddingTop: 60 },
   qrSection: { alignItems: 'center', paddingVertical: 24 },
   qrPlaceholder: { width: 200, height: 200, backgroundColor: 'white', borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#e2e8f0', marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  qrCode: { fontSize: 11, color: '#1e293b', fontFamily: 'monospace', textAlign: 'center', padding: 8 },
   qrLabel: { fontSize: 14, color: '#64748b', fontWeight: '500' },
   card: { marginHorizontal: 20, backgroundColor: 'white', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },

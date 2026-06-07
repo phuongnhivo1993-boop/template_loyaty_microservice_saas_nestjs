@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { members } from '../services/api';
+import { members, upload } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 
 export default function KYCUploadScreen() {
@@ -28,6 +28,14 @@ export default function KYCUploadScreen() {
     }
   };
 
+  const uploadImage = async (uri: string, side: string): Promise<string> => {
+    const filename = uri.split('/').pop() || `${side}.jpg`;
+    const ext = filename.split('.').pop() || 'jpg';
+    const type = ext === 'png' ? 'image/png' : 'image/jpeg';
+    const res = await upload.file(uri, filename, type);
+    return res.data?.url || res.data?.path || res.data?.file || '';
+  };
+
   const handleSubmit = async () => {
     if (!frontImage || !backImage) {
       Alert.alert('Missing', 'Please upload both front and back images');
@@ -39,7 +47,11 @@ export default function KYCUploadScreen() {
     }
     setSubmitting(true);
     try {
-      await members.updateProfile({ fullName });
+      const [frontImageUrl, backImageUrl] = await Promise.all([
+        uploadImage(frontImage, 'front'),
+        uploadImage(backImage, 'back'),
+      ]);
+      await members.updateProfile({ fullName, frontImage: frontImageUrl, backImage: backImageUrl } as any);
       Alert.alert('Submitted', 'Your KYC documents have been submitted for review.');
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.message || 'Failed to submit KYC');

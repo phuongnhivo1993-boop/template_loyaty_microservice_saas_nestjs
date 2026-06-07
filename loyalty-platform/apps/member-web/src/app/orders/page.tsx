@@ -21,6 +21,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const loadData = () => {
@@ -36,10 +37,20 @@ export default function OrdersPage() {
     loadData();
   }, []);
 
+  const searched = useMemo(() => {
+    if (!search.trim()) return orders;
+    const q = search.toLowerCase();
+    return orders.filter(o =>
+      (o.orderCode || '').toLowerCase().includes(q) ||
+      (o.couponCode || '').toLowerCase().includes(q) ||
+      (o.status || '').toLowerCase().includes(q)
+    );
+  }, [orders, search]);
+
   const filtered = useMemo(() => {
-    if (statusFilter === 'All') return orders;
-    return orders.filter(o => o.status === statusFilter.toUpperCase());
-  }, [orders, statusFilter]);
+    if (statusFilter === 'All') return searched;
+    return searched.filter(o => o.status === statusFilter.toUpperCase());
+  }, [searched, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -68,6 +79,14 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      <input
+        type="text"
+        placeholder="🔍 Search orders..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginBottom: '12px' }}
+      />
+
       <div className="tab-bar" style={{ overflowX: 'auto', flexWrap: 'wrap' }}>
         {statusFilters.map(f => (
           <button key={f} className={`tab ${statusFilter === f ? 'active' : ''}`} onClick={() => handleStatusFilter(f)}>
@@ -79,7 +98,7 @@ export default function OrdersPage() {
       {filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📦</div>
-          <div className="empty-text">No orders yet</div>
+          <div className="empty-text">{search ? 'No orders match your search' : 'No orders yet'}</div>
         </div>
       ) : (
         <>

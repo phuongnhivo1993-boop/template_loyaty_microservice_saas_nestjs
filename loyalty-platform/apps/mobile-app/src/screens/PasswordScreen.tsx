@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { members } from '../services/api';
-import { useAuthStore } from '../services/authStore';
 import Card from '../components/Card';
 
 export default function PasswordScreen({ navigation }: any) {
@@ -9,7 +8,6 @@ export default function PasswordScreen({ navigation }: any) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const profile = useAuthStore((s) => s.profile);
 
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
@@ -35,8 +33,6 @@ export default function PasswordScreen({ navigation }: any) {
     setLoading(false);
   };
 
-  const noPassword = !profile?.password; // member registered via OAuth
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -49,14 +45,12 @@ export default function PasswordScreen({ navigation }: any) {
       </View>
 
       <View style={styles.content}>
-        <Card title={noPassword ? 'Set Password' : 'Change Password'}>
-          {!noPassword && (
-            <View style={styles.field}>
-              <Text style={styles.label}>Current Password</Text>
-              <TextInput style={styles.input} secureTextEntry value={oldPassword}
-                onChangeText={setOldPassword} placeholder="Enter current password" />
-            </View>
-          )}
+        <Card title="Change Password">
+          <View style={styles.field}>
+            <Text style={styles.label}>Current Password</Text>
+            <TextInput style={styles.input} secureTextEntry value={oldPassword}
+              onChangeText={setOldPassword} placeholder="Enter current password" />
+          </View>
           <View style={styles.field}>
             <Text style={styles.label}>New Password</Text>
             <TextInput style={styles.input} secureTextEntry value={newPassword}
@@ -68,7 +62,7 @@ export default function PasswordScreen({ navigation }: any) {
               onChangeText={setConfirmPassword} placeholder="Confirm new password" />
           </View>
           <TouchableOpacity style={[styles.btn, loading && styles.btnDisabled]} onPress={handleChangePassword} disabled={loading}>
-            <Text style={styles.btnText}>{loading ? 'Saving...' : noPassword ? 'Set Password' : 'Change Password'}</Text>
+            <Text style={styles.btnText}>{loading ? 'Saving...' : 'Change Password'}</Text>
           </TouchableOpacity>
         </Card>
       </View>

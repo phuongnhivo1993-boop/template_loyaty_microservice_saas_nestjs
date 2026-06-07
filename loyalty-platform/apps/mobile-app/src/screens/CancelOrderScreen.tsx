@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { orders } from '../services/api';
 
@@ -16,8 +16,8 @@ export default function CancelOrderScreen() {
     try {
       await orders.cancel(orderId, reason ? { cancelReason: reason } : undefined);
       navigation.goBack();
-    } catch {
-      // error handled silently
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message || 'Failed to cancel order');
       setSubmitting(false);
     }
   };

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '../services/authStore';
 import { members } from '../services/api';
-import { LoadingState, ErrorState } from '../components';
+import { LoadingState, ErrorState, QRCode } from '../components';
 
 export default function MembershipCardScreen() {
   const profile = useAuthStore((s) => s.profile);
@@ -42,7 +42,7 @@ export default function MembershipCardScreen() {
         </View>
 
         <View style={styles.qrPlaceholder}>
-          <Text style={styles.qrCode}>{profile?.id || 'MEMBER'}</Text>
+          <QRCode value={profile?.id || 'MEMBER'} size={160} />
         </View>
 
         <Text style={styles.memberName}>{profile?.fullName || 'Member'}</Text>
@@ -78,7 +78,6 @@ const styles = StyleSheet.create({
   tierBadge: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 12 },
   tierText: { fontSize: 13, fontWeight: '700' },
   qrPlaceholder: { width: 180, height: 180, backgroundColor: '#f8fafc', borderRadius: 16, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-  qrCode: { fontSize: 10, color: '#1e293b', fontFamily: 'monospace', textAlign: 'center', padding: 8 },
   memberName: { fontSize: 20, fontWeight: '700', color: '#1e293b', textAlign: 'center' },
   memberEmail: { fontSize: 14, color: '#64748b', textAlign: 'center', marginTop: 4 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' },

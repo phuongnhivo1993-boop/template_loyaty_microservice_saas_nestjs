@@ -9,6 +9,13 @@ const navItems = [
   { label: 'Wallet', href: '/wallet', icon: '💰' },
   { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
   { label: 'Orders', href: '/orders', icon: '🛒' },
+  { label: 'Badges', href: '/badges', icon: '🏅' },
+  { label: 'Missions', href: '/missions', icon: '🎯' },
+  { label: 'Referrals', href: '/referrals', icon: '🔗' },
+  { label: 'Tier', href: '/tier-progress', icon: '📈' },
+  { label: 'Notifications', href: '/notifications', icon: '🔔' },
+  { label: 'Feedback', href: '/feedback', icon: '💬' },
+  { label: 'Check-in', href: '/checkin', icon: '✅' },
   { label: 'Profile', href: '/profile', icon: '👤' },
 ];
 

@@ -154,6 +154,16 @@ export const analytics = {
   leaderboard: (limit = 10) => api.get('/analytics/leaderboard', { params: { limit } }),
 };
 
+export const upload = {
+  file: (uri: string, name: string, type: string) => {
+    const formData = new FormData();
+    formData.append('file', { uri, name, type } as any);
+    return api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
 export const cartRedeem = (items: { rewardId: string; quantity: number }[]) =>
   api.post('/me/cart-redeem', { items });
 

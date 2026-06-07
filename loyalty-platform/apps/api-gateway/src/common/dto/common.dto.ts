@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEmail, IsString, MinLength, IsOptional, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -82,8 +83,8 @@ export class ValidateVoucherDto {
 }
 
 export class PaginationDto {
-  @ApiProperty({ required: false, default: 1 }) @IsOptional() page?: number;
-  @ApiProperty({ required: false, default: 20 }) @IsOptional() limit?: number;
+  @ApiProperty({ required: false, default: 1 }) @IsOptional() @Type(() => Number) @IsNumber() page?: number;
+  @ApiProperty({ required: false, default: 20 }) @IsOptional() @Type(() => Number) @IsNumber() limit?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() search?: string;
 }
 

@@ -1,8 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import TenantSwitcher from './TenantSwitcher';
+
+const rolePermissions: Record<string, string[]> = {
+  HOST: ['*'],
+  ADMIN: [
+    '/dashboard', '/members', '/tiers', '/earning-rules', '/point-transactions',
+    '/referrals', '/campaigns', '/rewards', '/vouchers', '/member-vouchers',
+    '/promotions', '/coupons', '/badges', '/missions', '/notifications',
+    '/notifications/broadcast', '/feedback', '/products', '/product-categories',
+    '/orders', '/stores', '/cashback', '/gift-cards', '/partner-brands',
+    '/member-segmentation', '/voucher-analytics', '/checkin-analytics',
+    '/webhooks', '/audit-log', '/settings', '/settings/branding',
+  ],
+  STAFF: [
+    '/dashboard', '/members', '/tiers', '/campaigns', '/rewards',
+    '/vouchers', '/member-vouchers', '/promotions', '/coupons',
+    '/badges', '/missions', '/notifications', '/notifications/broadcast',
+    '/feedback', '/products', '/product-categories', '/orders',
+    '/stores', '/cashback', '/gift-cards',
+  ],
+};
 
 const menuGroups = [
   {
@@ -103,6 +123,24 @@ export default function Sidebar() {
     setTheme(current);
   }, []);
 
+  useEffect(() => {
+    if (role && role !== 'HOST' && role !== 'ADMIN' && role !== 'STAFF') {
+      router.push('/login');
+    }
+  }, [role, router]);
+
+  const allowedMenuGroups = useMemo(() => {
+    const allowed = rolePermissions[role];
+    if (!allowed) return [];
+    if (allowed.includes('*')) return menuGroups;
+    return menuGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => allowed.includes(item.href)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [role]);
+
   const handleTenantSwitch = (newTenantId: string) => {
     localStorage.setItem('activeTenantId', newTenantId);
     window.location.reload();
@@ -147,7 +185,7 @@ export default function Sidebar() {
         )}
 
         <nav className="sidebar-nav">
-          {menuGroups.map((group) => (
+          {allowedMenuGroups.map((group) => (
             <div key={group.label ?? 'main'}>
               {group.label && <div className="sidebar-section-label">{group.label}</div>}
               {group.items.map((item) => {

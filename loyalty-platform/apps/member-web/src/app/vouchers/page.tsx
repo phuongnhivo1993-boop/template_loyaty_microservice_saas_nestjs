@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyVouchers } from '@/lib/api';
@@ -10,6 +10,7 @@ export default function VouchersPage() {
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const loadData = () => {
     setError('');
@@ -23,6 +24,16 @@ export default function VouchersPage() {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     loadData();
   }, []);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return vouchers;
+    const q = search.toLowerCase();
+    return vouchers.filter(v =>
+      (v.voucher?.code || v.code || '').toLowerCase().includes(q) ||
+      (v.voucher?.type || v.type || '').toLowerCase().includes(q) ||
+      (v.voucher?.description || v.description || '').toLowerCase().includes(q)
+    );
+  }, [vouchers, search]);
 
   if (loading) {
     return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
@@ -39,17 +50,25 @@ export default function VouchersPage() {
       <div className="header">
         <div>
           <div className="header-title">🎟️ My Vouchers</div>
-          <div className="header-subtitle">{vouchers.length} voucher{vouchers.length !== 1 ? 's' : ''}</div>
+          <div className="header-subtitle">{filtered.length} voucher{filtered.length !== 1 ? 's' : ''}</div>
         </div>
       </div>
 
-      {vouchers.length === 0 ? (
+      <input
+        type="text"
+        placeholder="🔍 Search vouchers..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginBottom: '12px' }}
+      />
+
+      {filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🎫</div>
-          <div className="empty-text">No vouchers yet</div>
+          <div className="empty-text">{search ? 'No vouchers match your search' : 'No vouchers yet'}</div>
         </div>
       ) : (
-        vouchers.map((v: any) => (
+        filtered.map((v: any) => (
           <div key={v.id} className="card" style={{ borderLeft: `4px solid ${v.redeemed ? 'var(--text-muted)' : 'var(--primary)'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>

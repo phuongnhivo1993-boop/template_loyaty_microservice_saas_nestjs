@@ -76,3 +76,12 @@ export const getTierProgress = () => api.get('/me/tier-progress');
 // Badges & Missions
 export const getBadges = () => api.get('/me/badges');
 export const getMissions = () => api.get('/me/missions');
+
+// Notifications
+export const getNotifications = () => api.get('/me/notifications');
+export const markNotificationRead = (id: string) => api.patch(`/me/notifications/${id}/read`, {});
+
+// Feedback
+export const getMyFeedback = () => api.get('/me/feedback');
+export const submitFeedback = (data: { rating: number; comment?: string }) =>
+  api.post('/me/feedback', data);

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { auth } from '../services/api';
+import TextInput from '../components/TextInput';
 
 export default function ResetPasswordScreen() {
   const navigation = useNavigation<any>();
@@ -43,12 +44,9 @@ export default function ResetPasswordScreen() {
       <Text style={styles.title}>Set New Password</Text>
       <Text style={styles.subtitle}>Enter the reset token from your email and choose a new password</Text>
       <View style={styles.form}>
-        <TextInput style={styles.input} placeholder="Reset Token" value={token}
-          onChangeText={setToken} autoCapitalize="none" />
-        <TextInput style={styles.input} placeholder="New Password (min 6 chars)" value={newPassword}
-          onChangeText={setNewPassword} secureTextEntry />
-        <TextInput style={styles.input} placeholder="Confirm New Password" value={confirmPassword}
-          onChangeText={setConfirmPassword} secureTextEntry />
+        <TextInput label="Reset Token" value={token} onChangeText={setToken} placeholder="Enter reset token" required />
+        <TextInput label="New Password" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Min 6 characters" required />
+        <TextInput label="Confirm New Password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Re-enter new password" required />
         <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Resetting...' : 'Reset Password'}</Text>
         </TouchableOpacity>
@@ -66,7 +64,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', color: 'white', textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginBottom: 40, paddingHorizontal: 20 },
   form: { gap: 14 },
-  input: { backgroundColor: '#334155', borderRadius: 8, padding: 14, fontSize: 16, color: 'white' },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });

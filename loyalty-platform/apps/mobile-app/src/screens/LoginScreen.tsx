@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { auth, members } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import * as SecureStore from 'expo-secure-store';
+import TextInput from '../components/TextInput';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
@@ -40,8 +41,8 @@ export default function LoginScreen() {
       <Text style={styles.title}>Loyalty Platform</Text>
       <Text style={styles.subtitle}>Member App</Text>
       <View style={styles.form}>
-        <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-        <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+        <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="Enter your email" required />
+        <TextInput label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="Enter your password" required />
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
@@ -62,7 +63,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', color: 'white', textAlign: 'center' },
   subtitle: { fontSize: 16, color: '#94a3b8', textAlign: 'center', marginBottom: 40 },
   form: { gap: 14 },
-  input: { backgroundColor: '#334155', borderRadius: 8, padding: 14, fontSize: 16, color: 'white' },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });
