@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { CreateNotificationTemplateDto, SendNotificationDto, BroadcastNotificationDto } from '../common/dto/common.dto';
 
 @ApiTags('Notifications')
@@ -69,5 +70,11 @@ export class NotificationController {
   @ApiOperation({ summary: 'Get notification log by ID' })
   findLogOne(@Param('id') id: string) {
     return this.notificationService.findLogOne(id);
+  }
+
+  @Patch(':id/read')
+  @ApiOperation({ summary: 'Mark notification as read' })
+  markAsRead(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.notificationService.markAsRead(id, user.id);
   }
 }

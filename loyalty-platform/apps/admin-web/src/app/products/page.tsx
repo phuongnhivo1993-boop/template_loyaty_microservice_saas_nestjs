@@ -11,7 +11,8 @@ import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, api } from '@/lib/api';
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, api, restoreItem } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface ProductForm {
   name: string; slug: string; price: string; costPrice: string; stock: string; unit: string; sku: string; status: string; categoryId: string; description: string;
@@ -35,11 +36,23 @@ export default function ProductsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteProduct, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Product',
+    message: 'Delete this product?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteProduct(deletingId); showToast('Product deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
     try {
-      const result = await getProducts({ page, limit, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined });
+      const result = await getProducts({ page, limit, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined, includeDeleted: showDeleted || undefined });
       setProducts(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
@@ -50,7 +63,7 @@ export default function ProductsPage() {
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
-  }, [search, page, statusFilter]);
+  }, [search, page, statusFilter, showDeleted]);
 
   const openCreate = async () => {
     setEditing(null); setForm(emptyForm);
@@ -69,9 +82,13 @@ export default function ProductsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this product?')) return;
-    try { await deleteProduct(id); showToast('Product deleted', 'success'); load(); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteProduct();
+  };
+
+  const handleRestore = async (id: string) => {
+    try { await restoreItem('products', id); showToast('Product restored', 'success'); load(); }
     catch { showToast('Network error', 'error'); }
   };
 
@@ -107,8 +124,12 @@ export default function ProductsPage() {
     { key: 'actions', label: 'Actions', render: (p: any) => (
       <>
         <button onClick={() => router.push(`/products/${p.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
-        <button onClick={() => openEdit(p)} className="btn-secondary btn-sm">Edit</button>
-        <button onClick={() => handleDelete(p.id)} className="btn-danger btn-sm">Delete</button>
+        <button onClick={() => openEdit(p)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        {p.deletedAt ? (
+          <button onClick={() => handleRestore(p.id)} className="btn-secondary btn-sm" style={{ borderColor: '#16a34a', color: '#16a34a' }}>Restore</button>
+        ) : (
+          <button onClick={() => handleDelete(p.id)} className="btn-danger btn-sm">Delete</button>
+        )}
       </>
     )},
   ];
@@ -128,6 +149,10 @@ export default function ProductsPage() {
           </select>
           <input type="text" placeholder="Search products..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); }} />
+            Show deleted
+          </label>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
         <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
@@ -176,6 +201,7 @@ export default function ProductsPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

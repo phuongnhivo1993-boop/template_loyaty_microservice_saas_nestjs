@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
-import { getMyVouchers } from '@/lib/api';
+import { getMyVouchers, redeemVoucher } from '@/lib/api';
+import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 export default function VouchersPage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function VouchersPage() {
   }, [vouchers, search]);
 
   if (loading) {
-    return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
+    return <MemberLayout><CardSkeleton /></MemberLayout>;
   }
 
   return (
@@ -97,6 +98,24 @@ export default function VouchersPage() {
                   Show this QR code at checkout
                 </div>
               </div>
+            )}
+            {!v.redeemed && (
+              <button
+                className="btn btn-primary btn-sm"
+                style={{ marginTop: 12, width: '100%' }}
+                onClick={async () => {
+                  if (!confirm('Use this voucher now?')) return;
+                  try {
+                    await redeemVoucher(v.id);
+                    alert('Voucher redeemed successfully!');
+                    loadData();
+                  } catch (e: any) {
+                    alert(e?.message || 'Failed to redeem voucher');
+                  }
+                }}
+              >
+                Use Now
+              </button>
             )}
           </div>
         ))

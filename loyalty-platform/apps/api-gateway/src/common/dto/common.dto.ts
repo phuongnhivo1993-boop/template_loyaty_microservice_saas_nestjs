@@ -50,7 +50,7 @@ export class CreateCampaignDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
   @ApiProperty() @IsString() startDate: string;
   @ApiProperty() @IsString() endDate: string;
-  @ApiProperty({ required: false }) @IsOptional() budget?: number;
+  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsNumber() budget?: number;
   @ApiProperty() @IsString() tenantId: string;
 }
 
@@ -58,22 +58,22 @@ export class CreateRewardDto {
   @ApiProperty() @IsString() name: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
   @ApiProperty() @IsString() type: string;
-  @ApiProperty() pointsRequired: number;
-  @ApiProperty() quantity: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() pointsRequired: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() quantity: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() imageUrl?: string;
   @ApiProperty() @IsString() tenantId: string;
 }
 
 export class RedeemRewardDto {
   @ApiProperty() @IsString() memberId: string;
-  @ApiProperty({ required: false }) @IsOptional() quantity?: number;
+  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsNumber() quantity?: number;
 }
 
 export class CreateVoucherDto {
   @ApiProperty() @IsString() code: string;
   @ApiProperty() @IsString() type: string;
-  @ApiProperty() value: number;
-  @ApiProperty({ required: false }) @IsOptional() maxUsage?: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() value: number;
+  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsNumber() maxUsage?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() expiresAt?: string;
   @ApiProperty() @IsString() tenantId: string;
 }
@@ -90,13 +90,13 @@ export class PaginationDto {
 
 export class EarnPointsDto {
   @ApiProperty() @IsString() memberId: string;
-  @ApiProperty() amount: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() amount: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() reason?: string;
 }
 
 export class AdjustPointsDto {
   @ApiProperty() @IsString() memberId: string;
-  @ApiProperty() amount: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() amount: number;
   @ApiProperty() @IsString() reason: string;
 }
 

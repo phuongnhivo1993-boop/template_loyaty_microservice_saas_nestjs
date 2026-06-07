@@ -333,6 +333,13 @@ export const deleteCoupon = (id: string) => api.delete(`/coupons/${id}`);
 export const validateCoupon = (data: any) => api.post('/coupons/validate', data);
 export const applyCoupon = (data: any) => api.post('/coupons/apply', data);
 
+// Bulk Restore
+export const bulkRestore = (entity: string, ids: string[]) =>
+  api.post('/bulk/restore', { entity, ids });
+
+export const restoreItem = (entity: string, id: string) =>
+  api.post('/bulk/restore', { entity, ids: [id] });
+
 // Bulk operations - Members
 export const bulkDeleteMembers = (ids: string[]) =>
   api.post('/members/bulk-delete', { ids });

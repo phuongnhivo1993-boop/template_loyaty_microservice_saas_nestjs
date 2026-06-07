@@ -271,3 +271,8 @@ input:focus { border-color: var(--primary); }
   cursor: pointer;
 }
 .referral-code:hover { background: var(--tab-bg); }
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

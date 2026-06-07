@@ -53,6 +53,7 @@ export const getTransactions = (params?: { page?: number; limit?: number; type?:
 
 // Vouchers
 export const getMyVouchers = () => api.get('/me/vouchers');
+export const redeemVoucher = (id: string) => api.post(`/member-vouchers/${id}/redeem`);
 
 // Orders
 export const getMyOrders = (params?: { page?: number; limit?: number }) => {
@@ -62,6 +63,7 @@ export const getMyOrders = (params?: { page?: number; limit?: number }) => {
   const s = q.toString();
   return api.get(`/orders/member/me${s ? `?${s}` : ''}`);
 };
+export const cancelOrder = (id: string, reason?: string) => api.post(`/orders/${id}/cancel`, { reason });
 
 // Check-in
 export const getCheckinStatus = () => api.get('/checkin/stats');
@@ -80,6 +82,9 @@ export const getMissions = () => api.get('/me/missions');
 // Notifications
 export const getNotifications = () => api.get('/me/notifications');
 export const markNotificationRead = (id: string) => api.patch(`/me/notifications/${id}/read`, {});
+
+// Stores
+export const getStores = (params?: any) => api.get('/stores');
 
 // Feedback
 export const getMyFeedback = () => api.get('/me/feedback');

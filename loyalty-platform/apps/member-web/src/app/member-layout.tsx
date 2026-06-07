@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Tier', href: '/tier-progress', icon: '📈' },
   { label: 'Notifications', href: '/notifications', icon: '🔔' },
   { label: 'Feedback', href: '/feedback', icon: '💬' },
+  { label: 'Stores', href: '/stores', icon: '🏪' },
   { label: 'Check-in', href: '/checkin', icon: '✅' },
   { label: 'Profile', href: '/profile', icon: '👤' },
 ];

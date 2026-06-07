@@ -127,4 +127,16 @@ export class NotificationService {
     if (!log) throw new NotFoundException('Notification log not found');
     return log;
   }
+
+  async markAsRead(id: string, userId: string) {
+    const log = await this.prisma.notificationLog.findUnique({
+      where: { id },
+    });
+    if (!log) throw new NotFoundException('Notification log not found');
+    if (log.recipient !== userId) throw new NotFoundException('Notification log not found');
+    return this.prisma.notificationLog.update({
+      where: { id },
+      data: { status: 'READ' },
+    });
+  }
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getProfile, updateProfile, changePassword } from '@/lib/api';
+import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
+    return <MemberLayout><CardSkeleton /></MemberLayout>;
   }
 
   return (

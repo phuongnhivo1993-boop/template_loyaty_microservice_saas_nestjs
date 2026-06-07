@@ -14,13 +14,22 @@ import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
-import { getMembers, createMember, updateMember, deleteMember, getTiers, bulkDeleteMembers, bulkActivateMembers, bulkDeactivateMembers } from '@/lib/api';
+import { getMembers, createMember, updateMember, deleteMember, getTiers, bulkDeleteMembers, bulkActivateMembers, bulkDeactivateMembers, restoreItem } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
+import { validateForm } from '@/lib/validation';
+import type { ValidationSchema } from '@/lib/validation';
 
 interface MemberForm {
   fullName: string; email: string; phone: string; birthday: string; status: string;
 }
 
 const emptyForm: MemberForm = { fullName: '', email: '', phone: '', birthday: '', status: 'ACTIVE' };
+
+const formSchema: ValidationSchema = {
+  fullName: { required: true, minLength: 2, maxLength: 100 },
+  email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, patternMessage: 'Enter a valid email address' },
+  phone: { pattern: /^[+]?[\d\s()-]{7,20}$/, patternMessage: 'Enter a valid phone number' },
+};
 
 export default function MembersPage() {
   const router = useRouter();
@@ -31,6 +40,7 @@ export default function MembersPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<MemberForm>(emptyForm);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('');
   const [tierOptions, setTierOptions] = useState<any[]>([]);
@@ -44,11 +54,26 @@ export default function MembersPage() {
   const [showTagModal, setShowTagModal] = useState(false);
   const [tagAction, setTagAction] = useState<'add' | 'remove'>('add');
   const [tagInput, setTagInput] = useState('');
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteMember, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Member',
+    message: 'Delete this member? This action cannot be undone.',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try {
+        await deleteMember(deletingId);
+        showToast('Member deleted successfully', 'success');
+        load();
+      } catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
     try {
-      const result = await getMembers({ page, limit, search: search || undefined, tierId: tierFilter || undefined, tags: tagFilter || undefined });
+      const result = await getMembers({ page, limit, search: search || undefined, tierId: tierFilter || undefined, tags: tagFilter || undefined, includeDeleted: showDeleted || undefined });
       setMembers(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
@@ -60,22 +85,29 @@ export default function MembersPage() {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
     getTiers().then(result => { setTierOptions(result.data); }).catch(() => {});
-  }, [search, page, tierFilter, tagFilter]);
+  }, [search, page, tierFilter, tagFilter, showDeleted]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
-  const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', birthday: m.birthday ? m.birthday.slice(0, 10) : '', status: m.status }); setShowModal(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setFormErrors({}); setShowModal(true); };
+  const openEdit = (m: any) => { setEditing(m); setForm({ fullName: m.fullName, email: m.email, phone: m.phone || '', birthday: m.birthday ? m.birthday.slice(0, 10) : '', status: m.status }); setFormErrors({}); setShowModal(true); };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this member? This action cannot be undone.')) return;
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteMember();
+  };
+
+  const handleRestore = async (id: string) => {
     try {
-      await deleteMember(id);
-      showToast('Member deleted successfully', 'success');
+      await restoreItem('members', id);
+      showToast('Member restored successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateForm(form, formSchema);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setSubmitting(true);
     try {
       if (editing) {
@@ -118,8 +150,12 @@ export default function MembersPage() {
     )) : <span className="text-muted" style={{ fontSize: '12px' }}>—</span> },
     { key: 'actions', label: 'Actions', render: (m: any) => (
       <>
-        <button onClick={() => openEdit(m)} className="btn-secondary btn-sm">Edit</button>
-        <button onClick={() => handleDelete(m.id)} className="btn-danger btn-sm">Delete</button>
+        <button onClick={() => openEdit(m)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        {m.deletedAt ? (
+          <button onClick={() => handleRestore(m.id)} className="btn-secondary btn-sm" style={{ borderColor: '#16a34a', color: '#16a34a' }}>Restore</button>
+        ) : (
+          <button onClick={() => handleDelete(m.id)} className="btn-danger btn-sm">Delete</button>
+        )}
       </>
     )},
   ];
@@ -159,6 +195,10 @@ export default function MembersPage() {
           </select>
           <input type="text" placeholder="Search name, email, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{total > 0 ? `${total} results` : ''}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); }} />
+            Show deleted
+          </label>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
@@ -204,9 +244,9 @@ export default function MembersPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Member' : 'New Member'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            <FormInput label="Full Name" value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} required />
-            <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" />
-            <FormInput label="Phone" value={form.phone} onChange={v => setForm({ ...form, phone: v })} type="tel" />
+            <FormInput label="Full Name" value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} required error={formErrors.fullName} />
+            <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" error={formErrors.email} />
+            <FormInput label="Phone" value={form.phone} onChange={v => setForm({ ...form, phone: v })} type="tel" error={formErrors.phone} />
             <FormInput label="Birthday" value={form.birthday} onChange={v => setForm({ ...form, birthday: v })} type="date" />
             <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })}
               options={[
@@ -248,6 +288,7 @@ export default function MembersPage() {
             }} className="btn-primary">{tagAction === 'add' ? 'Add Tags' : 'Remove Tags'}</button>
           </div>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

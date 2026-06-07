@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MemberLayout from '../../member-layout';
-import { api } from '@/lib/api';
+import { api, cancelOrder } from '@/lib/api';
+import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 const statusColors: Record<string, string> = {
   PENDING: '#f59e0b', CONFIRMED: '#3b82f6', PROCESSING: '#8b5cf6',
@@ -32,7 +33,7 @@ export default function OrderDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
+    return <MemberLayout><CardSkeleton /></MemberLayout>;
   }
 
   if (!order) {
@@ -100,6 +101,24 @@ export default function OrderDetailPage() {
       <div className="card" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
         Created: {new Date(order.createdAt).toLocaleString('vi-VN')}
       </div>
+
+      {['PENDING', 'CONFIRMED', 'PROCESSING'].includes(order.status) && (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <button
+            className="btn"
+            style={{ background: 'var(--error)', color: 'white' }}
+            onClick={() => {
+              const reason = prompt('Reason for cancellation (optional):');
+              if (reason === null) return;
+              cancelOrder(order.id, reason || undefined)
+                .then(() => { alert('Order cancelled'); loadData(); })
+                .catch((e: any) => alert(e?.message || 'Failed to cancel order'));
+            }}
+          >
+            Cancel Order
+          </button>
+        </div>
+      )}
     </MemberLayout>
   );
 }

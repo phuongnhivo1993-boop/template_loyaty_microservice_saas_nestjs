@@ -14,13 +14,22 @@ import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/F
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
-import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf, bulkDeleteCampaigns, bulkActivateCampaigns } from '@/lib/api';
+import { getCampaigns, createCampaign, updateCampaign, deleteCampaign, getCampaignPerf, bulkDeleteCampaigns, bulkActivateCampaigns, restoreItem } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
+import { validateForm } from '@/lib/validation';
+import type { ValidationSchema } from '@/lib/validation';
 
 interface CampaignForm {
   name: string; description: string; startDate: string; endDate: string; budget: string; status: string;
 }
 
 const emptyForm: CampaignForm = { name: '', description: '', startDate: '', endDate: '', budget: '', status: 'DRAFT' };
+
+const formSchema: ValidationSchema = {
+  name: { required: true, minLength: 2, maxLength: 200 },
+  startDate: { required: true, custom: (v) => v && isNaN(Date.parse(v)) ? 'Enter a valid date' : null },
+  endDate: { required: true, custom: (v) => v && isNaN(Date.parse(v)) ? 'Enter a valid date' : null },
+};
 
 export default function CampaignsPage() {
   const router = useRouter();
@@ -30,6 +39,7 @@ export default function CampaignsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<CampaignForm>(emptyForm);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
@@ -39,11 +49,26 @@ export default function CampaignsPage() {
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [performances, setPerformances] = useState<Record<string, any>>({});
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteCampaign, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Campaign',
+    message: 'Delete this campaign?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try {
+        await deleteCampaign(deletingId);
+        showToast('Campaign deleted successfully', 'success');
+        load();
+      } catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
     try {
-      const result = await getCampaigns({ page, limit, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined });
+      const result = await getCampaigns({ page, limit, search: search || undefined, status: statusFilter !== 'ALL' ? statusFilter : undefined, includeDeleted: showDeleted || undefined });
       setCampaigns(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
@@ -62,29 +87,37 @@ export default function CampaignsPage() {
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
     load();
-  }, [search, page, statusFilter]);
+  }, [search, page, statusFilter, showDeleted]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setFormErrors({}); setShowModal(true); };
   const openEdit = (c: any) => {
     setEditing(c);
     setForm({
       name: c.name, description: c.description || '', startDate: c.startDate?.slice(0, 10) || '',
       endDate: c.endDate?.slice(0, 10) || '', budget: c.budget?.toString() || '', status: c.status || 'DRAFT',
     });
+    setFormErrors({});
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this campaign?')) return;
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteCampaign();
+  };
+
+  const handleRestore = async (id: string) => {
     try {
-      await deleteCampaign(id);
-      showToast('Campaign deleted successfully', 'success');
+      await restoreItem('campaigns', id);
+      showToast('Campaign restored successfully', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateForm(form, formSchema);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     try {
       const body = { ...form, budget: form.budget ? Number(form.budget) : undefined };
       if (editing) {
@@ -130,8 +163,12 @@ export default function CampaignsPage() {
     { key: 'actions', label: 'Actions', render: (c: any) => (
       <>
         <button onClick={() => router.push(`/campaigns/${c.id}`)} className="btn-primary btn-sm" style={{ marginRight: '8px' }}>View</button>
-        <button onClick={() => openEdit(c)} className="btn-secondary btn-sm">Edit</button>
-        <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
+        <button onClick={() => openEdit(c)} className="btn-secondary btn-sm" style={{ marginRight: '8px' }}>Edit</button>
+        {c.deletedAt ? (
+          <button onClick={() => handleRestore(c.id)} className="btn-secondary btn-sm" style={{ borderColor: '#16a34a', color: '#16a34a' }}>Restore</button>
+        ) : (
+          <button onClick={() => handleDelete(c.id)} className="btn-danger btn-sm">Delete</button>
+        )}
       </>
     )},
   ];
@@ -158,6 +195,10 @@ export default function CampaignsPage() {
           </select>
           <input type="text" placeholder="Search campaigns..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="search-input" />
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showDeleted} onChange={e => { setShowDeleted(e.target.checked); setPage(1); }} />
+            Show deleted
+          </label>
           <button onClick={() => setShowImport(true)} className="btn-secondary">Import CSV</button>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
@@ -197,11 +238,11 @@ export default function CampaignsPage() {
 
         <Modal open={showModal} title={editing ? 'Edit Campaign' : 'New Campaign'} onClose={() => setShowModal(false)} width={520}>
           <form onSubmit={handleSubmit}>
-            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required />
+            <FormInput label="Name" value={form.name} onChange={v => setForm({ ...form, name: v })} required error={formErrors.name} />
             <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
             <div className="grid-2">
-              <FormInput label="Start Date" type="date" value={form.startDate} onChange={v => setForm({ ...form, startDate: v })} required />
-              <FormInput label="End Date" type="date" value={form.endDate} onChange={v => setForm({ ...form, endDate: v })} required />
+              <FormInput label="Start Date" type="date" value={form.startDate} onChange={v => setForm({ ...form, startDate: v })} required error={formErrors.startDate} />
+              <FormInput label="End Date" type="date" value={form.endDate} onChange={v => setForm({ ...form, endDate: v })} required error={formErrors.endDate} />
             </div>
             <FormInput label="Budget (VND)" type="number" value={form.budget} onChange={v => setForm({ ...form, budget: v })} />
             <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })} options={[
@@ -214,6 +255,7 @@ export default function CampaignsPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="campaigns" entityLabel="campaigns" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

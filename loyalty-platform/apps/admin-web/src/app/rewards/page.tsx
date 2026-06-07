@@ -13,6 +13,7 @@ import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getRewards, createReward, updateReward, deleteReward } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface RewardForm {
   name: string; description: string; type: string; pointsRequired: string; quantity: string; imageUrl: string;
@@ -36,6 +37,20 @@ export default function RewardsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteReward, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Reward',
+    message: 'Delete this reward?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try {
+        await deleteReward(deletingId);
+        showToast('Reward deleted successfully', 'success');
+        load();
+      } catch { showToast('Failed to delete reward', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -64,13 +79,9 @@ export default function RewardsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this reward?')) return;
-    try {
-      await deleteReward(id);
-      showToast('Reward deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete reward', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteReward();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,6 +185,7 @@ export default function RewardsPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="rewards" entityLabel="rewards" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

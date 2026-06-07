@@ -46,6 +46,7 @@ import { MemberSegmentationModule } from './member-segmentation/member-segmentat
 import { CouponModule } from './coupon/coupon.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { CommonModule } from './common/common.module';
+import { InvoiceModule } from './invoice/invoice.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { Customer360Module } from './customer360/customer360.module';
 import { HealthModule } from './health/health.module';
@@ -94,6 +95,7 @@ import { HealthModule } from './health/health.module';
     CouponModule,
     WebSocketModule,
     CommonModule,
+    InvoiceModule,
     SubscriptionModule,
     Customer360Module,
     HealthModule,

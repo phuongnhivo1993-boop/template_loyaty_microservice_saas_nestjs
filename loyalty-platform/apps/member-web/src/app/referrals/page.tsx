@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getReferrals } from '@/lib/api';
+import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function ReferralsPage() {
   const shareLink = refCode ? `${typeof window !== 'undefined' ? window.location.origin : ''}/register?ref=${refCode}` : '';
 
   if (loading) {
-    return <MemberLayout><div className="card" style={{ textAlign: 'center', padding: '60px' }}>Loading...</div></MemberLayout>;
+    return <MemberLayout><CardSkeleton /></MemberLayout>;
   }
 
   return (
