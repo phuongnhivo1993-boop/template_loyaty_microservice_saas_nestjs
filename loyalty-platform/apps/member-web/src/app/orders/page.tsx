@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyOrders } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 const PAGE_SIZE = 10;
 
@@ -97,10 +98,7 @@ export default function OrdersPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📦</div>
-          <div className="empty-text">{search ? 'No orders match your search' : 'No orders yet'}</div>
-        </div>
+        <EmptyState icon="📦" title={search ? 'No orders match your search' : 'No orders yet'} action={{ label: 'Start shopping', onClick: () => router.push('/orders/create') }} />
       ) : (
         <>
           {paginated.map((o: any) => (

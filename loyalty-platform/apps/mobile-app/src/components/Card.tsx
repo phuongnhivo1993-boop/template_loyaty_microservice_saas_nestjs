@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { useColors } from '../theme/useColors';
 
 interface CardProps {
   children: React.ReactNode;
@@ -7,9 +8,10 @@ interface CardProps {
 }
 
 export default function Card({ children, style, title }: CardProps) {
+  const colors = useColors();
   return (
-    <View style={[styles.card, style]}>
-      {title && <Text style={styles.title}>{title}</Text>}
+    <View style={[styles.card, { backgroundColor: colors.card }, style]}>
+      {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
       {children}
     </View>
   );
@@ -17,7 +19,6 @@ export default function Card({ children, style, title }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -28,7 +29,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1e293b',
     marginBottom: 12,
   },
 });

@@ -6,13 +6,15 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getGiftCards, createGiftCard, updateGiftCard, assignGiftCard, getMembers, duplicateEntity } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface GiftCardForm {
   code: string; initialValue: string; type: string; expiryDate: string; status: string;
@@ -41,6 +43,17 @@ export default function GiftCardsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteGiftCard, modal: deleteModal } = useConfirmDelete({
+    title: 'Deactivate Gift Card',
+    message: 'Deactivate this gift card?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await updateGiftCard(deletingId, { status: 'INACTIVE' }); showToast('Gift card deactivated', 'success'); load(); }
+      catch { showToast('Operation failed', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -93,13 +106,9 @@ export default function GiftCardsPage() {
     } catch { showToast('Failed to assign gift card', 'error'); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this gift card?')) return;
-    try {
-      await updateGiftCard(id, { status: 'INACTIVE' });
-      showToast('Gift card deactivated', 'success');
-      load();
-    } catch { showToast('Operation failed', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteGiftCard();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,19 +192,16 @@ export default function GiftCardsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Deactivate ${selectedIds.length} gift cards?`)) return;
-            for (const id of selectedIds) await updateGiftCard(id, { status: 'INACTIVE' });
-            showToast(`Deactivated ${selectedIds.length} gift cards`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['code', 'initialValue', 'balance', 'type', 'status', 'expiryDate'];
-            const rows = cards.filter(c => selectedIds.includes(c.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-gift-cards.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Deactivate Selected', variant: 'danger', confirmMessage: 'Xác nhận hủy kích hoạt', onClick: async (ids) => { for (const id of ids) await updateGiftCard(id, { status: 'INACTIVE' }); } },
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['code', 'initialValue', 'balance', 'type', 'status', 'expiryDate'];
+              const rows = cards.filter(c => ids.includes(c.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-gift-cards.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={cards} emptyMessage="No gift cards found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
@@ -231,6 +237,7 @@ export default function GiftCardsPage() {
         </Modal>
 
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="gift-cards" entityLabel="gift cards" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

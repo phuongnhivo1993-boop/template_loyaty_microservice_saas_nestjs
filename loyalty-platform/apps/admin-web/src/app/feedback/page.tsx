@@ -11,6 +11,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getFeedbackList, updateFeedback, deleteFeedback, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 const ratingColors: Record<number, string> = {
   1: '#dc2626', 2: '#ea580c', 3: '#d97706', 4: '#16a34a', 5: '#2563eb',
@@ -30,6 +31,17 @@ export default function FeedbackPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteFeedback, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Feedback',
+    message: 'Delete this feedback permanently?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteFeedback(deletingId); showToast('Feedback deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -69,13 +81,9 @@ export default function FeedbackPage() {
     } catch { showToast('Operation failed', 'error'); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this feedback permanently?')) return;
-    try {
-      await deleteFeedback(id);
-      showToast('Feedback deleted', 'success');
-      load();
-    } catch { showToast('Failed to delete', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteFeedback();
   };
 
   const columns = [
@@ -166,6 +174,7 @@ export default function FeedbackPage() {
           ]} />
         <DataTable columns={columns} data={feedbacks} emptyMessage="No feedback found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        {deleteModal}
       </main>
     </div>
   );

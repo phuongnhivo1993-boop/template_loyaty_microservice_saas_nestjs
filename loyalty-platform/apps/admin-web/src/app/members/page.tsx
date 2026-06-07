@@ -246,7 +246,7 @@ export default function MembersPage() {
         <Modal open={showModal} title={editing ? 'Edit Member' : 'New Member'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
             <FormInput label="Full Name" value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} required error={formErrors.fullName} />
-            <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" error={formErrors.email} />
+            <FormInput label="Email" value={form.email} onChange={v => setForm({ ...form, email: v })} required type="email" error={formErrors.email} helpText="Email must be unique across all members" />
             <FormInput label="Phone" value={form.phone} onChange={v => setForm({ ...form, phone: v })} type="tel" error={formErrors.phone} />
             <FormInput label="Birthday" value={form.birthday} onChange={v => setForm({ ...form, birthday: v })} type="date" />
             <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })}

@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 import { getFeedback, updateFeedback, deleteFeedback } from '@/lib/api';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const ratingColors: Record<number, string> = {
   1: '#dc2626', 2: '#ea580c', 3: '#d97706', 4: '#16a34a', 5: '#2563eb',
@@ -16,6 +17,7 @@ export default function FeedbackDetailPage({ params }: { params: { id: string } 
   const { showToast } = useToast();
   const [feedback, setFeedback] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     getFeedback(params.id)
@@ -46,8 +48,12 @@ export default function FeedbackDetailPage({ params }: { params: { id: string } 
     } catch { showToast('Operation failed', 'error'); }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this feedback permanently?')) return;
+  const handleDelete = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     try {
       await deleteFeedback(params.id);
       showToast('Feedback deleted', 'success');
@@ -113,6 +119,7 @@ export default function FeedbackDetailPage({ params }: { params: { id: string } 
         ) : (
           <p style={{ color: '#dc2626' }}>Feedback not found</p>
         )}
+        <ConfirmModal open={showConfirmDelete} title="Delete Feedback" message="Delete this feedback permanently?" onConfirm={handleConfirmDelete} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

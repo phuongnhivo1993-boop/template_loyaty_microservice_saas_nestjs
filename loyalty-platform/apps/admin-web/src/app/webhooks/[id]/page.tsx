@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import DataTable from '@/components/DataTable';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getWebhookEndpoint, updateWebhookEndpoint, deleteWebhookEndpoint, testWebhookEndpoint, getWebhookLogs } from '@/lib/api';
 
 export default function WebhookDetailPage({ params }: { params: { id: string } }) {
@@ -22,6 +23,7 @@ export default function WebhookDetailPage({ params }: { params: { id: string } }
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     getWebhookEndpoint(params.id)
@@ -48,8 +50,12 @@ export default function WebhookDetailPage({ params }: { params: { id: string } }
     setShowEditModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this webhook endpoint?')) return;
+  const handleDelete = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     try {
       await deleteWebhookEndpoint(params.id);
       showToast('Webhook endpoint deleted', 'success');
@@ -171,6 +177,7 @@ export default function WebhookDetailPage({ params }: { params: { id: string } }
             <DataTable columns={logColumns} data={logs} emptyMessage="No logs found for this endpoint" />
           )}
         </Modal>
+        <ConfirmModal open={showConfirmDelete} title="Delete Webhook" message="Delete this webhook endpoint?" onConfirm={handleConfirmDelete} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

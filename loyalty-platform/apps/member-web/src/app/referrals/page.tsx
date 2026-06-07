@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getReferrals } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -70,10 +71,7 @@ export default function ReferralsPage() {
       <div className="card">
         <div style={{ fontWeight: 600, marginBottom: '12px' }}>Your Referrals ({referrals.length})</div>
         {referrals.length === 0 ? (
-          <div className="empty-state" style={{ padding: '20px 0' }}>
-            <div className="empty-icon">👥</div>
-            <div className="empty-text">No referrals yet. Share your code!</div>
-          </div>
+          <EmptyState icon="👥" title="No referrals yet. Share your code!" action={{ label: 'Copy your code', onClick: () => { if (refCode) navigator.clipboard.writeText(refCode); }}} />
         ) : (
           referrals.map((r: any) => (
             <div key={r.id} className="tx-item">

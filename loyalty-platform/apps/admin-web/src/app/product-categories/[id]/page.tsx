@@ -7,6 +7,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import { FormInput, FormTextarea, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getProductCategory, updateProductCategory, deleteProductCategory } from '@/lib/api';
 
 export default function ProductCategoryDetailPage({ params }: { params: { id: string } }) {
@@ -17,6 +18,7 @@ export default function ProductCategoryDetailPage({ params }: { params: { id: st
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     getProductCategory(params.id)
@@ -42,8 +44,12 @@ export default function ProductCategoryDetailPage({ params }: { params: { id: st
     setShowEditModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this category?')) return;
+  const handleDelete = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     try {
       await deleteProductCategory(params.id);
       showToast('Category deleted', 'success');
@@ -117,6 +123,7 @@ export default function ProductCategoryDetailPage({ params }: { params: { id: st
             <FormActions onCancel={() => setShowEditModal(false)} loading={submitting} submitLabel="Save" />
           </form>
         </Modal>
+        <ConfirmModal open={showConfirmDelete} title="Delete Category" message="Delete this category?" onConfirm={handleConfirmDelete} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

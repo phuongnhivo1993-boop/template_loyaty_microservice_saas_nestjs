@@ -19,11 +19,14 @@ interface DataTableProps<T> {
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   onRowClick?: (item: T) => void;
+  createLabel?: string;
+  onCreate?: () => void;
 }
 
 export default function DataTable<T extends Record<string, any>>({
   columns, data, loading, emptyMessage = 'No data found',
   selectable, selectedIds = [], onSelectionChange, onRowClick,
+  createLabel, onCreate,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -108,7 +111,16 @@ export default function DataTable<T extends Record<string, any>>({
         </thead>
         <tbody>
           {sorted.length === 0 ? (
-            <tr><td colSpan={columns.length + (selectable ? 1 : 0)} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>{emptyMessage}</td></tr>
+            <tr>
+              <td colSpan={columns.length + (selectable ? 1 : 0)} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                {emptyMessage}
+                {createLabel && onCreate && (
+                  <div style={{ marginTop: '12px' }}>
+                    <button onClick={onCreate} className="btn-primary btn-sm">{`Create first ${createLabel}`}</button>
+                  </div>
+                )}
+              </td>
+            </tr>
           ) : sorted.map((item, i) => (
             <tr
               key={item.id || i}

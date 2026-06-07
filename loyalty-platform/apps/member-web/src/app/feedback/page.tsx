@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyFeedback, submitFeedback } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function FeedbackPage() {
   const router = useRouter();
@@ -135,10 +136,7 @@ export default function FeedbackPage() {
         </div>
       ) : (
         feedbackList.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">💬</div>
-            <div className="empty-text">No feedback yet</div>
-          </div>
+          <EmptyState icon="💬" title="No feedback yet" action={{ label: 'Submit your first feedback', onClick: () => setTab('submit') }} />
         ) : (
           feedbackList.map((f: any) => (
             <div key={f.id} className="card">

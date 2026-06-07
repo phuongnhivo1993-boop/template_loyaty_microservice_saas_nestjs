@@ -106,6 +106,8 @@ export const vouchers = {
 
 export const notifications = {
   list: () => api.get('/me/notifications'),
+  markAsRead: (id: string) => api.patch(`/me/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/me/notifications/read-all'),
 };
 
 export const checkin = {

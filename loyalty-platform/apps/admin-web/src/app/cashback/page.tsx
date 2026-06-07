@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getCashbackConfigs, createCashbackConfig, updateCashbackConfig, deleteCashbackConfig, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface ConfigForm {
   name: string; description: string; rate: string; minAmount: string; maxAmount: string; status: string;
@@ -35,6 +36,17 @@ export default function CashbackPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteCashback, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Cashback Config',
+    message: 'Delete this cashback config?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteCashbackConfig(deletingId); showToast('Cashback config deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -66,13 +78,9 @@ export default function CashbackPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this cashback config?')) return;
-    try {
-      await deleteCashbackConfig(id);
-      showToast('Cashback config deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete config', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteCashback();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,6 +168,7 @@ export default function CashbackPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

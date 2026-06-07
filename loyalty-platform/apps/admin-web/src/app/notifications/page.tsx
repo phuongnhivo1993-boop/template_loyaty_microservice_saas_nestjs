@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getNotificationTemplates, getNotificationLogs, createTemplate, updateTemplate, deleteTemplate, sendNotification, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface TemplateForm { name: string; type: string; subject: string; content: string; variables: string; }
 
@@ -39,6 +40,18 @@ export default function NotificationsPage() {
   const [sendForm, setSendForm] = useState({ templateId: '', recipient: '', channel: 'EMAIL', variables: '{}' });
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteTemplate, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Template',
+    message: 'Delete this template?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteTemplate(deletingId); showToast('Template deleted', 'success'); loadTemplates(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
+
   const [showImport, setShowImport] = useState(false);
 
   const loadTemplates = async () => {
@@ -82,13 +95,9 @@ export default function NotificationsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this template?')) return;
-    try {
-      await deleteTemplate(id);
-      showToast('Template deleted successfully', 'success');
-      loadTemplates();
-    } catch { showToast('Failed to delete template', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteTemplate();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -270,6 +279,7 @@ export default function NotificationsPage() {
             <FormActions onCancel={() => setShowSendModal(false)} loading={false} submitLabel="Send" cancelLabel="Cancel" />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

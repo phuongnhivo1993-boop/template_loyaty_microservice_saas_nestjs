@@ -1,6 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsNumber, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDateString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+export enum CampaignStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  ENDED = 'ENDED',
+}
 
 export class CreateCampaignDto {
   @ApiProperty() @IsString() name: string;
@@ -14,7 +21,7 @@ export class CreateCampaignDto {
 export class UpdateCampaignDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() status?: string;
+  @ApiProperty({ required: false, enum: CampaignStatus }) @IsOptional() @IsEnum(CampaignStatus) status?: CampaignStatus;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() budget?: number;
 }
 

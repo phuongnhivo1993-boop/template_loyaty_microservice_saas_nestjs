@@ -4,9 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import { stores } from '../services/api';
 import type { Store } from '../services/types';
 import { LoadingState, ErrorState, EmptyState, Header } from '../components';
+import { useColors } from '../theme/useColors';
 
 export default function StoresScreen() {
   const navigation = useNavigation<any>();
+  const colors = useColors();
   const [items, setItems] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,33 +52,33 @@ export default function StoresScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Stores" subtitle="Find our branches near you" />
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primaryDark]} />}
         data={items}
         keyExtractor={(item: Store) => item.id}
         renderItem={({ item }: { item: Store }) => (
-          <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => navigation.navigate('StoreDetail', { store: item })}>
+          <TouchableOpacity style={[styles.card, { backgroundColor: colors.card }]} activeOpacity={0.7} onPress={() => navigation.navigate('StoreDetail', { store: item })}>
             <View style={styles.cardHeader}>
-              <Text style={styles.storeName}>{item.name}</Text>
-              <View style={styles.mapPlaceholder}>
+              <Text style={[styles.storeName, { color: colors.text }]}>{item.name}</Text>
+              <View style={[styles.mapPlaceholder, { backgroundColor: colors.border }]}>
                 <Text style={styles.mapIcon}>📍</Text>
               </View>
             </View>
-            <Text style={styles.address}>{item.address}</Text>
+            <Text style={[styles.address, { color: colors.textSecondary }]}>{item.address}</Text>
             {item.phone && (
               <TouchableOpacity style={styles.phoneRow} onPress={() => callStore(item.phone!)}>
                 <Text style={styles.phoneIcon}>📞</Text>
-                <Text style={styles.phone}>{item.phone}</Text>
+                <Text style={[styles.phone, { color: colors.primaryDark }]}>{item.phone}</Text>
               </TouchableOpacity>
             )}
-            {item.hours && <Text style={styles.hours}>🕐 {item.hours}</Text>}
+            {item.hours && <Text style={[styles.hours, { color: colors.textSecondary }]}>🕐 {item.hours}</Text>}
             <View style={styles.actions}>
               {item.lat && item.lng && (
-                <TouchableOpacity style={styles.actionBtn} onPress={() => openMap(item)}>
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primaryDark }]} onPress={() => openMap(item)}>
                   <Text style={styles.actionText}>Navigate</Text>
                 </TouchableOpacity>
               )}
@@ -93,22 +95,19 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { padding: 16, paddingBottom: 24 },
   card: {
-    backgroundColor: 'white', borderRadius: 14, padding: 18, marginBottom: 12,
+    borderRadius: 14, padding: 18, marginBottom: 12,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  storeName: { fontSize: 17, fontWeight: '700', color: '#1e293b', flex: 1 },
-  mapPlaceholder: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
+  storeName: { fontSize: 17, fontWeight: '700', flex: 1 },
+  mapPlaceholder: { width: 48, height: 48, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   mapIcon: { fontSize: 22 },
-  address: { fontSize: 14, color: '#64748b', marginBottom: 6 },
+  address: { fontSize: 14, marginBottom: 6 },
   phoneRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   phoneIcon: { fontSize: 14, marginRight: 6 },
-  phone: { fontSize: 14, color: '#2563eb', fontWeight: '600' },
-  hours: { fontSize: 13, color: '#94a3b8', marginBottom: 8 },
+  phone: { fontSize: 14, fontWeight: '600' },
+  hours: { fontSize: 13, marginBottom: 8 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  actionBtn: {
-    paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#2563eb',
-    borderRadius: 8,
-  },
+  actionBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
   actionText: { color: 'white', fontSize: 13, fontWeight: '600' },
 });

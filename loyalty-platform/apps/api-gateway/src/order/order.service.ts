@@ -35,12 +35,14 @@ export class OrderService {
 
     let discount = data.discount ?? 0;
     let couponCode = data.couponCode;
+    let couponValidation: any = null;
     if (data.couponCode) {
       try {
         const result = await this.couponService.validate(data.couponCode, data.memberId, subtotal - discount, data.tenantId);
         if (result.valid) {
           discount += result.discount;
           couponCode = data.couponCode;
+          couponValidation = result;
         }
       } catch { }
     }
@@ -56,61 +58,74 @@ export class OrderService {
     });
     const pointsEarned = earningRule ? Math.floor(total * Number(earningRule.pointsPerUnit)) : Math.floor(total);
 
-    const order = await this.prisma.order.create({
-      data: {
-        orderCode,
-        memberId: data.memberId,
-        tenantId: data.tenantId,
-        storeId: data.storeId,
-        subtotal,
-        discount,
-        shippingFee,
-        tax,
-        total,
-        pointsEarned,
-        couponCode,
-        notes: data.notes,
-        shippingAddress: data.shippingAddress ?? undefined,
-        paymentMethod: data.paymentMethod,
-        items: { create: orderItems },
-      },
-      include: { items: true },
-    });
+    const result = await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          orderCode,
+          memberId: data.memberId,
+          tenantId: data.tenantId,
+          storeId: data.storeId,
+          subtotal,
+          discount,
+          shippingFee,
+          tax,
+          total,
+          pointsEarned,
+          couponCode,
+          notes: data.notes,
+          shippingAddress: data.shippingAddress ?? undefined,
+          paymentMethod: data.paymentMethod,
+          items: { create: orderItems },
+        },
+        include: { items: true },
+      });
 
-    await this.prisma.member.update({
-      where: { id: data.memberId },
-      data: {
-        totalPoints: { increment: pointsEarned },
-        availablePoints: { increment: pointsEarned },
-      },
-    });
+      await tx.member.update({
+        where: { id: data.memberId },
+        data: {
+          totalPoints: { increment: pointsEarned },
+          availablePoints: { increment: pointsEarned },
+        },
+      });
 
-    await this.prisma.pointTransaction.create({
-      data: {
-        memberId: data.memberId,
-        type: 'EARN',
-        amount: pointsEarned,
-        balance: member.availablePoints + pointsEarned,
-        reason: `Points from order ${orderCode}`,
-        reference: order.id,
-      },
-    });
+      await tx.pointTransaction.create({
+        data: {
+          memberId: data.memberId,
+          type: 'EARN',
+          amount: pointsEarned,
+          balance: member.availablePoints + pointsEarned,
+          reason: `Points from order ${orderCode}`,
+          reference: order.id,
+        },
+      });
 
-    if (data.couponCode) {
-      try {
-        await this.couponService.apply(data.couponCode, data.memberId, order.id, subtotal, data.tenantId);
-      } catch { }
-    }
+      if (data.couponCode && couponValidation?.valid) {
+        await tx.coupon.update({
+          where: { id: couponValidation.coupon.id },
+          data: { usedCount: { increment: 1 } },
+        });
+        await tx.couponUsage.create({
+          data: {
+            couponId: couponValidation.coupon.id,
+            memberId: data.memberId,
+            orderId: order.id,
+            discountAmount: couponValidation.discount,
+          },
+        });
+      }
+
+      return order;
+    });
 
     try {
-      this.wsGateway.emitOrderCreated(order);
+      this.wsGateway.emitOrderCreated(result);
       this.wsGateway.emitPointsEarned(data.memberId, pointsEarned, member.availablePoints + pointsEarned, `Points from order ${orderCode}`);
       if (data.couponCode) {
         this.wsGateway.emitCouponApplied(data.couponCode, data.memberId, discount, orderCode);
       }
     } catch { }
 
-    return order;
+    return result;
   }
 
   async findAll(query: { tenantId?: string; memberId?: string; page?: number; limit?: number; status?: string; search?: string; sort?: string; storeId?: string; paymentMethod?: string; dateFrom?: string; dateTo?: string }) {

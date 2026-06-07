@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getWallet, getTransactions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 const PAGE_SIZE = 10;
 
@@ -94,15 +95,12 @@ export default function WalletPage() {
 
       <div className="card" style={{ fontWeight: 600, marginBottom: '12px' }}>Recent Transactions</div>
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📭</div>
-          <div className="empty-text">No transactions yet</div>
-        </div>
+        <EmptyState icon="📭" title="No transactions yet" action={{ label: 'Earn your first points', onClick: () => router.push('/rewards') }} />
       ) : (
         <>
           <div className="card" style={{ padding: '0 20px' }}>
             {paginated.map((tx: any) => (
-              <div key={tx.id} className="tx-item">
+              <div key={tx.id} className="tx-item" style={{ cursor: 'pointer' }} onClick={() => router.push(`/transactions/${tx.id}`)}>
                 <div className="tx-left">
                   <div className="tx-reason">{tx.reason || tx.type}</div>
                   <div className="tx-date">{formatDate(tx.createdAt)}</div>

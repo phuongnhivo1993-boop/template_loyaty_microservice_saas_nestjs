@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class ProductService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async create(data: { name: string; price: number; tenantId: string; slug?: string; description?: string; compareAtPrice?: number; costPrice?: number; imageUrl?: string; unit?: string; stock?: number; sku?: string; barcode?: string; categoryId?: string }) {
     const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -14,10 +18,16 @@ export class ProductService {
       const skuExists = await this.prisma.product.findUnique({ where: { sku_tenantId: { sku: data.sku, tenantId: data.tenantId } } });
       if (skuExists) throw new BadRequestException('Product SKU already exists');
     }
-    return this.prisma.product.create({ data: { ...data, slug } });
+    const product = await this.prisma.product.create({ data: { ...data, slug } });
+    await this.cacheService.delPattern('products:*', data.tenantId);
+    return product;
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, categoryId?: string, status?: string, sort?: string, priceMin?: number, priceMax?: number, stockStatus?: string) {
+    const cacheKey = `products:list:${page}:${limit}:${search || ''}:${categoryId || ''}:${status || ''}:${sort || ''}:${priceMin ?? ''}:${priceMax ?? ''}:${stockStatus || ''}`;
+    const cached = await this.cacheService.get<any>(cacheKey, tenantId);
+    if (cached) return cached;
+
     const where: any = { deletedAt: null };
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -44,7 +54,9 @@ export class ProductService {
       this.prisma.product.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit, include: { category: true } }),
       this.prisma.product.count({ where }),
     ]);
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    const result = { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    await this.cacheService.set(cacheKey, result, 120, tenantId);
+    return result;
   }
 
   async findOne(id: string) {
@@ -54,8 +66,10 @@ export class ProductService {
   }
 
   async update(id: string, data: any) {
-    await this.findOne(id);
-    return this.prisma.product.update({ where: { id }, data });
+    const product = await this.findOne(id);
+    const updated = await this.prisma.product.update({ where: { id }, data });
+    await this.cacheService.delPattern('products:*', product.tenantId);
+    return updated;
   }
 
   async restore(id: string) {
@@ -69,13 +83,17 @@ export class ProductService {
   }
 
   async softRemove(id: string) {
-    await this.findOne(id);
-    return this.prisma.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } });
+    const product = await this.findOne(id);
+    const updated = await this.prisma.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } });
+    await this.cacheService.delPattern('products:*', product.tenantId);
+    return updated;
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.product.delete({ where: { id } });
+    const product = await this.findOne(id);
+    const deleted = await this.prisma.product.delete({ where: { id } });
+    await this.cacheService.delPattern('products:*', product.tenantId);
+    return deleted;
   }
 
   async bulkDelete(ids: string[]) {

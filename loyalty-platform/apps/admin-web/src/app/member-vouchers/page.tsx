@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getMemberVouchers, assignVoucher, deleteMemberVoucher, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface AssignForm { memberId: string; voucherId: string; }
 
@@ -28,6 +29,18 @@ export default function MemberVouchersPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteMemberVoucher, modal: deleteModal } = useConfirmDelete({
+    title: 'Remove Assignment',
+    message: 'Remove this voucher assignment?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteMemberVoucher(deletingId); showToast('Assignment removed', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
+
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState<AssignForm>({ memberId: '', voucherId: '' });
@@ -61,13 +74,9 @@ export default function MemberVouchersPage() {
     } catch { showToast('Failed to assign voucher', 'error'); }
   };
 
-  const handleUnassign = async (id: string) => {
-    if (!confirm('Remove this voucher assignment?')) return;
-    try {
-      await deleteMemberVoucher(id);
-      showToast('Assignment removed', 'success');
-      load();
-    } catch { showToast('Failed to remove assignment', 'error'); }
+  const handleUnassign = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteMemberVoucher();
   };
 
   const exportCsv = async () => {
@@ -142,6 +151,7 @@ export default function MemberVouchersPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel="Assign" />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { api, duplicateEntity } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const typeColors: Record<string, string> = {
   PERCENTAGE: '#7c3aed', FIXED: '#0891b2',
@@ -51,6 +52,7 @@ export default function CouponsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleExportCsv = async () => {
     try {
@@ -111,13 +113,18 @@ export default function CouponsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this coupon?')) return;
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return;
     try {
-      await api.delete(`/coupons/${id}`);
+      await api.delete(`/coupons/${confirmDeleteId}`);
       showToast('Coupon deleted', 'success');
       load();
     } catch { showToast('Network error', 'error'); }
+    setConfirmDeleteId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -275,6 +282,7 @@ export default function CouponsPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={submitting} submitLabel={editing ? 'Update' : 'Create'} />
           </form>
         </Modal>
+        <ConfirmModal open={!!confirmDeleteId} title="Delete Coupon" message="Delete this coupon?" onConfirm={handleConfirmDelete} onCancel={() => setConfirmDeleteId(null)} confirmText="Delete" />
       </main>
     </div>
   );

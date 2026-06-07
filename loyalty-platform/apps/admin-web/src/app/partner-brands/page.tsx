@@ -6,13 +6,15 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getPartnerBrands, createPartnerBrand, updatePartnerBrand, deletePartnerBrand, duplicateEntity } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface BrandForm {
   name: string; code: string; description: string; website: string; logoUrl: string; status: string;
@@ -36,6 +38,17 @@ export default function PartnerBrandsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteBrand, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Partner Brand',
+    message: 'Delete this partner brand?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deletePartnerBrand(deletingId); showToast('Brand deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -67,13 +80,9 @@ export default function PartnerBrandsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this partner brand?')) return;
-    try {
-      await deletePartnerBrand(id);
-      showToast('Partner brand deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete brand', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteBrand();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,19 +157,16 @@ export default function PartnerBrandsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} brands?`)) return;
-            for (const id of selectedIds) await deletePartnerBrand(id);
-            showToast(`Deleted ${selectedIds.length} brands`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['name', 'code', 'description', 'website', 'status'];
-            const rows = brands.filter(b => selectedIds.includes(b.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-brands.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Delete Selected', variant: 'danger', confirmMessage: 'Xác nhận xóa', onClick: async (ids) => { for (const id of ids) await deletePartnerBrand(id); } },
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['name', 'code', 'description', 'website', 'status'];
+              const rows = brands.filter(b => ids.includes(b.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-brands.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={brands} emptyMessage="No partner brands found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
@@ -181,6 +187,7 @@ export default function PartnerBrandsPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="partnership/brands" entityLabel="partner brands" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

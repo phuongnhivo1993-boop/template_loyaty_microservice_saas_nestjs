@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { members, analytics } from '../services/api';
+import { members, analytics, auth } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import { useWsStore } from '../services/wsStore';
-import { auth } from '../services/api';
-import * as SecureStore from 'expo-secure-store';
 import type { Member, Wallet } from '../services/types';
 import { LoadingState, ErrorState } from '../components';
+import { useColors } from '../theme/useColors';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const colors = useColors();
   const [profile, setProfile] = useState<Member | null>(null);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -18,7 +18,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const logout = useAuthStore((s) => s.logout);
-
   const wsStatus = useWsStore(s => s.status);
 
   const handleLogout = async () => {
@@ -53,10 +52,10 @@ export default function HomeScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={styles.container}>
-    <ScrollView style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primaryDark]} />}>
+      <View style={[styles.header, { backgroundColor: colors.text }]}>
         <Text style={styles.greeting}>Hi, {profile?.fullName || 'Member'}</Text>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <View style={[styles.wsDot,
@@ -74,7 +73,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.pointsCard}>
+      <View style={[styles.pointsCard, { backgroundColor: colors.primaryDark }]}>
         <Text style={styles.pointsLabel}>Available Points</Text>
         <Text style={styles.pointsValue}>{(wallet?.available ?? profile?.availablePoints ?? 0).toLocaleString()}</Text>
         <Text style={styles.tier}>{profile?.tier?.name || 'Bronze'}</Text>
@@ -99,26 +98,26 @@ export default function HomeScreen() {
           { label: 'Gift Cards', icon: '🎴', screen: 'GiftCards' },
           { label: 'Profile', icon: '👤', screen: 'Profile' },
         ].map((item) => (
-          <TouchableOpacity key={item.screen} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>
+          <TouchableOpacity key={item.screen} style={[styles.menuItem, { backgroundColor: colors.card }]} onPress={() => navigation.navigate(item.screen)}>
             <Text style={styles.menuIcon}>{item.icon}</Text>
-            <Text style={styles.menuLabel}>{item.label}</Text>
+            <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {leaderboard.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>🏆 Leaderboard</Text>
           {leaderboard.map((m: any) => (
-            <View key={m.id} style={styles.leaderboardRow}>
-              <View style={[styles.rankBadge, { backgroundColor: m.rank <= 3 ? '#f59e0b' : '#e2e8f0' }]}>
-                <Text style={[styles.rankText, { color: m.rank <= 3 ? 'white' : '#64748b' }]}>{m.rank}</Text>
+            <View key={m.id} style={[styles.leaderboardRow, { backgroundColor: colors.card }]}>
+              <View style={[styles.rankBadge, { backgroundColor: m.rank <= 3 ? '#f59e0b' : colors.border }]}>
+                <Text style={[styles.rankText, { color: m.rank <= 3 ? 'white' : colors.textSecondary }]}>{m.rank}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '600', color: '#1e293b' }}>{m.fullName}</Text>
-                <Text style={{ fontSize: 12, color: m.tierColor || '#94a3b8' }}>{m.tier}</Text>
+                <Text style={{ fontWeight: '600', color: colors.text }}>{m.fullName}</Text>
+                <Text style={{ fontSize: 12, color: m.tierColor || colors.textSecondary }}>{m.tier}</Text>
               </View>
-              <Text style={{ fontWeight: '700', color: '#2563eb' }}>{m.totalPoints?.toLocaleString()} pts</Text>
+              <Text style={{ fontWeight: '700', color: colors.primaryDark }}>{m.totalPoints?.toLocaleString()} pts</Text>
             </View>
           ))}
         </View>
@@ -129,9 +128,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   greeting: { fontSize: 20, fontWeight: '700', color: 'white' },
   logout: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
   notifIcon: { fontSize: 20 },
@@ -140,26 +139,23 @@ const styles = StyleSheet.create({
   wsConnected: { backgroundColor: '#22c55e' },
   wsReconnecting: { backgroundColor: '#f59e0b' },
   wsDisconnected: { backgroundColor: '#ef4444' },
-  pointsCard: { margin: 16, padding: 24, backgroundColor: '#2563eb', borderRadius: 16, alignItems: 'center' },
+  pointsCard: { margin: 16, padding: 24, borderRadius: 16, alignItems: 'center' },
   pointsLabel: { fontSize: 14, color: '#bfdbfe' },
   pointsValue: { fontSize: 36, fontWeight: '800', color: 'white', marginVertical: 4 },
   tier: { fontSize: 14, color: '#bfdbfe', fontWeight: '600' },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, gap: 12 },
-  menuItem: { width: '30%', backgroundColor: 'white', borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  menuItem: { width: '30%', borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   menuIcon: { fontSize: 32 },
-  menuLabel: { fontSize: 14, fontWeight: '600', color: '#1e293b', marginTop: 8 },
+  menuLabel: { fontSize: 14, fontWeight: '600', marginTop: 8 },
   section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
-  sectionSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '700' },
+  sectionSubtitle: { fontSize: 14, marginTop: 4 },
   leaderboardRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'white',
+    flexDirection: 'row', alignItems: 'center',
     borderRadius: 10, padding: 14, marginTop: 8, gap: 12,
     shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  rankBadge: {
-    width: 32, height: 32, borderRadius: 16,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  rankBadge: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   rankText: { fontSize: 14, fontWeight: '700' },
-  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
+  errorText: { fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

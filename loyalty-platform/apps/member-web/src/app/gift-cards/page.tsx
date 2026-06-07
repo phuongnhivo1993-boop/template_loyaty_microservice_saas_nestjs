@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyGiftCards } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 const statusColors: Record<string, string> = {
   ACTIVE: '#10b981',
@@ -70,10 +71,7 @@ export default function GiftCardsPage() {
       />
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🎴</div>
-          <div className="empty-text">{search ? 'No gift cards match your search' : 'No gift cards yet'}</div>
-        </div>
+        <EmptyState icon="🎴" title={search ? 'No gift cards match your search' : 'No gift cards yet'} action={{ label: 'Earn points to get gift cards', onClick: () => router.push('/wallet') }} />
       ) : (
         filtered.map((c: any) => (
           <div key={c.id} className="card" style={{ borderLeft: `4px solid ${statusColors[c.status] || '#94a3b8'}` }}>

@@ -6,13 +6,15 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getStores, createStore, updateStore, deleteStore, duplicateEntity } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface StoreForm {
   name: string; code: string; address: string; phone: string; email: string; openingHours: string; status: string;
@@ -36,6 +38,17 @@ export default function StoresPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteStore, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Store',
+    message: 'Delete this store?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteStore(deletingId); showToast('Store deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -67,13 +80,9 @@ export default function StoresPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this store?')) return;
-    try {
-      await deleteStore(id);
-      showToast('Store deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete store', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteStore();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,19 +153,16 @@ export default function StoresPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} stores?`)) return;
-            for (const id of selectedIds) await deleteStore(id);
-            showToast(`Deleted ${selectedIds.length} stores`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['name', 'code', 'address', 'phone', 'email', 'status'];
-            const rows = stores.filter(s => selectedIds.includes(s.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-stores.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Delete Selected', variant: 'danger', confirmMessage: 'Xác nhận xóa', onClick: async (ids) => { for (const id of ids) await deleteStore(id); } },
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['name', 'code', 'address', 'phone', 'email', 'status'];
+              const rows = stores.filter(s => ids.includes(s.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-stores.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={stores} emptyMessage="No stores found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
@@ -178,6 +184,7 @@ export default function StoresPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="stores" entityLabel="stores" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

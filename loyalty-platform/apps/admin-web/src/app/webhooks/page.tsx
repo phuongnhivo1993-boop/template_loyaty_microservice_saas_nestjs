@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint, deleteWebhookEndpoint, testWebhookEndpoint, getWebhookLogs, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface WebhookForm {
   name: string; url: string; events: string; secret: string; active: string;
@@ -35,6 +36,17 @@ export default function WebhooksPage() {
   const limit = 20;
   const [testingId, setTestingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteWebhook, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Webhook',
+    message: 'Delete this webhook endpoint?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteWebhookEndpoint(deletingId); showToast('Webhook deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
   const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -68,13 +80,9 @@ export default function WebhooksPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this webhook endpoint?')) return;
-    try {
-      await deleteWebhookEndpoint(id);
-      showToast('Webhook endpoint deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete webhook', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteWebhook();
   };
 
   const handleTest = async (id: string) => {
@@ -201,6 +209,7 @@ export default function WebhooksPage() {
             <DataTable columns={logColumns} data={logs} emptyMessage="No logs found" />
           )}
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

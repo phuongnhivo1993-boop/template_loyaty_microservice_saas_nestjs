@@ -13,7 +13,7 @@ const rolePermissions: Record<string, string[]> = {
     '/notifications/broadcast', '/feedback', '/products', '/product-categories',
     '/orders', '/stores', '/cashback', '/gift-cards', '/partner-brands',
     '/member-segmentation', '/voucher-analytics', '/checkin-analytics',
-    '/webhooks', '/audit-log', '/settings', '/settings/branding',
+    '/webhooks', '/audit-logs', '/settings', '/settings/branding',
   ],
   STAFF: [
     '/dashboard', '/members', '/tiers', '/campaigns', '/rewards',
@@ -93,7 +93,7 @@ const menuGroups = [
     label: 'Hạ tầng',
     items: [
       { label: 'Webhooks', href: '/webhooks', icon: '🔗' },
-      { label: 'Audit Log', href: '/audit-log', icon: '📋' },
+      { label: 'Audit Log', href: '/audit-logs', icon: '📋' },
       { label: 'Settings', href: '/settings', icon: '⚙️' },
       { label: 'Branding', href: '/settings/branding', icon: '🎨' },
     ],

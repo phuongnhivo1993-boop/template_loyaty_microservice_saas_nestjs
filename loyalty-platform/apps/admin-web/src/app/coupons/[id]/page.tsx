@@ -7,6 +7,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { api } from '@/lib/api';
 
 export default function CouponDetailPage({ params }: { params: { id: string } }) {
@@ -18,6 +19,7 @@ export default function CouponDetailPage({ params }: { params: { id: string } })
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     api.get(`/coupons/${params.id}`)
@@ -49,8 +51,12 @@ export default function CouponDetailPage({ params }: { params: { id: string } })
     setShowEditModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this coupon?')) return;
+  const handleDelete = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     try {
       await api.delete(`/coupons/${params.id}`);
       showToast('Coupon deleted', 'success');
@@ -177,6 +183,7 @@ export default function CouponDetailPage({ params }: { params: { id: string } })
             <FormActions onCancel={() => setShowEditModal(false)} loading={submitting} submitLabel="Update" />
           </form>
         </Modal>
+        <ConfirmModal open={showConfirmDelete} title="Delete Coupon" message="Delete this coupon?" onConfirm={handleConfirmDelete} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

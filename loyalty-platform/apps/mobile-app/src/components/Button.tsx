@@ -1,4 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useColors } from '../theme/useColors';
 
 interface ButtonProps {
   title: string;
@@ -10,9 +11,10 @@ interface ButtonProps {
 }
 
 export default function Button({ title, onPress, variant = 'primary', loading, disabled, style }: ButtonProps) {
-  const bg = variant === 'primary' ? '#2563eb' : variant === 'danger' ? '#dc2626' : 'white';
-  const textColor = variant === 'secondary' ? '#1e293b' : 'white';
-  const border = variant === 'secondary' ? '#cbd5e1' : 'transparent';
+  const colors = useColors();
+  const bg = variant === 'primary' ? colors.primaryDark : variant === 'danger' ? colors.error : colors.card;
+  const textColor = variant === 'secondary' ? colors.text : 'white';
+  const border = variant === 'secondary' ? colors.border : 'transparent';
 
   return (
     <TouchableOpacity

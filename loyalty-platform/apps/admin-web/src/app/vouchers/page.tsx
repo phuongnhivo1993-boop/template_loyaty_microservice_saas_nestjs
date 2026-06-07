@@ -6,7 +6,6 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
@@ -15,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getVouchers, createVoucher, updateVoucher, deleteVoucher, api, bulkDeleteVouchers, bulkVouchersExpire, duplicateEntity } from '@/lib/api';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface VoucherForm {
   code: string; type: string; value: string; maxUsage: string; expiresAt: string; description: string;
@@ -42,6 +42,17 @@ export default function VouchersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchForm, setBatchForm] = useState({ prefix: '', count: '10', type: 'DISCOUNT', value: '', maxUsage: '', expiresAt: '' });
   const [batchResult, setBatchResult] = useState<string[] | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteVoucher, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Voucher',
+    message: 'Delete this voucher?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteVoucher(deletingId); showToast('Voucher deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -73,13 +84,9 @@ export default function VouchersPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this voucher?')) return;
-    try {
-      await deleteVoucher(id);
-      showToast('Voucher deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete voucher', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteVoucher();
   };
 
   const handleBatchGenerate = async (e: React.FormEvent) => {
@@ -163,25 +170,22 @@ export default function VouchersPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} vouchers?`)) return;
-            for (const id of selectedIds) await deleteVoucher(id);
-            showToast(`Deleted ${selectedIds.length} vouchers`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['code', 'type', 'value', 'usedCount', 'maxUsage'];
-            const rows = vouchers.filter(v => selectedIds.includes(v.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-vouchers.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Delete Selected', variant: 'danger', confirmMessage: 'Xác nhận xóa', onClick: async (ids) => { for (const id of ids) await deleteVoucher(id); } },
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['code', 'type', 'value', 'usedCount', 'maxUsage'];
+              const rows = vouchers.filter(v => ids.includes(v.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-vouchers.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={vouchers} emptyMessage="No vouchers found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
         <Modal open={showModal} title={editing ? 'Edit Voucher' : 'New Voucher'} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit}>
-            <FormInput label="Code" value={form.code} onChange={v => setForm({ ...form, code: v })} required />
+            <FormInput label="Code" value={form.code} onChange={v => setForm({ ...form, code: v })} required helpText="Auto-generated if left blank" />
             <FormSelect label="Type" value={form.type} onChange={v => setForm({ ...form, type: v })} options={TYPES.map(t => ({ value: t, label: t }))} />
             <div className="grid-2">
               <FormInput label="Value" type="number" value={form.value} onChange={v => setForm({ ...form, value: v })} required />
@@ -219,6 +223,7 @@ export default function VouchersPage() {
             </form>
           )}
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

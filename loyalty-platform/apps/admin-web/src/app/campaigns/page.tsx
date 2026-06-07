@@ -243,7 +243,7 @@ export default function CampaignsPage() {
             <FormTextarea label="Description" value={form.description} onChange={v => setForm({ ...form, description: v })} />
             <div className="grid-2">
               <FormInput label="Start Date" type="date" value={form.startDate} onChange={v => setForm({ ...form, startDate: v })} required error={formErrors.startDate} />
-              <FormInput label="End Date" type="date" value={form.endDate} onChange={v => setForm({ ...form, endDate: v })} required error={formErrors.endDate} />
+              <FormInput label="End Date" type="date" value={form.endDate} onChange={v => setForm({ ...form, endDate: v })} required error={formErrors.endDate} helpText="The date until which the campaign can be joined" />
             </div>
             <FormInput label="Budget (VND)" type="number" value={form.budget} onChange={v => setForm({ ...form, budget: v })} />
             <FormSelect label="Status" value={form.status} onChange={v => setForm({ ...form, status: v })} options={[

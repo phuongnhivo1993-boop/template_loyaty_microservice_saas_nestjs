@@ -3,10 +3,12 @@ import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, Refre
 import { feedback } from '../services/api';
 import type { Feedback } from '../services/types';
 import { LoadingState, ErrorState, EmptyState, Header, Button, TextInput } from '../components';
+import { useColors } from '../theme/useColors';
 
 const RATINGS = [1, 2, 3, 4, 5];
 
 export default function FeedbackScreen() {
+  const colors = useColors();
   const [items, setItems] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,7 +61,7 @@ export default function FeedbackScreen() {
     <View style={styles.stars}>
       {RATINGS.map(n => (
         <TouchableOpacity key={n} onPress={interactive ? () => setRating(n) : undefined} disabled={!interactive}>
-          <Text style={[styles.star, { color: n <= current ? '#f59e0b' : '#d1d5db' }]}>★</Text>
+          <Text style={[styles.star, { color: n <= current ? colors.warning : colors.border }]}>★</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -69,15 +71,15 @@ export default function FeedbackScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Feedback" subtitle="Share your thoughts" />
 
       <View style={styles.tabRow}>
-        <TouchableOpacity style={[styles.tab, tab === 'list' && styles.tabActive]} onPress={() => setTab('list')}>
-          <Text style={[styles.tabText, tab === 'list' && styles.tabTextActive]}>My Feedback</Text>
+        <TouchableOpacity style={[styles.tab, { backgroundColor: colors.border }, tab === 'list' && { backgroundColor: colors.primaryDark }]} onPress={() => setTab('list')}>
+          <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'list' && styles.tabTextActive]}>My Feedback</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, tab === 'new' && styles.tabActive]} onPress={() => setTab('new')}>
-          <Text style={[styles.tabText, tab === 'new' && styles.tabTextActive]}>New Feedback</Text>
+        <TouchableOpacity style={[styles.tab, { backgroundColor: colors.border }, tab === 'new' && { backgroundColor: colors.primaryDark }]} onPress={() => setTab('new')}>
+          <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'new' && styles.tabTextActive]}>New Feedback</Text>
         </TouchableOpacity>
       </View>
 
@@ -85,24 +87,24 @@ export default function FeedbackScreen() {
         <FlatList
           style={styles.container}
           contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primaryDark]} />}
           data={items}
           keyExtractor={(item: Feedback) => item.id}
           renderItem={({ item }: { item: Feedback }) => (
-            <View style={styles.fbCard}>
+            <View style={[styles.fbCard, { backgroundColor: colors.card }]}>
               <View style={styles.fbHeader}>
                 {renderStars(item.rating)}
-                <Text style={styles.fbDate}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
+                <Text style={[styles.fbDate, { color: colors.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
               </View>
-              {item.comment && <Text style={styles.fbComment}>{item.comment}</Text>}
-              {item.memberName && <Text style={styles.fbMember}>- {item.memberName}</Text>}
+              {item.comment && <Text style={[styles.fbComment, { color: colors.textSecondary }]}>{item.comment}</Text>}
+              {item.memberName && <Text style={[styles.fbMember, { color: colors.textSecondary }]}>- {item.memberName}</Text>}
             </View>
           )}
           ListEmptyComponent={<EmptyState message="No feedback yet" icon="⭐" />}
         />
       ) : (
         <View style={styles.form}>
-          <Text style={styles.formLabel}>Rating</Text>
+          <Text style={[styles.formLabel, { color: colors.text }]}>Rating</Text>
           {renderStars(rating, true)}
           <TextInput
             label="Comment (optional)"
@@ -121,20 +123,19 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { padding: 16, paddingBottom: 24 },
   tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#f1f5f9', alignItems: 'center' },
-  tabActive: { backgroundColor: '#2563eb' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  tabText: { fontSize: 14, fontWeight: '600' },
   tabTextActive: { color: 'white' },
   fbCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 10,
+    borderRadius: 12, padding: 16, marginBottom: 10,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
   fbHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  fbDate: { fontSize: 12, color: '#94a3b8' },
-  fbComment: { fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 20 },
-  fbMember: { fontSize: 13, color: '#94a3b8', marginTop: 4, fontStyle: 'italic' },
+  fbDate: { fontSize: 12 },
+  fbComment: { fontSize: 14, marginTop: 8, lineHeight: 20 },
+  fbMember: { fontSize: 13, marginTop: 4, fontStyle: 'italic' },
   form: { padding: 20 },
-  formLabel: { fontSize: 14, fontWeight: '600', color: '#1e293b', marginBottom: 8 },
+  formLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   stars: { flexDirection: 'row', gap: 4, marginBottom: 16 },
   star: { fontSize: 32, marginRight: 2 },
 });

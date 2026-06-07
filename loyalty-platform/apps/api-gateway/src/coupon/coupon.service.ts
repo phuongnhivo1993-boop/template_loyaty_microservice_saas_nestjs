@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class CouponService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async create(data: {
     code: string; type: string; value: number; tenantId: string;
@@ -177,6 +181,10 @@ export class CouponService {
   }
 
   async validate(couponCode: string, memberId: string, orderTotal: number, tenantId?: string) {
+    const cacheKey = `coupon:validate:${couponCode.toUpperCase()}:${memberId}:${orderTotal}`;
+    const cached = await this.cacheService.get<any>(cacheKey, tenantId);
+    if (cached) return cached;
+
     const where: any = { code: couponCode.toUpperCase() };
     if (tenantId) where.tenantId = tenantId;
 
@@ -210,7 +218,9 @@ export class CouponService {
       if (discount > orderTotal) discount = orderTotal;
     }
 
-    return { valid: errors.length === 0, coupon, errors, discount };
+    const result = { valid: errors.length === 0, coupon, errors, discount };
+    await this.cacheService.set(cacheKey, result, 60, tenantId);
+    return result;
   }
 
   async apply(couponCode: string, memberId: string, orderId: string, orderTotal: number, tenantId?: string) {

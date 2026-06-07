@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsString, IsEmail, IsOptional, IsDateString, IsArray, IsNumber } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsDateString, IsArray, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { MemberStatus } from '@prisma/client';
 
 export class CreateMemberDto {
   @ApiProperty() @IsEmail() email: string;
@@ -18,7 +19,7 @@ export class UpdateMemberDto {
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() birthday?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
   @ApiProperty({ required: false }) @IsOptional() @IsString() tierId?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() status?: string;
+  @ApiProperty({ required: false, enum: MemberStatus }) @IsOptional() @IsEnum(MemberStatus) status?: MemberStatus;
 }
 
 export class MemberQueryDto {

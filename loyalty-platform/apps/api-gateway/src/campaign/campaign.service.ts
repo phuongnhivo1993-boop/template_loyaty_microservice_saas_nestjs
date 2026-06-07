@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import { parseSort } from '../common/utils/sort.util';
 
 @Injectable()
 export class CampaignService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   create(data: { name: string; description?: string; startDate: string; endDate: string; budget?: number; tenantId: string }) {
     const startDate = new Date(data.startDate);
@@ -15,6 +19,10 @@ export class CampaignService {
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, status?: string, search?: string, sort?: string) {
+    const cacheKey = `campaigns:list:${page}:${limit}:${status || ''}:${search || ''}:${sort || ''}`;
+    const cached = await this.cacheService.get<any>(cacheKey, tenantId);
+    if (cached) return cached;
+
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (status) where.status = status;
@@ -30,7 +38,9 @@ export class CampaignService {
       this.prisma.campaign.findMany({ where, orderBy: { [orderBy]: orderDirection }, skip, take: limit }),
       this.prisma.campaign.count({ where }),
     ]);
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    const result = { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    await this.cacheService.set(cacheKey, result, 120, tenantId);
+    return result;
   }
 
   async findOne(id: string) {

@@ -21,6 +21,7 @@ export default function CreateOrderPage() {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const loadData = () => {
     setError('');
@@ -73,11 +74,16 @@ export default function CreateOrderPage() {
     return cart.reduce((sum, c) => sum + (c.product.price || 0) * c.quantity, 0);
   }, [cart]);
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (cart.length === 0) e.cart = 'Your cart is empty';
+    if (note.length > 500) e.note = 'Note must be under 500 characters';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (cart.length === 0) {
-      setMessage('Your cart is empty');
-      return;
-    }
+    if (!validate()) return;
     setSubmitting(true);
     setMessage('');
     try {
@@ -168,12 +174,18 @@ export default function CreateOrderPage() {
 
           <input
             type="text"
-            placeholder="Order note (optional)"
+            placeholder="Order note (optional, max 500 characters)"
             value={note}
-            onChange={e => setNote(e.target.value)}
-            style={{ marginBottom: '12px' }}
+            onChange={e => { setNote(e.target.value); if (errors.note) setErrors(prev => ({ ...prev, note: '' })); }}
+            style={{ marginBottom: '12px', borderColor: errors.note ? 'var(--error)' : undefined }}
           />
+          {errors.note && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px', marginBottom: '8px' }}>{errors.note}</div>}
 
+          {errors.cart && (
+            <div style={{ fontSize: '14px', color: 'var(--error)', marginBottom: '8px', padding: '8px', background: 'var(--error-bg, #fef2f2)', borderRadius: '6px' }}>
+              {errors.cart}
+            </div>
+          )}
           {message && (
             <div style={{ fontSize: '14px', color: message.includes('successfully') ? 'var(--success)' : 'var(--error)', marginBottom: '8px', padding: '8px', background: message.includes('successfully') ? 'var(--success-bg, #dcfce7)' : 'var(--error-bg, #fef2f2)', borderRadius: '6px' }}>
               {message}

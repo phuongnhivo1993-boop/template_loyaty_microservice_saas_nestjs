@@ -3,12 +3,14 @@ import { SafeAreaView, View, Text, StyleSheet, ScrollView, Share } from 'react-n
 import { members } from '../services/api';
 import type { Referral } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
+import { useColors } from '../theme/useColors';
 
 interface ReferralStats {
   total: number; converted: number; pending: number;
 }
 
 export default function ReferralsScreen() {
+  const colors = useColors();
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,38 +37,38 @@ export default function ReferralsScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.text }]}>
         <Text style={styles.title}>Referrals</Text>
         <Text style={styles.subtitle}>Invite friends and earn points</Text>
       </View>
 
       {stats && (
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total || 0}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats.total || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#16a34a' }]}>{stats.converted || 0}</Text>
-            <Text style={styles.statLabel}>Converted</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.statValue, { color: colors.success }]}>{stats.converted || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Converted</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#2563eb' }]}>{stats.pending || 0}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.statValue, { color: colors.primaryDark }]}>{stats.pending || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Pending</Text>
           </View>
         </View>
       )}
 
       <View style={styles.list}>
         {referrals.length > 0 ? referrals.map((r: Referral) => (
-          <View key={r.id} style={styles.card}>
+          <View key={r.id} style={[styles.card, { backgroundColor: colors.card }]}>
             <View>
-              <Text style={styles.code}>Code: {r.code}</Text>
-              <Text style={styles.status}>{r.status}</Text>
+              <Text style={[styles.code, { color: colors.text }]}>Code: {r.code}</Text>
+              <Text style={[styles.status, { color: colors.textSecondary }]}>{r.status}</Text>
             </View>
-            <Text style={styles.shareLink} onPress={() => handleShare(r.code)}>Share</Text>
+            <Text style={[styles.shareLink, { color: colors.primaryDark }]} onPress={() => handleShare(r.code)}>Share</Text>
           </View>
         )) : (
           <EmptyState message="No referrals yet" icon="🔗" />
@@ -78,19 +80,19 @@ export default function ReferralsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b' },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { padding: 20, paddingTop: 60 },
   title: { fontSize: 24, fontWeight: '700', color: 'white' },
   subtitle: { color: '#94a3b8', marginTop: 4 },
   statsRow: { flexDirection: 'row', padding: 16, gap: 12 },
-  statCard: { flex: 1, backgroundColor: 'white', borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  statValue: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
-  statLabel: { fontSize: 12, color: '#64748b', marginTop: 4 },
+  statCard: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  statValue: { fontSize: 24, fontWeight: '800' },
+  statLabel: { fontSize: 12, marginTop: 4 },
   list: { padding: 16, gap: 12 },
-  card: { backgroundColor: 'white', borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  code: { fontSize: 16, fontWeight: '600', color: '#1e293b', fontFamily: 'monospace' },
-  status: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  shareLink: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
-  errorText: { color: '#dc2626', fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
+  card: { borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  code: { fontSize: 16, fontWeight: '600', fontFamily: 'monospace' },
+  status: { fontSize: 12, marginTop: 4 },
+  shareLink: { fontWeight: '600', fontSize: 14 },
+  errorText: { fontSize: 16, textAlign: 'center', paddingHorizontal: 20 },
 });

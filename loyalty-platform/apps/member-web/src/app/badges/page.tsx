@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getBadges } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function BadgesPage() {
   const router = useRouter();
@@ -45,10 +46,7 @@ export default function BadgesPage() {
       </div>
 
       {badges.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🏅</div>
-          <div className="empty-text">No badges available</div>
-        </div>
+        <EmptyState icon="🏅" title="No badges available" action={{ label: 'Complete missions', onClick: () => router.push('/missions') }} />
       ) : (
         <div className="grid-2">
           {badges.map((b: any) => (

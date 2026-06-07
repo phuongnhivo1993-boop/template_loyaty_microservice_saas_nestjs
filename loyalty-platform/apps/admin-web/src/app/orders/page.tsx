@@ -8,7 +8,9 @@ import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { getOrders, duplicateEntity } from '@/lib/api';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { getOrders, duplicateEntity, api } from '@/lib/api';
 
 const statusColors: Record<string, string> = {
   PENDING: '#f59e0b', CONFIRMED: '#3b82f6', PROCESSING: '#8b5cf6',
@@ -26,6 +28,7 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -92,7 +95,16 @@ export default function OrdersPage() {
           <span style={{ color: '#64748b', fontSize: '14px' }}>{total > 0 ? `${total} results` : ''}</span>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
-        <DataTable columns={columns} data={orders} emptyMessage="No orders found" />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['orderCode', 'status', 'total', 'pointsEarned', 'createdAt', 'memberId'];
+              const rows = orders.filter(o => ids.includes(o.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-orders.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} />
+        <DataTable columns={columns} data={orders} emptyMessage="No orders found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </main>
     </div>

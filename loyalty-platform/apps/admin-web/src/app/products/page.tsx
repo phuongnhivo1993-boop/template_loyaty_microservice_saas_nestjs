@@ -6,11 +6,12 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, api, restoreItem, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
@@ -156,22 +157,12 @@ export default function ProductsPage() {
           </label>
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} products?`)) return;
-            await api.post('/products/bulk/delete', { ids: selectedIds });
-            showToast(`Deleted ${selectedIds.length} products`, 'success'); setSelectedIds([]); load();
-          }}
-          customActions={[
-            { label: 'Activate', onClick: async () => {
-              await api.post('/products/bulk/status', { ids: selectedIds, status: 'ACTIVE' });
-              showToast(`Activated ${selectedIds.length} products`, 'success'); setSelectedIds([]); load();
-            }, color: '#16a34a' },
-            { label: 'Deactivate', onClick: async () => {
-              await api.post('/products/bulk/status', { ids: selectedIds, status: 'INACTIVE' });
-              showToast(`Deactivated ${selectedIds.length} products`, 'success'); setSelectedIds([]); load();
-            }, color: '#d97706' },
-          ]} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Delete Selected', variant: 'danger', confirmMessage: 'Xác nhận xóa', onClick: async (ids) => { await api.post('/products/bulk/delete', { ids }); } },
+            { label: 'Activate', variant: 'primary', onClick: async (ids) => { await api.post('/products/bulk/status', { ids, status: 'ACTIVE' }); } },
+            { label: 'Deactivate', variant: 'warning', onClick: async (ids) => { await api.post('/products/bulk/status', { ids, status: 'INACTIVE' }); } },
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={products} emptyMessage="No products found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         <Modal open={showModal} title={editing ? 'Edit Product' : 'New Product'} onClose={() => setShowModal(false)} width={560}>
@@ -181,7 +172,7 @@ export default function ProductsPage() {
               <FormInput label="Slug" value={form.slug} onChange={v => setForm({ ...form, slug: v })} />
             </div>
             <div className="grid-2">
-              <FormInput label="Price (VND)" type="number" value={form.price} onChange={v => setForm({ ...form, price: v })} required />
+              <FormInput label="Price (VND)" type="number" value={form.price} onChange={v => setForm({ ...form, price: v })} required helpText="Price in the base currency" />
               <FormInput label="Cost Price (VND)" type="number" value={form.costPrice} onChange={v => setForm({ ...form, costPrice: v })} />
             </div>
             <div className="grid-2">

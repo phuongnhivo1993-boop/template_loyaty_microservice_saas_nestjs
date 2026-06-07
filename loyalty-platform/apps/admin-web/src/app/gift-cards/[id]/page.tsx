@@ -7,6 +7,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getGiftCard, updateGiftCard } from '@/lib/api';
 
 export default function GiftCardDetailPage({ params }: { params: { id: string } }) {
@@ -17,6 +18,7 @@ export default function GiftCardDetailPage({ params }: { params: { id: string } 
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     getGiftCard(params.id)
@@ -43,8 +45,12 @@ export default function GiftCardDetailPage({ params }: { params: { id: string } 
     setShowEditModal(true);
   };
 
-  const handleDeactivate = async () => {
-    if (!confirm('Deactivate this gift card?')) return;
+  const handleDeactivate = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    setShowConfirmDelete(false);
     try {
       await updateGiftCard(params.id, { status: 'INACTIVE' });
       showToast('Gift card deactivated', 'success');
@@ -128,6 +134,7 @@ export default function GiftCardDetailPage({ params }: { params: { id: string } 
             <FormActions onCancel={() => setShowEditModal(false)} loading={submitting} submitLabel="Save" />
           </form>
         </Modal>
+        <ConfirmModal open={showConfirmDelete} title="Deactivate Gift Card" message="Deactivate this gift card?" onConfirm={handleConfirmDeactivate} onCancel={() => setShowConfirmDelete(false)} confirmText="Deactivate" />
       </main>
     </div>
   );

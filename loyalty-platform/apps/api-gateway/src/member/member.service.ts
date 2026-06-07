@@ -103,7 +103,19 @@ export class MemberService {
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.member.delete({ where: { id } });
+    return this.prisma.member.update({
+      where: { id },
+      data: { status: 'INACTIVE' as any },
+    });
+  }
+
+  async restore(id: string) {
+    const member = await this.prisma.member.findUnique({ where: { id } });
+    if (!member) throw new NotFoundException('Member not found');
+    return this.prisma.member.update({
+      where: { id },
+      data: { status: 'ACTIVE' as any },
+    });
   }
 
   async toggleStatus(id: string) {

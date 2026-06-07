@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface CategoryForm { name: string; slug: string; description: string; icon: string; sortOrder: string }
 
@@ -32,6 +33,17 @@ export default function ProductCategoriesPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteCategory, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Category',
+    message: 'Delete this category?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteProductCategory(deletingId); showToast('Category deleted', 'success'); load(); }
+      catch (e: any) { showToast(e.message || 'Cannot delete category with products', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -56,10 +68,9 @@ export default function ProductCategoriesPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this category?')) return;
-    try { await deleteProductCategory(id); showToast('Category deleted', 'success'); load(); }
-    catch (e: any) { showToast(e.message || 'Cannot delete category with products', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteCategory();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,6 +133,7 @@ export default function ProductCategoriesPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

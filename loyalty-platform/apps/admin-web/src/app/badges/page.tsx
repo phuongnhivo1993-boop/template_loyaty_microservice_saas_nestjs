@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getBadges, createBadge, updateBadge, deleteBadge, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface BadgeForm {
   name: string; description: string; iconUrl: string; criteria: string;
@@ -36,6 +37,17 @@ export default function BadgesPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteBadge, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Badge',
+    message: 'Delete this badge?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteBadge(deletingId); showToast('Badge deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -64,13 +76,9 @@ export default function BadgesPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this badge?')) return;
-    try {
-      await deleteBadge(id);
-      showToast('Badge deleted successfully', 'success');
-      load();
-    } catch { showToast('Network error', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteBadge();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,6 +169,7 @@ export default function BadgesPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="badges" entityLabel="badges" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

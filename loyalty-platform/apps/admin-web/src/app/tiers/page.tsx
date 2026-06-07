@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getTiers, createTier, updateTier, deleteTier, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface TierForm {
   name: string; minPoints: number; maxPoints: number; benefits: string; color: string; status: string;
@@ -37,6 +38,17 @@ export default function TiersPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteTier, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Tier',
+    message: 'Delete this tier?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteTier(deletingId); showToast('Tier deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -62,13 +74,9 @@ export default function TiersPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this tier?')) return;
-    try {
-      await deleteTier(id);
-      showToast('Tier deleted successfully', 'success');
-      load();
-    } catch { showToast('Network error', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteTier();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +165,7 @@ export default function TiersPage() {
           <form onSubmit={handleSubmit}>
             <FormInput label="Name" value={form.name} onChange={e => setForm({ ...form, name: e })} required />
             <div className="grid-2">
-              <FormInput label="Min Points" value={String(form.minPoints)} onChange={e => setForm({ ...form, minPoints: Number(e) })} required type="number" />
+              <FormInput label="Min Points" value={String(form.minPoints)} onChange={e => setForm({ ...form, minPoints: Number(e) })} required type="number" helpText="Minimum points needed to reach this tier" />
               <FormInput label="Max Points" value={String(form.maxPoints)} onChange={e => setForm({ ...form, maxPoints: Number(e) })} required type="number" />
             </div>
             <FormTextarea label="Benefits" value={form.benefits} onChange={e => setForm({ ...form, benefits: e })} />
@@ -167,6 +175,7 @@ export default function TiersPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="tiers" entityLabel="tiers" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

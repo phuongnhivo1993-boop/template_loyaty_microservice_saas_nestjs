@@ -16,6 +16,17 @@ const ENTITY_MODEL_MAP: Record<string, string> = {
   missions: 'mission',
   'notification-templates': 'notificationTemplate',
   'member-vouchers': 'memberVoucher',
+  stores: 'store',
+  products: 'product',
+  orders: 'order',
+  coupons: 'coupon',
+  invoices: 'invoice',
+  subscriptions: 'subscription',
+  'gift-cards': 'giftCard',
+  cashback: 'cashbackConfig',
+  settings: 'settings',
+  webhooks: 'webhookEndpoint',
+  'member-feedback': 'memberFeedback',
 };
 
 @Injectable()

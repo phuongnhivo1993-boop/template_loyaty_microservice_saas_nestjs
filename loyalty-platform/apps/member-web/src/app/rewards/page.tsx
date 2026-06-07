@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getRewards, redeemReward } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 const typeOptions = ['All', 'product', 'discount', 'shipping', 'gift'];
 
@@ -77,10 +78,7 @@ export default function RewardsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🎁</div>
-          <div className="empty-text">{search || typeFilter !== 'All' ? 'No rewards match your filters' : 'No rewards available'}</div>
-        </div>
+        <EmptyState icon="🎁" title={search || typeFilter !== 'All' ? 'No rewards match your filters' : 'No rewards available'} action={{ label: 'Check back later', onClick: () => {} }} />
       ) : (
         <div className="grid-2">
           {filtered.map((r: any) => (

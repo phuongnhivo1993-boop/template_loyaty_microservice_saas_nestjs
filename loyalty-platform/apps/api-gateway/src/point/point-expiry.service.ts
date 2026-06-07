@@ -50,44 +50,65 @@ export class PointExpiryService {
         orderBy: { totalPoints: 'asc' },
       });
 
-      for (const member of members) {
-        const alreadyExpired = await this.prisma.pointTransaction.aggregate({
-          where: { memberId: member.id, type: 'EXPIRE' },
+      if (members.length === 0) continue;
+      const memberIds = members.map(m => m.id);
+
+      const [earnsByMember, expiredByMember] = await Promise.all([
+        this.prisma.pointTransaction.groupBy({
+          by: ['memberId'],
+          where: { memberId: { in: memberIds }, type: 'EARN', createdAt: { lte: cutoff } },
           _sum: { amount: true },
-        });
-        const expiredSum = Math.abs(alreadyExpired._sum.amount ?? 0);
-        const availableForExpiry = member.availablePoints - expiredSum;
+        }),
+        this.prisma.pointTransaction.groupBy({
+          by: ['memberId'],
+          where: { memberId: { in: memberIds }, type: 'EXPIRE' },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      const earnMap = new Map(earnsByMember.map(e => [e.memberId, e._sum.amount ?? 0]));
+      const expiredMap = new Map(expiredByMember.map(e => [e.memberId, Math.abs(e._sum.amount ?? 0)]));
+
+      const expireOps: { memberId: string; amount: number; balance: number }[] = [];
+      const memberUpdates: { id: string; decrement: number }[] = [];
+
+      for (const member of members) {
+        const earned = earnMap.get(member.id) ?? 0;
+        if (earned <= 0) continue;
+        const alreadyExpired = expiredMap.get(member.id) ?? 0;
+        const availableForExpiry = member.availablePoints - alreadyExpired;
         if (availableForExpiry <= 0) continue;
 
-        const oldestEarns = await this.prisma.pointTransaction.findMany({
-          where: { memberId: member.id, type: 'EARN', createdAt: { lte: cutoff } },
-          orderBy: { createdAt: 'asc' },
-          take: 100,
-        });
-
-        if (oldestEarns.length === 0) continue;
-
-        const expiryAmount = oldestEarns.reduce((sum, tx) => sum + tx.amount, 0);
-        const actualExpiry = Math.min(expiryAmount, availableForExpiry);
-
+        const actualExpiry = Math.min(earned, availableForExpiry);
         if (actualExpiry <= 0) continue;
 
-        await this.prisma.$transaction([
-          this.prisma.pointTransaction.create({
-            data: {
-              memberId: member.id,
-              type: 'EXPIRE',
-              amount: -actualExpiry,
-              balance: member.availablePoints - actualExpiry,
-              reason: `Auto-expiry after ${expiryDays} days`,
-            },
-          }),
-          this.prisma.member.update({
-            where: { id: member.id },
-            data: { availablePoints: { decrement: actualExpiry } },
-          }),
-        ]);
+        expireOps.push({
+          memberId: member.id,
+          amount: -actualExpiry,
+          balance: member.availablePoints - actualExpiry,
+        });
+        memberUpdates.push({ id: member.id, decrement: actualExpiry });
         totalExpired += actualExpiry;
+      }
+
+      if (expireOps.length > 0) {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.pointTransaction.createMany({
+            data: expireOps.map(op => ({
+              memberId: op.memberId,
+              type: 'EXPIRE' as const,
+              amount: op.amount,
+              balance: op.balance,
+              reason: `Auto-expiry after ${expiryDays} days`,
+            })),
+          });
+          for (const m of memberUpdates) {
+            await tx.member.update({
+              where: { id: m.id },
+              data: { availablePoints: { decrement: m.decrement } },
+            });
+          }
+        });
       }
     }
     this.logger.log(`Point expiry complete. ${totalExpired} points expired.`);
@@ -118,45 +139,69 @@ export class PointExpiryService {
       return;
     }
 
-    let totalBonus = 0;
-    for (const member of birthdayMembers) {
-      const settings = await this.settingsService.getTenantSettings(member.tenantId);
-      const bonusAmount = settings.loyaltyConfig?.birthdayBonus ?? 50000;
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const existingBonuses = await this.prisma.pointTransaction.findMany({
+      where: {
+        memberId: { in: birthdayMembers.map(m => m.id) },
+        type: 'EARN',
+        reason: { contains: 'Birthday bonus' },
+        createdAt: { gte: todayStart },
+      },
+      select: { memberId: true },
+    });
+    const existingSet = new Set(existingBonuses.map(e => e.memberId));
 
+    const tenantGroups = new Map<string, typeof birthdayMembers>();
+    for (const member of birthdayMembers) {
+      if (existingSet.has(member.id)) continue;
+      const group = tenantGroups.get(member.tenantId) || [];
+      group.push(member);
+      tenantGroups.set(member.tenantId, group);
+    }
+
+    let totalBonus = 0;
+    const bonusOps: { memberId: string; amount: number; balance: number }[] = [];
+    const memberUpdates: { id: string; amount: number }[] = [];
+
+    for (const [tenantId, tenantMembers] of tenantGroups) {
+      const settings = await this.settingsService.getTenantSettings(tenantId);
+      const bonusAmount = settings.loyaltyConfig?.birthdayBonus ?? 50000;
       if (bonusAmount <= 0) continue;
 
-      const existing = await this.prisma.pointTransaction.findFirst({
-        where: {
+      for (const member of tenantMembers) {
+        bonusOps.push({
           memberId: member.id,
-          type: 'EARN',
-          reason: { contains: 'Birthday bonus' },
-          createdAt: {
-            gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
-          },
-        },
-      });
-      if (existing) continue;
-
-      await this.prisma.$transaction([
-        this.prisma.pointTransaction.create({
-          data: {
-            memberId: member.id,
-            type: 'EARN',
-            amount: bonusAmount,
-            balance: member.availablePoints + bonusAmount,
-            reason: 'Birthday bonus',
-          },
-        }),
-        this.prisma.member.update({
-          where: { id: member.id },
-          data: {
-            totalPoints: { increment: bonusAmount },
-            availablePoints: { increment: bonusAmount },
-          },
-        }),
-      ]);
-      totalBonus += bonusAmount;
+          amount: bonusAmount,
+          balance: member.availablePoints + bonusAmount,
+        });
+        memberUpdates.push({ id: member.id, amount: bonusAmount });
+        totalBonus += bonusAmount;
+      }
     }
+
+    if (bonusOps.length > 0) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.pointTransaction.createMany({
+          data: bonusOps.map(op => ({
+            memberId: op.memberId,
+            type: 'EARN' as const,
+            amount: op.amount,
+            balance: op.balance,
+            reason: 'Birthday bonus',
+          })),
+        });
+        for (const m of memberUpdates) {
+          await tx.member.update({
+            where: { id: m.id },
+            data: {
+              totalPoints: { increment: m.amount },
+              availablePoints: { increment: m.amount },
+            },
+          });
+        }
+      });
+    }
+
     this.logger.log(`Birthday bonuses assigned: ${totalBonus} points to ${birthdayMembers.length} members`);
   }
 }

@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getUsers, createUser, updateUser, deleteUser, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface UserForm {
   email: string; fullName: string; phone: string; role: string;
@@ -39,6 +40,17 @@ export default function UsersPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteUser, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete User',
+    message: 'Delete this user?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteUser(deletingId); showToast('User deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -64,13 +76,9 @@ export default function UsersPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this user?')) return;
-    try {
-      await deleteUser(id);
-      showToast('User deleted successfully', 'success');
-      load();
-    } catch { showToast('Network error', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteUser();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +170,7 @@ export default function UsersPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="users" entityLabel="users" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

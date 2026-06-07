@@ -16,6 +16,7 @@ export default function KycPage() {
   const [backFile, setBackFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const loadData = () => {
     setError('');
@@ -33,12 +34,18 @@ export default function KycPage() {
     loadData();
   }, []);
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.fullName.trim()) e.fullName = 'Full name is required';
+    if (!form.idNumber.trim()) e.idNumber = 'ID number is required';
+    else if (form.idNumber.trim().length < 6) e.idNumber = 'ID number must be at least 6 characters';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.fullName || !form.idNumber) {
-      setMessage('Please fill in all fields');
-      return;
-    }
+    if (!validate()) return;
     setSubmitting(true);
     setMessage('');
     try {
@@ -111,13 +118,15 @@ export default function KycPage() {
             <div style={{ fontWeight: 600, marginBottom: '16px' }}>Identity Verification</div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Full Name (as on ID)</label>
-              <input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} placeholder="Enter your full legal name" />
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Full Name (as on ID) <span style={{ color: 'var(--error)' }}>*</span></label>
+              <input value={form.fullName} onChange={e => { setForm({ ...form, fullName: e.target.value }); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }} placeholder="Enter your full legal name" style={{ borderColor: errors.fullName ? 'var(--error)' : undefined }} />
+              {errors.fullName && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.fullName}</div>}
             </div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>ID Number</label>
-              <input value={form.idNumber} onChange={e => setForm({ ...form, idNumber: e.target.value })} placeholder="Enter your ID number" />
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>ID Number <span style={{ color: 'var(--error)' }}>*</span></label>
+              <input value={form.idNumber} onChange={e => { setForm({ ...form, idNumber: e.target.value }); if (errors.idNumber) setErrors(prev => ({ ...prev, idNumber: '' })); }} placeholder="Enter your ID number" style={{ borderColor: errors.idNumber ? 'var(--error)' : undefined }} />
+              {errors.idNumber && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.idNumber}</div>}
             </div>
 
             <div className="field" style={{ marginBottom: '12px' }}>

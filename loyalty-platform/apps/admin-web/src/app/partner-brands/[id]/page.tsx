@@ -8,6 +8,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getPartnerBrand, getPartnerBrandRewards, createPartnerReward, updatePartnerReward, deletePartnerReward } from '@/lib/api';
 
 interface RewardForm {
@@ -27,6 +28,7 @@ export default function PartnerBrandDetailPage() {
   const [editingReward, setEditingReward] = useState<any>(null);
   const [rewardForm, setRewardForm] = useState<RewardForm>(emptyRewardForm);
   const [rewardSubmitting, setRewardSubmitting] = useState(false);
+  const [confirmDeleteRewardId, setConfirmDeleteRewardId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -56,13 +58,18 @@ export default function PartnerBrandDetailPage() {
     setShowRewardModal(true);
   };
 
-  const handleDeleteReward = async (rewardId: string) => {
-    if (!confirm('Delete this partner reward?')) return;
+  const handleDeleteReward = (rewardId: string) => {
+    setConfirmDeleteRewardId(rewardId);
+  };
+
+  const handleConfirmDeleteReward = async () => {
+    if (!confirmDeleteRewardId) return;
     try {
-      await deletePartnerReward(rewardId);
+      await deletePartnerReward(confirmDeleteRewardId);
       showToast('Partner reward deleted successfully', 'success');
       load();
     } catch { showToast('Failed to delete reward', 'error'); }
+    setConfirmDeleteRewardId(null);
   };
 
   const handleRewardSubmit = async (e: React.FormEvent) => {
@@ -181,6 +188,7 @@ export default function PartnerBrandDetailPage() {
             <FormActions onCancel={() => setShowRewardModal(false)} loading={rewardSubmitting} submitLabel={editingReward ? 'Save' : 'Create'} />
           </form>
         </Modal>
+        <ConfirmModal open={!!confirmDeleteRewardId} title="Delete Partner Reward" message="Delete this partner reward?" onConfirm={handleConfirmDeleteReward} onCancel={() => setConfirmDeleteRewardId(null)} confirmText="Delete" />
       </main>
     </div>
   );

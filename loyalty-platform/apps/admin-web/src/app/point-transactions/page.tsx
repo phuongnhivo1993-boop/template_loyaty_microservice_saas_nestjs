@@ -9,6 +9,8 @@ import DataTable from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import ImportModal from '@/components/ImportModal';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getPointTransactions } from '@/lib/api';
 
 const typeColors: Record<string, { bg: string; color: string }> = {
@@ -29,6 +31,7 @@ export default function PointTransactionsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -96,7 +99,16 @@ export default function PointTransactionsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <DataTable columns={columns} data={transactions} emptyMessage="No transactions found" />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['type', 'amount', 'balance', 'reason', 'reference', 'createdAt'];
+              const rows = transactions.filter(t => ids.includes(t.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-transactions.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} />
+        <DataTable columns={columns} data={transactions} emptyMessage="No transactions found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="point_transactions" entityLabel="point transactions" onImportComplete={load} />
       </main>

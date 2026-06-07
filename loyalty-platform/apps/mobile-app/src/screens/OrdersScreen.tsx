@@ -8,6 +8,7 @@ import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 import Header from '../components/Header';
+import { useColors } from '../theme/useColors';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#F59E0B',
@@ -21,6 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function OrdersScreen() {
   const navigation = useNavigation<any>();
+  const colors = useColors();
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,22 +79,22 @@ export default function OrdersScreen() {
     amount.toLocaleString('vi-VN') + ' VND';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header title="My Orders" onBack={() => navigation.goBack()} />
       <View style={styles.filterRow}>
         <TouchableOpacity
-          style={[styles.filterChip, !statusFilter && styles.filterChipActive]}
+          style={[styles.filterChip, { backgroundColor: colors.border }, !statusFilter && { backgroundColor: colors.primaryDark }]}
           onPress={() => setStatusFilter(undefined)}
         >
-          <Text style={[styles.filterText, !statusFilter && styles.filterTextActive]}>All</Text>
+          <Text style={[styles.filterText, { color: colors.textSecondary }, !statusFilter && styles.filterTextActive]}>All</Text>
         </TouchableOpacity>
         {filters.map((f) => (
           <TouchableOpacity
             key={f}
-            style={[styles.filterChip, statusFilter === f && styles.filterChipActive]}
+            style={[styles.filterChip, { backgroundColor: colors.border }, statusFilter === f && { backgroundColor: colors.primaryDark }]}
             onPress={() => setStatusFilter(f)}
           >
-            <Text style={[styles.filterText, statusFilter === f && styles.filterTextActive]}>{f}</Text>
+            <Text style={[styles.filterText, { color: colors.textSecondary }, statusFilter === f && styles.filterTextActive]}>{f}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -106,22 +108,22 @@ export default function OrdersScreen() {
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} /> : null}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.orderCard}
+            style={[styles.orderCard, { backgroundColor: colors.card }]}
             onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
           >
             <View style={styles.orderHeader}>
-              <Text style={styles.orderCode}>#{item.orderCode}</Text>
+              <Text style={[styles.orderCode, { color: colors.text }]}>#{item.orderCode}</Text>
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] || '#6B7280' }]}>
                 <Text style={styles.statusText}>{item.status}</Text>
               </View>
             </View>
             <Text style={styles.orderTotal}>{formatCurrency(item.total)}</Text>
             <View style={styles.orderMeta}>
-              <Text style={styles.metaText}>{item.items?.length || 0} items</Text>
-              <Text style={styles.metaText}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{item.items?.length || 0} items</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
             </View>
             {item.pointsEarned > 0 && (
-              <Text style={styles.pointsText}>+{item.pointsEarned} points earned</Text>
+              <Text style={[styles.pointsText, { color: colors.primaryDark }]}>+{item.pointsEarned} points earned</Text>
             )}
           </TouchableOpacity>
         )}
@@ -131,19 +133,18 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1 },
   filterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexWrap: 'wrap' },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F3F4F6' },
-  filterChipActive: { backgroundColor: '#3B82F6' },
-  filterText: { fontSize: 12, color: '#6B7280' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  filterText: { fontSize: 12 },
   filterTextActive: { color: '#FFFFFF', fontWeight: '600' },
-  orderCard: { marginHorizontal: 16, marginVertical: 4, padding: 16, backgroundColor: '#FFFFFF', borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+  orderCard: { marginHorizontal: 16, marginVertical: 4, padding: 16, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderCode: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  orderCode: { fontSize: 16, fontWeight: '700' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   statusText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
   orderTotal: { fontSize: 20, fontWeight: '700', color: '#059669', marginBottom: 4 },
   orderMeta: { flexDirection: 'row', justifyContent: 'space-between' },
-  metaText: { fontSize: 13, color: '#6B7280' },
-  pointsText: { fontSize: 12, color: '#3B82F6', marginTop: 4, fontWeight: '500' },
+  metaText: { fontSize: 13 },
+  pointsText: { fontSize: 12, marginTop: 4, fontWeight: '500' },
 });

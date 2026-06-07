@@ -8,6 +8,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import { FormInput, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getStore, getStoreStaff, addStoreStaff, updateStoreStaff, deleteStoreStaff } from '@/lib/api';
 
 export default function StoreDetailPage() {
@@ -21,6 +22,7 @@ export default function StoreDetailPage() {
   const [editingStaff, setEditingStaff] = useState<any>(null);
   const [staffForm, setStaffForm] = useState({ fullName: '', email: '', phone: '', role: 'STAFF' });
   const [staffLoading, setStaffLoading] = useState(false);
+  const [confirmDeleteStaffId, setConfirmDeleteStaffId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -47,13 +49,18 @@ export default function StoreDetailPage() {
     setShowStaffModal(true);
   };
 
-  const handleDeleteStaff = async (staffId: string) => {
-    if (!confirm('Remove this staff member?')) return;
+  const handleDeleteStaff = (staffId: string) => {
+    setConfirmDeleteStaffId(staffId);
+  };
+
+  const handleConfirmDeleteStaff = async () => {
+    if (!confirmDeleteStaffId) return;
     try {
-      await deleteStoreStaff(staffId);
+      await deleteStoreStaff(confirmDeleteStaffId);
       showToast('Staff removed successfully', 'success');
       load();
     } catch { showToast('Failed to remove staff', 'error'); }
+    setConfirmDeleteStaffId(null);
   };
 
   const handleStaffSubmit = async (e: React.FormEvent) => {
@@ -160,6 +167,7 @@ export default function StoreDetailPage() {
             <FormActions onCancel={() => setShowStaffModal(false)} loading={staffLoading} submitLabel={editingStaff ? 'Save' : 'Add'} />
           </form>
         </Modal>
+        <ConfirmModal open={!!confirmDeleteStaffId} title="Remove Staff" message="Remove this staff member?" onConfirm={handleConfirmDeleteStaff} onCancel={() => setConfirmDeleteStaffId(null)} confirmText="Remove" />
       </main>
     </div>
   );

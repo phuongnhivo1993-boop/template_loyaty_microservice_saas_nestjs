@@ -12,6 +12,8 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getReferrals, convertReferral, getReferralStats, api, duplicateEntity } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import ConfirmModal from '@/components/ConfirmModal';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function ReferralsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmConvertId, setConfirmConvertId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
 
   const load = async () => {
@@ -57,16 +60,21 @@ export default function ReferralsPage() {
     loadStats();
   }, [search, page, filterStatus]);
 
-  const handleConvert = async (id: string) => {
-    if (!confirm('Convert this referral?')) return;
-    setConverting(id);
+  const handleConvert = (id: string) => {
+    setConfirmConvertId(id);
+  };
+
+  const handleConfirmConvert = async () => {
+    if (!confirmConvertId) return;
+    setConverting(confirmConvertId);
     try {
-      await convertReferral(id, {});
+      await convertReferral(confirmConvertId, {});
       showToast('Referral converted successfully', 'success');
       load();
       loadStats();
     } catch { showToast('Failed to convert referral', 'error'); }
     setConverting(null);
+    setConfirmConvertId(null);
   };
 
   const exportCsv = async () => {
@@ -162,6 +170,7 @@ export default function ReferralsPage() {
         <DataTable columns={columns} data={referrals} emptyMessage="No referrals found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="referrals" entityLabel="referrals" onImportComplete={load} />
+        <ConfirmModal open={!!confirmConvertId} title="Convert Referral" message="Convert this referral?" onConfirm={handleConfirmConvert} onCancel={() => setConfirmConvertId(null)} confirmText="Convert" />
       </main>
     </div>
   );

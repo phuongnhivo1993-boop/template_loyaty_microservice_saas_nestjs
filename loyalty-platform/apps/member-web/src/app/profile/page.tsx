@@ -10,11 +10,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [form, setForm] = useState({ fullName: '', phone: '' });
-  const [pwForm, setPwForm] = useState({ oldPassword: '', newPassword: '' });
+  const [pwForm, setPwForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [message, setMessage] = useState('');
   const [pwMessage, setPwMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pwErrors, setPwErrors] = useState<Record<string, string>>({});
 
   const loadData = () => {
     setError('');
@@ -29,20 +31,40 @@ export default function ProfilePage() {
     loadData();
   }, []);
 
+  const validateProfile = () => {
+    const e: Record<string, string> = {};
+    if (!form.fullName.trim()) e.fullName = 'Full name is required';
+    if (form.phone && !/^\+?[\d\s\-()]{7,15}$/.test(form.phone)) e.phone = 'Invalid phone number format';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateProfile()) return;
     try {
       await updateProfile(form);
       setMessage('Profile updated!');
     } catch (err: any) { setMessage(err.message); }
   };
 
+  const validatePassword = () => {
+    const e: Record<string, string> = {};
+    if (!pwForm.oldPassword) e.oldPassword = 'Current password is required';
+    if (!pwForm.newPassword) e.newPassword = 'New password is required';
+    else if (pwForm.newPassword.length < 6) e.newPassword = 'New password must be at least 6 characters';
+    if (pwForm.newPassword !== pwForm.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    setPwErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePassword()) return;
     try {
       await changePassword(pwForm.oldPassword, pwForm.newPassword);
       setPwMessage('Password changed!');
-      setPwForm({ oldPassword: '', newPassword: '' });
+      setPwForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) { setPwMessage(err.message); }
   };
 
@@ -83,12 +105,14 @@ export default function ProfilePage() {
         <div className="card">
           <div style={{ fontWeight: 600, marginBottom: '12px' }}>Update Profile</div>
           <div className="field" style={{ marginBottom: '12px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Full Name</label>
-            <input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Full Name <span style={{ color: 'var(--error)' }}>*</span></label>
+            <input value={form.fullName} onChange={e => { setForm({ ...form, fullName: e.target.value }); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }} style={{ borderColor: errors.fullName ? 'var(--error)' : undefined }} />
+            {errors.fullName && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.fullName}</div>}
           </div>
           <div className="field" style={{ marginBottom: '12px' }}>
             <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Phone</label>
-            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            <input value={form.phone} onChange={e => { setForm({ ...form, phone: e.target.value }); if (errors.phone) setErrors(prev => ({ ...prev, phone: '' })); }} style={{ borderColor: errors.phone ? 'var(--error)' : undefined }} />
+            {errors.phone && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.phone}</div>}
           </div>
           {message && <div style={{ fontSize: '14px', color: message.includes('Error') ? 'var(--error)' : 'var(--success)', marginBottom: '8px' }}>{message}</div>}
           <button type="submit" className="btn btn-primary">Save</button>
@@ -99,12 +123,19 @@ export default function ProfilePage() {
         <div className="card">
           <div style={{ fontWeight: 600, marginBottom: '12px' }}>Change Password</div>
           <div className="field" style={{ marginBottom: '12px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Current Password</label>
-            <input type="password" value={pwForm.oldPassword} onChange={e => setPwForm({ ...pwForm, oldPassword: e.target.value })} />
+            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Current Password <span style={{ color: 'var(--error)' }}>*</span></label>
+            <input type="password" value={pwForm.oldPassword} onChange={e => { setPwForm({ ...pwForm, oldPassword: e.target.value }); if (pwErrors.oldPassword) setPwErrors(prev => ({ ...prev, oldPassword: '' })); }} style={{ borderColor: pwErrors.oldPassword ? 'var(--error)' : undefined }} />
+            {pwErrors.oldPassword && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{pwErrors.oldPassword}</div>}
           </div>
           <div className="field" style={{ marginBottom: '12px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>New Password</label>
-            <input type="password" value={pwForm.newPassword} onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })} />
+            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>New Password <span style={{ color: 'var(--error)' }}>*</span></label>
+            <input type="password" value={pwForm.newPassword} onChange={e => { setPwForm({ ...pwForm, newPassword: e.target.value }); if (pwErrors.newPassword) setPwErrors(prev => ({ ...prev, newPassword: '' })); }} style={{ borderColor: pwErrors.newPassword ? 'var(--error)' : undefined }} />
+            {pwErrors.newPassword && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{pwErrors.newPassword}</div>}
+          </div>
+          <div className="field" style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Confirm New Password <span style={{ color: 'var(--error)' }}>*</span></label>
+            <input type="password" value={pwForm.confirmPassword} onChange={e => { setPwForm({ ...pwForm, confirmPassword: e.target.value }); if (pwErrors.confirmPassword) setPwErrors(prev => ({ ...prev, confirmPassword: '' })); }} style={{ borderColor: pwErrors.confirmPassword ? 'var(--error)' : undefined }} />
+            {pwErrors.confirmPassword && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{pwErrors.confirmPassword}</div>}
           </div>
           {pwMessage && <div style={{ fontSize: '14px', color: pwMessage.includes('Error') ? 'var(--error)' : 'var(--success)', marginBottom: '8px' }}>{pwMessage}</div>}
           <button type="submit" className="btn btn-outline">Change Password</button>

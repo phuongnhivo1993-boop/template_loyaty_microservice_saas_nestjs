@@ -6,12 +6,13 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import PageHeader from '@/components/PageHeader';
 import DataTable from '@/components/DataTable';
-import BulkActionBar from '@/components/BulkActionBar';
 import Pagination from '@/components/Pagination';
 import Modal from '@/components/Modal';
 import ImportModal from '@/components/ImportModal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
+import BulkActionsToolbar from '@/components/BulkActionsToolbar';
+import type { BulkAction } from '@/components/BulkActionsToolbar';
 import { getRewards, createReward, updateReward, deleteReward, duplicateEntity } from '@/lib/api';
 import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
@@ -151,19 +152,16 @@ export default function RewardsPage() {
           <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
         </div>
 
-        <BulkActionBar selectedCount={selectedIds.length} onClear={() => setSelectedIds([])}
-          onDelete={async () => {
-            if (!confirm(`Delete ${selectedIds.length} rewards?`)) return;
-            for (const id of selectedIds) await deleteReward(id);
-            showToast(`Deleted ${selectedIds.length} rewards`, 'success');
-            setSelectedIds([]); load();
-          }}
-          onExport={() => {
-            const cols = ['name', 'type', 'pointsRequired', 'quantity'];
-            const rows = rewards.filter(r => selectedIds.includes(r.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
-            const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
-            const a = document.createElement('a'); a.href = url; a.download = 'selected-rewards.csv'; a.click(); URL.revokeObjectURL(url);
-          }} />
+        <BulkActionsToolbar selectedIds={selectedIds} onClear={() => setSelectedIds([])}
+          actions={[
+            { label: 'Delete Selected', variant: 'danger', confirmMessage: 'Xác nhận xóa', onClick: async (ids) => { for (const id of ids) await deleteReward(id); } },
+            { label: 'Export CSV', onClick: async (ids) => {
+              const cols = ['name', 'type', 'pointsRequired', 'quantity'];
+              const rows = rewards.filter(r => ids.includes(r.id)).map((item: any) => cols.map((col: string) => { const v = item[col]?.toString() || ''; return v.includes(',') ? `"${v}"` : v; }).join(','));
+              const url = URL.createObjectURL(new Blob([[cols.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }));
+              const a = document.createElement('a'); a.href = url; a.download = 'selected-rewards.csv'; a.click(); URL.revokeObjectURL(url);
+            }},
+          ]} onSuccess={load} />
         <DataTable columns={columns} data={rewards} emptyMessage="No rewards found" selectable selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 

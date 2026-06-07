@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface PromotionForm {
   name: string; description: string; priority: string; conditions: string; actions: string; status: string;
@@ -37,6 +38,17 @@ export default function PromotionsPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeletePromotion, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Promotion',
+    message: 'Delete this promotion rule?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deletePromotion(deletingId); showToast('Promotion deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -70,13 +82,9 @@ export default function PromotionsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this promotion rule?')) return;
-    try {
-      await deletePromotion(id);
-      showToast('Promotion rule deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete promotion rule', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeletePromotion();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,6 +188,7 @@ export default function PromotionsPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="promotions" entityLabel="promotions" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );

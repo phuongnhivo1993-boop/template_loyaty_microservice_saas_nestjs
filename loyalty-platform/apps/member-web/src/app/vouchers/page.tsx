@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyVouchers, redeemVoucher } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function VouchersPage() {
   const router = useRouter();
@@ -64,13 +65,10 @@ export default function VouchersPage() {
       />
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🎫</div>
-          <div className="empty-text">{search ? 'No vouchers match your search' : 'No vouchers yet'}</div>
-        </div>
+        <EmptyState icon="🎫" title={search ? 'No vouchers match your search' : 'No vouchers yet'} />
       ) : (
         filtered.map((v: any) => (
-          <div key={v.id} className="card" style={{ borderLeft: `4px solid ${v.redeemed ? 'var(--text-muted)' : 'var(--primary)'}` }}>
+          <div key={v.id} className="card" style={{ borderLeft: `4px solid ${v.redeemed ? 'var(--text-muted)' : 'var(--primary)'}`, cursor: 'pointer' }} onClick={() => router.push(`/vouchers/${v.id}`)}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: '16px' }}>{v.voucher?.code || v.code}</div>

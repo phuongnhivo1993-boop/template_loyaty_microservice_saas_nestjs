@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import { NotificationTriggerService } from '../common/services/notification-trigger.service';
 import { parseSort } from '../common/utils/sort.util';
 
@@ -10,6 +11,7 @@ export class TierService {
 
   constructor(
     private prisma: PrismaService,
+    private cacheService: CacheService,
     private notificationTrigger: NotificationTriggerService,
   ) {}
 
@@ -25,6 +27,10 @@ export class TierService {
   }
 
   async findAll(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string, status?: string) {
+    const cacheKey = `tiers:list:${page}:${limit}:${search || ''}:${sort || ''}:${status || ''}`;
+    const cached = await this.cacheService.get<any>(cacheKey, tenantId);
+    if (cached) return cached;
+
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -41,7 +47,9 @@ export class TierService {
       this.prisma.tier.findMany({ where, orderBy: sort ? { [orderBy]: orderDirection } : { minPoints: 'asc' }, skip, take: limit }),
       this.prisma.tier.count({ where }),
     ]);
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    const result = { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    await this.cacheService.set(cacheKey, result, 300, tenantId);
+    return result;
   }
 
   async findOne(id: string) {

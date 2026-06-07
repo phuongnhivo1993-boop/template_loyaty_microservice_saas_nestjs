@@ -1,4 +1,5 @@
 import { Modal as RNModal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useColors } from '../theme/useColors';
 
 interface Props {
   visible: boolean;
@@ -8,13 +9,14 @@ interface Props {
 }
 
 export default function Modal({ visible, title, onClose, children }: Props) {
+  const colors = useColors();
   return (
     <RNModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: colors.card }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose}><Text style={styles.close}>✕</Text></TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            <TouchableOpacity onPress={onClose}><Text style={[styles.close, { color: colors.textSecondary }]}>✕</Text></TouchableOpacity>
           </View>
           {children}
         </View>
@@ -25,8 +27,8 @@ export default function Modal({ visible, title, onClose, children }: Props) {
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  content: { backgroundColor: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
+  content: { borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
-  close: { fontSize: 20, color: '#94a3b8', padding: 4 },
+  title: { fontSize: 18, fontWeight: '700' },
+  close: { fontSize: 20, padding: 4 },
 });

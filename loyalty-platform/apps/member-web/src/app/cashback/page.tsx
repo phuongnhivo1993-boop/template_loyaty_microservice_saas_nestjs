@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMyCashback, getCashbackTransactions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 const typeFilters = ['All', 'Earned', 'Burned'] as const;
 type TypeFilter = (typeof typeFilters)[number];
@@ -82,10 +83,7 @@ export default function CashbackPage() {
       <div style={{ fontWeight: 600, marginBottom: '12px' }}>Transaction History</div>
 
       {filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📭</div>
-          <div className="empty-text">No transactions yet</div>
-        </div>
+        <EmptyState icon="📭" title="No transactions yet" action={{ label: 'Earn cashback on purchases', onClick: () => {} }} />
       ) : (
         <div className="card" style={{ padding: '0 20px' }}>
           {filtered.map((tx: any) => (

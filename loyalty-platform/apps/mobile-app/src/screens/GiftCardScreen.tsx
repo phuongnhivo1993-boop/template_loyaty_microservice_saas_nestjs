@@ -4,6 +4,7 @@ import { giftCards } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import type { GiftCard } from '../services/types';
 import { LoadingState, ErrorState, EmptyState, Badge } from '../components';
+import { useColors } from '../theme/useColors';
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   ACTIVE: { color: '#16a34a', bg: '#f0fdf4' },
@@ -13,6 +14,7 @@ const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
 };
 
 export default function GiftCardScreen() {
+  const colors = useColors();
   const profile = useAuthStore((s) => s.profile);
   const [cards, setCards] = useState<GiftCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,12 +46,12 @@ export default function GiftCardScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
-        style={styles.container}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
+        style={[styles.container, { backgroundColor: colors.background }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primaryDark]} />}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.primaryDark }]}>
           <Text style={styles.headerTitle}>Gift Cards</Text>
           <Text style={styles.headerSubtitle}>{cards.length} card{cards.length !== 1 ? 's' : ''}</Text>
         </View>
@@ -58,28 +60,28 @@ export default function GiftCardScreen() {
           {cards.length > 0 ? cards.map((card) => {
             const sc = STATUS_COLORS[card.status] || STATUS_COLORS.DISABLED;
             return (
-              <View key={card.id} style={styles.card}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.cardCode}>{card.code}</Text>
+              <View key={card.id} style={[styles.card, { backgroundColor: colors.card }]}>
+                <View style={[styles.cardTop, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.cardCode, { color: colors.text }]}>{card.code}</Text>
                   <Badge label={card.status} color={sc.color} bg={sc.bg} />
                 </View>
                 <View style={styles.cardBody}>
                   <View style={styles.cardRow}>
-                    <Text style={styles.cardLabel}>Type</Text>
-                    <Text style={styles.cardValue}>{card.type}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Type</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{card.type}</Text>
                   </View>
                   <View style={styles.cardRow}>
-                    <Text style={styles.cardLabel}>Balance</Text>
-                    <Text style={styles.cardValue}>{card.balance?.toLocaleString()} {card.currency}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Balance</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{card.balance?.toLocaleString()} {card.currency}</Text>
                   </View>
                   <View style={styles.cardRow}>
-                    <Text style={styles.cardLabel}>Initial Value</Text>
-                    <Text style={styles.cardValue}>{card.initialValue?.toLocaleString()} {card.currency}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Initial Value</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{card.initialValue?.toLocaleString()} {card.currency}</Text>
                   </View>
                   {card.expiresAt && (
                     <View style={styles.cardRow}>
-                      <Text style={styles.cardLabel}>Expires</Text>
-                      <Text style={styles.cardValue}>{new Date(card.expiresAt).toLocaleDateString('vi-VN')}</Text>
+                      <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Expires</Text>
+                      <Text style={[styles.cardValue, { color: colors.text }]}>{new Date(card.expiresAt).toLocaleDateString('vi-VN')}</Text>
                     </View>
                   )}
                 </View>
@@ -95,16 +97,16 @@ export default function GiftCardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { padding: 24, backgroundColor: '#2563eb' },
+  container: { flex: 1 },
+  header: { padding: 24 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: 'white' },
   headerSubtitle: { fontSize: 14, color: '#bfdbfe', marginTop: 4 },
   list: { padding: 16, gap: 16 },
-  card: { backgroundColor: 'white', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  cardCode: { fontSize: 16, fontWeight: '700', color: '#1e293b', fontFamily: 'monospace' },
+  card: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingBottom: 12, borderBottomWidth: 1 },
+  cardCode: { fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
   cardBody: { padding: 16, gap: 12 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardLabel: { fontSize: 14, color: '#94a3b8' },
-  cardValue: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+  cardLabel: { fontSize: 14 },
+  cardValue: { fontSize: 14, fontWeight: '600' },
 });

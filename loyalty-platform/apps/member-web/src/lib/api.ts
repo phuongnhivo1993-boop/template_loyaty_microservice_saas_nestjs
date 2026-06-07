@@ -42,6 +42,7 @@ export const changePassword = (oldPassword: string, newPassword: string) =>
 
 // Wallet
 export const getWallet = () => api.get('/me/wallet');
+export const getTransaction = (id: string) => api.get(`/me/transactions/${id}`);
 export const getTransactions = (params?: { page?: number; limit?: number; type?: string }) => {
   const q = new URLSearchParams();
   if (params?.page) q.set('page', String(params.page));
@@ -53,6 +54,7 @@ export const getTransactions = (params?: { page?: number; limit?: number; type?:
 
 // Vouchers
 export const getMyVouchers = () => api.get('/me/vouchers');
+export const getVoucher = (id: string) => api.get(`/member-vouchers/${id}`);
 export const redeemVoucher = (id: string) => api.post(`/member-vouchers/${id}/redeem`);
 
 // Orders

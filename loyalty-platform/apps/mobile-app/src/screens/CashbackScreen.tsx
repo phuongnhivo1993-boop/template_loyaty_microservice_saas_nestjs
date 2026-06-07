@@ -4,10 +4,12 @@ import { cashback } from '../services/api';
 import { useAuthStore } from '../services/authStore';
 import type { CashbackBalance, CashbackTransaction } from '../services/types';
 import { LoadingState, ErrorState, EmptyState, Header } from '../components';
+import { useColors } from '../theme/useColors';
 
 const TABS = ['ALL', 'EARN', 'BURN'];
 
 export default function CashbackScreen() {
+  const colors = useColors();
   const profile = useAuthStore((s) => s.profile);
   const [balance, setBalance] = useState<CashbackBalance | null>(null);
   const [transactions, setTransactions] = useState<CashbackTransaction[]>([]);
@@ -52,15 +54,15 @@ export default function CashbackScreen() {
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Cashback" subtitle="Earn cashback on every purchase" />
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primaryDark]} />}
         ListHeaderComponent={
           <>
-            <View style={styles.balanceCard}>
+            <View style={[styles.balanceCard, { backgroundColor: colors.primaryDark }]}>
               <Text style={styles.balanceLabel}>Cashback Balance</Text>
               <Text style={styles.balanceValue}>
                 {(balance?.balance ?? 0).toLocaleString()} {balance?.currency || 'VND'}
@@ -70,8 +72,8 @@ export default function CashbackScreen() {
             <View style={styles.filterRow}>
               {TABS.map(tab => (
                 <TouchableOpacity key={tab} onPress={() => setFilter(tab)}
-                  style={[styles.filterBtn, filter === tab && styles.filterActive]}>
-                  <Text style={[styles.filterText, filter === tab && styles.filterTextActive]}>{tab}</Text>
+                  style={[styles.filterBtn, { backgroundColor: colors.border }, filter === tab && { backgroundColor: colors.primaryDark }]}>
+                  <Text style={[styles.filterText, { color: colors.textSecondary }, filter === tab && styles.filterTextActive]}>{tab}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -80,15 +82,15 @@ export default function CashbackScreen() {
         data={filtered}
         keyExtractor={(item: CashbackTransaction) => item.id}
         renderItem={({ item }: { item: CashbackTransaction }) => (
-          <View style={styles.txCard}>
+          <View style={[styles.txCard, { backgroundColor: colors.card }]}>
             <View style={styles.txHeader}>
-              <Text style={[styles.txType, item.type === 'EARN' ? styles.earnText : styles.burnText]}>
+              <Text style={[styles.txType, item.type === 'EARN' ? { color: colors.success } : { color: colors.error }]}>
                 {item.type === 'EARN' ? '+' : '-'}{item.amount.toLocaleString()}
               </Text>
-              <Text style={styles.txDate}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
+              <Text style={[styles.txDate, { color: colors.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
             </View>
-            {item.reason && <Text style={styles.txReason}>{item.reason}</Text>}
-            <Text style={styles.txBalance}>Balance: {item.balance.toLocaleString()}</Text>
+            {item.reason && <Text style={[styles.txReason, { color: colors.textSecondary }]}>{item.reason}</Text>}
+            <Text style={[styles.txBalance, { color: colors.textSecondary }]}>Balance: {item.balance.toLocaleString()}</Text>
           </View>
         )}
         ListEmptyComponent={<EmptyState message="No transactions found" icon="💵" />}
@@ -101,25 +103,23 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingBottom: 24 },
   balanceCard: {
-    margin: 16, padding: 24, backgroundColor: '#2563eb', borderRadius: 16,
+    margin: 16, padding: 24, borderRadius: 16,
     alignItems: 'center',
   },
   balanceLabel: { fontSize: 14, color: '#bfdbfe' },
   balanceValue: { fontSize: 32, fontWeight: '800', color: 'white', marginTop: 4 },
   filterRow: { flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 12, gap: 8 },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: '#f1f5f9' },
-  filterActive: { backgroundColor: '#2563eb' },
-  filterText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  filterBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 },
+  filterActive: {},
+  filterText: { fontSize: 13, fontWeight: '600' },
   filterTextActive: { color: 'white' },
   txCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 16, marginHorizontal: 16, marginBottom: 10,
+    borderRadius: 12, padding: 16, marginHorizontal: 16, marginBottom: 10,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
   txHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   txType: { fontSize: 18, fontWeight: '700' },
-  earnText: { color: '#16a34a' },
-  burnText: { color: '#dc2626' },
-  txDate: { fontSize: 13, color: '#94a3b8' },
-  txReason: { fontSize: 14, color: '#64748b', marginTop: 4 },
-  txBalance: { fontSize: 12, color: '#94a3b8', marginTop: 6 },
+  txDate: { fontSize: 13 },
+  txReason: { fontSize: 14, marginTop: 4 },
+  txBalance: { fontSize: 12, marginTop: 6 },
 });

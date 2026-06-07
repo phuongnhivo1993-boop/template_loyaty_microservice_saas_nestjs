@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getEarningRules, createEarningRule, updateEarningRule, deleteEarningRule, calculateEarningRule, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface RuleForm {
   name: string; description: string; pointsPerUnit: string; minAmount: string; maxAmount: string; category: string;
@@ -36,6 +37,18 @@ export default function EarningRulesPage() {
   const limit = 20;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteEarningRule, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Earning Rule',
+    message: 'Delete this earning rule?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteEarningRule(deletingId); showToast('Rule deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
+
   const [calcAmount, setCalcAmount] = useState('100000');
   const [calcResult, setCalcResult] = useState<any>(null);
 
@@ -68,13 +81,9 @@ export default function EarningRulesPage() {
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
   const openEdit = (r: any) => { setEditing(r); setForm({ name: r.name, description: r.description || '', pointsPerUnit: String(r.pointsPerUnit), minAmount: r.minAmount ? String(r.minAmount) : '', maxAmount: r.maxAmount ? String(r.maxAmount) : '', category: r.category || '' }); setShowModal(true); };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this earning rule?')) return;
-    try {
-      await deleteEarningRule(id);
-      showToast('Rule deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteEarningRule();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +172,7 @@ export default function EarningRulesPage() {
             <FormActions onCancel={() => setShowModal(false)} loading={false} submitLabel={editing ? 'Save' : 'Create'} />
           </form>
         </Modal>
+        {deleteModal}
       </main>
     </div>
   );

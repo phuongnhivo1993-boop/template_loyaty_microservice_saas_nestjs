@@ -106,6 +106,18 @@ export class MemberController {
     return this.memberService.remove(id);
   }
 
+  @Post(':id/restore')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Member ID' })
+  @ApiOperation({ summary: 'Restore inactive member' })
+  @ApiResponse({ status: 201, description: 'Member restored' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  restore(@Param('id') id: string) {
+    return this.memberService.restore(id);
+  }
+
   @Post(':id/toggle-status')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

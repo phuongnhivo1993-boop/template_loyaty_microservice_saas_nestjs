@@ -1,6 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsNumber, Min, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min, IsArray, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+export enum BulkProductStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  OUT_OF_STOCK = 'OUT_OF_STOCK',
+}
 
 export class CreateProductDto {
   @ApiProperty() @IsString() name: string;
@@ -49,7 +55,7 @@ export class ProductQueryDto {
 
 export class BulkStatusDto {
   @ApiProperty({ type: [String] }) @IsArray() @IsString({ each: true }) ids: string[];
-  @ApiProperty() @IsString() status: string;
+  @ApiProperty({ enum: BulkProductStatus }) @IsEnum(BulkProductStatus) status: BulkProductStatus;
 }
 
 export class BulkIdsDto {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getMissions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function MissionsPage() {
   const router = useRouter();
@@ -45,10 +46,7 @@ export default function MissionsPage() {
       </div>
 
       {missions.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📋</div>
-          <div className="empty-text">No missions available</div>
-        </div>
+        <EmptyState icon="📋" title="No missions available" action={{ label: 'Check back later', onClick: () => {} }} />
       ) : (
         missions.map((m: any) => {
           const progress = m.currentProgress ?? m.progress ?? 0;

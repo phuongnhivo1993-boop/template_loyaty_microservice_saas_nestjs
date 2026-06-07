@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MemberLayout from '../member-layout';
 import { getStores } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 export default function StoresPage() {
   const router = useRouter();
@@ -45,10 +46,7 @@ export default function StoresPage() {
       </div>
 
       {stores.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🏪</div>
-          <div className="empty-text">No stores available</div>
-        </div>
+        <EmptyState icon="🏪" title="No stores available" />
       ) : (
         stores.map((s: any) => (
           <div key={s.id} className="card">

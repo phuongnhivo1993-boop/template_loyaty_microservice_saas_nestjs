@@ -7,6 +7,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import { FormInput, FormSelect, FormTextarea, FormActions } from '@/components/FormField';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getCashbackConfig, updateCashbackConfig, deleteCashbackConfig } from '@/lib/api';
 
 export default function CashbackDetailPage({ params }: { params: { id: string } }) {
@@ -17,6 +18,7 @@ export default function CashbackDetailPage({ params }: { params: { id: string } 
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const load = () => {
     getCashbackConfig(params.id)
@@ -47,8 +49,12 @@ export default function CashbackDetailPage({ params }: { params: { id: string } 
     setShowEditModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this cashback config?')) return;
+  const handleDelete = () => {
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     try {
       await deleteCashbackConfig(params.id);
       showToast('Cashback config deleted', 'success');
@@ -143,6 +149,7 @@ export default function CashbackDetailPage({ params }: { params: { id: string } 
             <FormActions onCancel={() => setShowEditModal(false)} loading={submitting} submitLabel="Save" />
           </form>
         </Modal>
+        <ConfirmModal open={showConfirmDelete} title="Delete Cashback Config" message="Delete this cashback config?" onConfirm={handleConfirmDelete} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

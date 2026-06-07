@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/Toast';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { getProduct, deleteProduct } from '@/lib/api';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function ProductDetailPage() {
   const { showToast } = useToast();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) { router.push('/login'); return; }
@@ -60,8 +62,9 @@ export default function ProductDetailPage() {
         )}
         <div style={{ display: 'flex', gap: '12px' }}>
           <button onClick={() => router.push('/products')} className="btn-primary">Edit</button>
-          <button onClick={async () => { if (confirm('Delete this product?')) { await deleteProduct(product.id); showToast('Product deleted', 'success'); router.push('/products'); } }} className="btn-danger">Delete</button>
+          <button onClick={() => setShowConfirmDelete(true)} className="btn-danger">Delete</button>
         </div>
+        <ConfirmModal open={showConfirmDelete} title="Delete Product" message="Delete this product?" onConfirm={async () => { setShowConfirmDelete(false); await deleteProduct(product.id); showToast('Product deleted', 'success'); router.push('/products'); }} onCancel={() => setShowConfirmDelete(false)} confirmText="Delete" />
       </main>
     </div>
   );

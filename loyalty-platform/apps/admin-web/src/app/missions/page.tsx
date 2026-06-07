@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { getMissions, createMission, updateMission, deleteMission, duplicateEntity, api } from '@/lib/api';
 import BulkActionsToolbar from '@/components/BulkActionsToolbar';
 import type { BulkAction } from '@/components/BulkActionsToolbar';
+import { useConfirmDelete } from '@/hooks/useConfirmDelete';
 
 interface MissionForm {
   name: string; description: string; pointsReward: string; criteria: string; startDate: string; endDate: string;
@@ -36,6 +37,17 @@ export default function MissionsPage() {
   const limit = 20;
   const [showImport, setShowImport] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirmDelete: confirmDeleteMission, modal: deleteModal } = useConfirmDelete({
+    title: 'Delete Mission',
+    message: 'Delete this mission?',
+    onConfirm: async () => {
+      if (!deletingId) return;
+      try { await deleteMission(deletingId); showToast('Mission deleted', 'success'); load(); }
+      catch { showToast('Network error', 'error'); }
+    },
+  });
 
   const load = async () => {
     setLoading(true);
@@ -69,13 +81,9 @@ export default function MissionsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this mission?')) return;
-    try {
-      await deleteMission(id);
-      showToast('Mission deleted successfully', 'success');
-      load();
-    } catch { showToast('Failed to delete mission', 'error'); }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    confirmDeleteMission();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,6 +181,7 @@ export default function MissionsPage() {
           </form>
         </Modal>
         <ImportModal open={showImport} onClose={() => setShowImport(false)} entity="missions" entityLabel="missions" onImportComplete={load} />
+        {deleteModal}
       </main>
     </div>
   );
