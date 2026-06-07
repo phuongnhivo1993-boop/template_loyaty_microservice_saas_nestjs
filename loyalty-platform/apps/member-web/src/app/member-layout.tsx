@@ -1,37 +1,39 @@
 'use client';
 
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-
-const navItems = [
-  { label: 'Home', href: '/dashboard', icon: '🏠' },
-  { label: 'Wallet', href: '/wallet', icon: '💰' },
-  { label: 'Vouchers', href: '/vouchers', icon: '🎟️' },
-  { label: 'Orders', href: '/orders', icon: '🛒' },
-  { label: 'Rewards', href: '/rewards', icon: '🎁' },
-  { label: 'Gift Cards', href: '/gift-cards', icon: '🎴' },
-  { label: 'Cashback', href: '/cashback', icon: '💵' },
-  { label: 'Membership Card', href: '/membership-card', icon: '💳' },
-  { label: 'Badges', href: '/badges', icon: '🏅' },
-  { label: 'Missions', href: '/missions', icon: '🎯' },
-  { label: 'Referrals', href: '/referrals', icon: '🔗' },
-  { label: 'Tier', href: '/tier-progress', icon: '📈' },
-  { label: 'Notifications', href: '/notifications', icon: '🔔' },
-  { label: 'Feedback', href: '/feedback', icon: '💬' },
-  { label: 'Stores', href: '/stores', icon: '🏪' },
-  { label: 'Check-in', href: '/checkin', icon: '✅' },
-  { label: 'KYC', href: '/kyc', icon: '🪪' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-  { label: 'Profile', href: '/profile', icon: '👤' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [theme, setTheme] = useState('light');
   const [refreshing, setRefreshing] = useState(false);
   const touchStartY = useRef(0);
+
+  const navItems = useMemo(() => [
+    { label: t('nav.home'), href: '/dashboard', icon: '🏠' },
+    { label: t('nav.wallet'), href: '/wallet', icon: '💰' },
+    { label: t('nav.vouchers'), href: '/vouchers', icon: '🎟️' },
+    { label: t('nav.orders'), href: '/orders', icon: '🛒' },
+    { label: t('nav.rewards'), href: '/rewards', icon: '🎁' },
+    { label: t('nav.giftCards'), href: '/gift-cards', icon: '🎴' },
+    { label: t('nav.cashback'), href: '/cashback', icon: '💵' },
+    { label: t('nav.membershipCard'), href: '/membership-card', icon: '💳' },
+    { label: t('nav.badges'), href: '/badges', icon: '🏅' },
+    { label: t('nav.missions'), href: '/missions', icon: '🎯' },
+    { label: t('nav.referrals'), href: '/referrals', icon: '🔗' },
+    { label: t('nav.tier'), href: '/tier-progress', icon: '📈' },
+    { label: t('nav.notifications'), href: '/notifications', icon: '🔔' },
+    { label: t('nav.feedback'), href: '/feedback', icon: '💬' },
+    { label: t('nav.stores'), href: '/stores', icon: '🏪' },
+    { label: t('nav.checkin'), href: '/checkin', icon: '✅' },
+    { label: t('nav.kyc'), href: '/kyc', icon: '🪪' },
+    { label: t('nav.settings'), href: '/settings', icon: '⚙️' },
+    { label: t('nav.profile'), href: '/profile', icon: '👤' },
+  ], [t]);
 
   useEffect(() => {
     const stored = localStorage.getItem('theme');
@@ -74,7 +76,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     <div className="container" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {refreshing && (
         <div style={{ textAlign: 'center', padding: '16px', fontSize: '14px', color: 'var(--primary)' }}>
-          Refreshing...
+          {t('common.loading')}
         </div>
       )}
       <button

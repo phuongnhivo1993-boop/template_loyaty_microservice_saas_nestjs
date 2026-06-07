@@ -1,4 +1,5 @@
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../services/authStore';
 import { auth } from '../services/api';
@@ -21,13 +22,13 @@ export default function SettingsScreen() {
   };
 
   const menuItems = [
-    { icon: '👤', label: 'Edit Profile', action: () => navigation.navigate('Profile') },
-    { icon: '🔒', label: 'Change Password', action: () => navigation.navigate('Password') },
-    { icon: '🎴', label: 'Membership Card', action: () => navigation.navigate('MembershipCard') },
-    { icon: '📊', label: 'Tier Progress', action: () => navigation.navigate('TierProgress') },
-    { icon: '📋', label: 'Transaction History', action: () => navigation.navigate('PointsHistory') },
-    { icon: '🔔', label: 'Notifications', action: () => navigation.navigate('Notifications') },
-    { icon: '✅', label: 'KYC Verification', action: () => navigation.navigate('KYCUpload') },
+    { icon: 'person-outline', label: 'Edit Profile', action: () => navigation.navigate('Profile') },
+    { icon: 'lock-closed-outline', label: 'Change Password', action: () => navigation.navigate('Password') },
+    { icon: 'albums-outline', label: 'Membership Card', action: () => navigation.navigate('MembershipCard') },
+    { icon: 'bar-chart-outline', label: 'Tier Progress', action: () => navigation.navigate('TierProgress') },
+    { icon: 'receipt-outline', label: 'Transaction History', action: () => navigation.navigate('PointsHistory') },
+    { icon: 'notifications-outline', label: 'Notifications', action: () => navigation.navigate('Notifications') },
+    { icon: 'checkmark-circle-outline', label: 'KYC Verification', action: () => navigation.navigate('KYCUpload') },
   ];
 
   return (
@@ -48,7 +49,7 @@ export default function SettingsScreen() {
       <View style={[styles.menuSection, { backgroundColor: colors.card }]}>
         {menuItems.map((item, i) => (
           <TouchableOpacity key={i} style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={item.action}>
-            <Text style={[styles.menuIcon]}>{item.icon}</Text>
+            <Ionicons name={item.icon as any} size={20} color={colors.text} style={{ marginRight: 14 }} />
             <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -57,7 +58,7 @@ export default function SettingsScreen() {
 
       <View style={[styles.menuSection, { backgroundColor: colors.card, marginTop: 24 }]}>
         <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
-          <Text style={styles.menuIcon}>🌙</Text>
+          <Ionicons name="moon-outline" size={20} color={colors.text} style={{ marginRight: 14 }} />
           <Text style={[styles.menuLabel, { color: colors.text }]}>Dark Mode</Text>
           <Switch
             value={isDark}

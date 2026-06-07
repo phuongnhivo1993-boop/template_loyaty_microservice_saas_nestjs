@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getMyVouchers, redeemVoucher } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
 import EmptyState from '@/components/EmptyState';
 
 export default function VouchersPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,26 +48,26 @@ export default function VouchersPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">🎟️ My Vouchers</div>
-          <div className="header-subtitle">{filtered.length} voucher{filtered.length !== 1 ? 's' : ''}</div>
+          <div className="header-title">{t('vouchers.title')}</div>
+          <div className="header-subtitle">{filtered.length} {t('vouchers.title').toLowerCase()}</div>
         </div>
       </div>
 
       <input
         type="text"
-        placeholder="🔍 Search vouchers..."
+        placeholder={t('vouchers.search')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{ marginBottom: '12px' }}
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🎫" title={search ? 'No vouchers match your search' : 'No vouchers yet'} />
+        <EmptyState icon="🎫" title={search ? t('vouchers.noVouchersMatch') : t('vouchers.noVouchersYet')} />
       ) : (
         filtered.map((v: any) => (
           <div key={v.id} className="card" style={{ borderLeft: `4px solid ${v.redeemed ? 'var(--text-muted)' : 'var(--primary)'}`, cursor: 'pointer' }} onClick={() => router.push(`/vouchers/${v.id}`)}>

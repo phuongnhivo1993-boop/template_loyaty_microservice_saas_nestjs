@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ApiGatewayModule } from './api-gateway.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -8,15 +8,20 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 import { PrismaService } from './prisma/prisma.service';
 import { TenantSubdomainMiddleware } from './common/middleware/tenant-subdomain.middleware';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { WinstonLoggerService } from './common/logger/winston-logger.service';
 import { RedisIoAdapter } from './common/adapters/redis-io.adapter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as helmet from 'helmet';
 
 async function bootstrap() {
-  const logger = new Logger('ApiGateway');
+  const logger = new WinstonLoggerService();
   const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule, {
     rawBody: true,
+    bufferLogs: true,
   });
+
+  app.useLogger(logger);
 
   app.setGlobalPrefix('api/v1');
 
@@ -38,14 +43,15 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new AuditLogInterceptor(app.get(PrismaService)));
 
-  // Tenant subdomain middleware
+  // Middleware
+  app.use(new CorrelationIdMiddleware().use);
   app.use(new TenantSubdomainMiddleware().use);
 
   // Redis adapter for WebSocket multi-instance
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
-  logger.log('WebSocket Redis adapter initialized');
+  logger.log('WebSocket Redis adapter initialized', 'Bootstrap');
 
   // Swagger
   const swaggerEnabled = process.env.SWAGGER_ENABLED !== 'false';
@@ -76,11 +82,11 @@ async function bootstrap() {
         operationsSorter: 'alpha',
       },
     });
-    logger.log('Swagger docs available at /api/docs');
+    logger.log('Swagger docs available at /api/docs', 'Bootstrap');
   }
 
   const port = process.env.API_GATEWAY_PORT ?? 3001;
   await app.listen(port);
-  logger.log(`API Gateway running on port ${port}`);
+  logger.log(`API Gateway running on port ${port}`, 'Bootstrap');
 }
 bootstrap();

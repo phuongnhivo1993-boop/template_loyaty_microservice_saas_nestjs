@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { checkin } from '../services/api';
 import type { CheckinStats, DailyCheckin } from '../services/types';
 import { LoadingState, ErrorState } from '../components';
@@ -52,7 +53,7 @@ export default function CheckinScreen() {
       <View style={[styles.header, { backgroundColor: colors.text }]}>
         <Text style={styles.title}>Daily Check-in</Text>
         <View style={styles.streakRow}>
-          <Text style={styles.fire}>🔥</Text>
+          <Ionicons name="flame" size={28} color="#fbbf24" />
           <Text style={styles.streakNum}>{stats?.currentStreak || 0}</Text>
           <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>day streak</Text>
         </View>

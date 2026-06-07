@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Linking, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { stores } from '../services/api';
 import type { Store } from '../services/types';
@@ -65,17 +66,17 @@ export default function StoresScreen() {
             <View style={styles.cardHeader}>
               <Text style={[styles.storeName, { color: colors.text }]}>{item.name}</Text>
               <View style={[styles.mapPlaceholder, { backgroundColor: colors.border }]}>
-                <Text style={styles.mapIcon}>📍</Text>
+                <Ionicons name="location-outline" size={22} color={colors.textSecondary} />
               </View>
             </View>
             <Text style={[styles.address, { color: colors.textSecondary }]}>{item.address}</Text>
             {item.phone && (
               <TouchableOpacity style={styles.phoneRow} onPress={() => callStore(item.phone!)}>
-                <Text style={styles.phoneIcon}>📞</Text>
+                <Ionicons name="call-outline" size={14} color={colors.primaryDark} style={{ marginRight: 6 }} />
                 <Text style={[styles.phone, { color: colors.primaryDark }]}>{item.phone}</Text>
               </TouchableOpacity>
             )}
-            {item.hours && <Text style={[styles.hours, { color: colors.textSecondary }]}>🕐 {item.hours}</Text>}
+            {item.hours && <Text style={[styles.hours, { color: colors.textSecondary }]}><Ionicons name="time-outline" size={13} color={colors.textSecondary} /> {item.hours}</Text>}
             <View style={styles.actions}>
               {item.lat && item.lng && (
                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primaryDark }]} onPress={() => openMap(item)}>
@@ -85,7 +86,7 @@ export default function StoresScreen() {
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<EmptyState message="No stores available" icon="🏪" />}
+        ListEmptyComponent={<EmptyState message="No stores available" iconName="storefront-outline" />}
       />
     </SafeAreaView>
   );

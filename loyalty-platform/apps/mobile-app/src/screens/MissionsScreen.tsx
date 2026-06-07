@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { members } from '../services/api';
 import type { Mission } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -27,7 +28,10 @@ export default function MissionsScreen() {
       <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
       {item.description && <Text style={[styles.desc, { color: colors.textSecondary }]}>{item.description}</Text>}
       <View style={styles.footer}>
-        <Text style={[styles.reward, { color: colors.primaryDark }]}>🎯 {item.pointsReward} pts</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Ionicons name="navigate-outline" size={14} color={colors.primaryDark} />
+          <Text style={[styles.reward, { color: colors.primaryDark }]}>{item.pointsReward} pts</Text>
+        </View>
         {item.endDate && (
           <Text style={[styles.date, { color: colors.textSecondary }]}>Due: {new Date(item.endDate).toLocaleDateString()}</Text>
         )}

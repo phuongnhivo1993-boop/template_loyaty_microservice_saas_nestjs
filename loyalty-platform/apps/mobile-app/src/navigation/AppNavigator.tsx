@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -39,23 +39,16 @@ import { useAuthStore } from '../services/authStore';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const icons: Record<string, { active: string; inactive: string; accessibilityLabel: string }> = {
-    Home: { active: '🏠', inactive: '🏠', accessibilityLabel: 'Home' },
-    Rewards: { active: '🎁', inactive: '🎁', accessibilityLabel: 'Rewards' },
-    Orders: { active: '📋', inactive: '📋', accessibilityLabel: 'Orders' },
-    Profile: { active: '👤', inactive: '👤', accessibilityLabel: 'Profile' },
-  };
-  const icon = icons[label] || { active: '📌', inactive: '📌', accessibilityLabel: label };
-  return (
-    <Text
-      style={{ fontSize: focused ? 24 : 22, opacity: focused ? 1 : 0.5 }}
-      accessibilityLabel={icon.accessibilityLabel}
-      accessibilityRole="image"
-    >
-      {focused ? icon.active : icon.inactive}
-    </Text>
-  );
+const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
+  Home: { active: 'home', inactive: 'home-outline' },
+  Rewards: { active: 'gift', inactive: 'gift-outline' },
+  Orders: { active: 'receipt', inactive: 'receipt-outline' },
+  Profile: { active: 'person', inactive: 'person-outline' },
+};
+
+function TabIcon({ label, focused, color }: { label: string; focused: boolean; color: string }) {
+  const icon = TAB_ICONS[label] || { active: 'ellipse', inactive: 'ellipse-outline' };
+  return <Ionicons name={focused ? icon.active : icon.inactive} size={24} color={color} />;
 }
 
 function MainTabs() {
@@ -63,7 +56,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon label={route.name} focused={focused} color={color} />,
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#E5E7EB', paddingBottom: 4, height: 56 },

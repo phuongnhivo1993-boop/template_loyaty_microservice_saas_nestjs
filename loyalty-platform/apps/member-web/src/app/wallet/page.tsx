@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getWallet, getTransactions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
@@ -10,9 +11,11 @@ import EmptyState from '@/components/EmptyState';
 const PAGE_SIZE = 10;
 
 const typeFilters = ['All', 'Earned', 'Burned'] as const;
+const typeFilterLabels: Record<string, string> = { All: 'wallet.all', Earned: 'wallet.earned', Burned: 'wallet.burned' };
 type TypeFilter = (typeof typeFilters)[number];
 
 export default function WalletPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [wallet, setWallet] = useState<any>(null);
   const [txs, setTxs] = useState<any[]>([]);
@@ -65,45 +68,45 @@ export default function WalletPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+           <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">💰 Wallet</div>
-          <div className="header-subtitle">Points & transaction history</div>
+          <div className="header-title">{t('wallet.title')}</div>
+          <div className="header-subtitle">{t('wallet.balance')} & {t('wallet.transactions')}</div>
         </div>
       </div>
 
       <div className="card points-display">
         <div className="points-value">{(wallet?.availablePoints ?? 0).toLocaleString()}</div>
-        <div className="points-label">Available Balance</div>
+        <div className="points-label">{t('wallet.availableBalance')}</div>
       </div>
 
       <div className="grid-2">
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--success)' }}>{(wallet?.totalEarned ?? 0).toLocaleString()}</div>
-          <div className="stat-label">Total Earned</div>
+          <div className="stat-label">{t('wallet.totalEarned')}</div>
         </div>
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--error)' }}>{(wallet?.totalBurned ?? 0).toLocaleString()}</div>
-          <div className="stat-label">Total Used</div>
+          <div className="stat-label">{t('wallet.totalUsed')}</div>
         </div>
       </div>
 
       <div className="tab-bar">
         {typeFilters.map(f => (
           <button key={f} className={`tab ${typeFilter === f ? 'active' : ''}`} onClick={() => handleTypeFilter(f)}>
-            {f}
+            {t(typeFilterLabels[f])}
           </button>
         ))}
       </div>
 
-      <input type="text" placeholder="Search transactions..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ marginBottom: '12px' }} />
+      <input type="text" placeholder={t('wallet.search')} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ marginBottom: '12px' }} />
 
-      <div className="card" style={{ fontWeight: 600, marginBottom: '12px' }}>Recent Transactions</div>
+      <div className="card" style={{ fontWeight: 600, marginBottom: '12px' }}>{t('wallet.recentTransactions')}</div>
       {filtered.length === 0 ? (
-        <EmptyState icon="📭" title="No transactions yet" action={{ label: 'Earn your first points', onClick: () => router.push('/rewards') }} />
+        <EmptyState icon="📭" title={t('wallet.noTransactions')} action={{ label: t('wallet.earnFirstPoints'), onClick: () => router.push('/rewards') }} />
       ) : (
         <>
           <div className="card" style={{ padding: '0 20px' }}>
@@ -128,7 +131,7 @@ export default function WalletPage() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 style={{ width: 'auto', opacity: page <= 1 ? 0.5 : 1 }}
               >
-                Previous
+                {t('wallet.previous')}
               </button>
               <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
                 {page} / {totalPages}
@@ -139,7 +142,7 @@ export default function WalletPage() {
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 style={{ width: 'auto', opacity: page >= totalPages ? 0.5 : 1 }}
               >
-                Next
+                {t('wallet.next')}
               </button>
             </div>
           )}

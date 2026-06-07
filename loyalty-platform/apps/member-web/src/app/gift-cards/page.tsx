@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getMyGiftCards } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
@@ -15,6 +16,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function GiftCardsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,26 +54,26 @@ export default function GiftCardsPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">🎴 Gift Cards</div>
-          <div className="header-subtitle">{filtered.length} card{filtered.length !== 1 ? 's' : ''}</div>
+          <div className="header-title">{t('giftCards.title')}</div>
+          <div className="header-subtitle">{filtered.length} {t('giftCards.title').toLowerCase()}</div>
         </div>
       </div>
 
       <input
         type="text"
-        placeholder="🔍 Search gift cards..."
+        placeholder={t('giftCards.search')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{ marginBottom: '12px' }}
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🎴" title={search ? 'No gift cards match your search' : 'No gift cards yet'} action={{ label: 'Earn points to get gift cards', onClick: () => router.push('/wallet') }} />
+        <EmptyState icon="🎴" title={search ? t('giftCards.noGiftCardsMatch') : t('giftCards.noGiftCardsYet')} action={{ label: t('giftCards.earnPointsToGet'), onClick: () => router.push('/wallet') }} />
       ) : (
         filtered.map((c: any) => (
           <div key={c.id} className="card" style={{ borderLeft: `4px solid ${statusColors[c.status] || '#94a3b8'}` }}>
@@ -79,7 +81,7 @@ export default function GiftCardsPage() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: '16px', fontFamily: 'monospace', letterSpacing: '2px' }}>{c.code}</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Initial: {c.initialValue?.toLocaleString()} {c.currency || 'VND'}
+                  {t('giftCards.initial')}: {c.initialValue?.toLocaleString()} {c.currency || 'VND'}
                 </div>
               </div>
               <span className="badge" style={{
@@ -99,7 +101,7 @@ export default function GiftCardsPage() {
             </div>
             {c.expiryDate && (
               <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                Expires: {new Date(c.expiryDate).toLocaleDateString('vi-VN')}
+                {t('giftCards.expires')}: {new Date(c.expiryDate).toLocaleDateString('vi-VN')}
               </div>
             )}
           </div>

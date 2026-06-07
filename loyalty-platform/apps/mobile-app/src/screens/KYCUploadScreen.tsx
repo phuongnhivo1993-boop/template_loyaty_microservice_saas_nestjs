@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { members, upload } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -65,7 +66,7 @@ export default function KYCUploadScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>KYC Verification</Text>
         <View style={styles.verifiedBox}>
-          <Text style={styles.verifiedIcon}>✅</Text>
+          <Ionicons name="checkmark-circle" size={60} color="#16a34a" style={{ marginBottom: 16 }} />
           <Text style={styles.verifiedText}>Your identity has been verified</Text>
         </View>
       </View>
@@ -86,12 +87,18 @@ export default function KYCUploadScreen() {
       <TextInput style={styles.input} value={idNumber} onChangeText={setIdNumber} placeholder="Enter ID number" keyboardType="numeric" />
 
       <TouchableOpacity style={styles.uploadBtn} onPress={() => pickImage('front')}>
-        <Text style={styles.uploadText}>{frontImage ? '✅ Front ID Uploaded' : '📷 Upload Front ID'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {frontImage ? <Ionicons name="checkmark-circle" size={18} color="#16a34a" /> : <Ionicons name="camera-outline" size={18} color="#2563eb" />}
+          <Text style={styles.uploadText}>{frontImage ? 'Front ID Uploaded' : 'Upload Front ID'}</Text>
+        </View>
       </TouchableOpacity>
       {frontImage && <Image source={{ uri: frontImage }} style={styles.preview} />}
 
       <TouchableOpacity style={styles.uploadBtn} onPress={() => pickImage('back')}>
-        <Text style={styles.uploadText}>{backImage ? '✅ Back ID Uploaded' : '📷 Upload Back ID'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {backImage ? <Ionicons name="checkmark-circle" size={18} color="#16a34a" /> : <Ionicons name="camera-outline" size={18} color="#2563eb" />}
+          <Text style={styles.uploadText}>{backImage ? 'Back ID Uploaded' : 'Upload Back ID'}</Text>
+        </View>
       </TouchableOpacity>
       {backImage && <Image source={{ uri: backImage }} style={styles.preview} />}
 

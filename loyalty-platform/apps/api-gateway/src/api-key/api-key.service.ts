@@ -6,8 +6,9 @@ import * as crypto from 'crypto';
 export class ApiKeyService {
   constructor(private prisma: PrismaService) {}
 
-  private generateKey(): string {
-    return `lp_${crypto.randomBytes(32).toString('hex')}`;
+  private generateKey(tenantId: string): string {
+    const randomHex = crypto.randomBytes(16).toString('hex');
+    return `lp_${tenantId}_${randomHex}`;
   }
 
   private maskKey(key: string): string {
@@ -15,7 +16,7 @@ export class ApiKeyService {
   }
 
   async create(tenantId: string, data: { name: string; permissions?: string[] }) {
-    const rawKey = this.generateKey();
+    const rawKey = this.generateKey(tenantId);
     const settings = await this.prisma.settings.findUnique({
       where: { scope_scopeId_key: { scope: 'tenant', scopeId: tenantId, key: 'api_keys' } },
     });
@@ -87,7 +88,7 @@ export class ApiKeyService {
     const idx = apiKeys.findIndex(k => k.id === id);
     if (idx === -1) throw new NotFoundException('API key not found');
 
-    const rawKey = this.generateKey();
+    const rawKey = this.generateKey(tenantId);
     apiKeys[idx].key = rawKey;
     apiKeys[idx].maskedKey = this.maskKey(rawKey);
     apiKeys[idx].updatedAt = new Date().toISOString();
@@ -99,5 +100,22 @@ export class ApiKeyService {
     });
 
     return apiKeys[idx];
+  }
+
+  async validateApiKey(apiKey: string): Promise<boolean> {
+    const parts = apiKey.split('_');
+    if (parts.length !== 3 || parts[0] !== 'lp') {
+      return false;
+    }
+    const tenantId = parts[1];
+    try {
+      const settings = await this.prisma.settings.findUnique({
+        where: { scope_scopeId_key: { scope: 'tenant', scopeId: tenantId, key: 'api_keys' } },
+      });
+      const apiKeys = (settings?.value as any[]) ?? [];
+      return apiKeys.some((k: any) => k.key === apiKey && k.active !== false);
+    } catch {
+      return false;
+    }
   }
 }

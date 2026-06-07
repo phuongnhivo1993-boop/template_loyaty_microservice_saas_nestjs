@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { members } from '../services/api';
 import type { Badge } from '../services/types';
 import { LoadingState, ErrorState, EmptyState } from '../components';
@@ -33,10 +34,10 @@ export default function BadgesScreen() {
         data={badges}
         keyExtractor={(item: Badge) => item.id}
         contentContainerStyle={badges.length === 0 ? styles.emptyContainer : styles.list}
-        ListEmptyComponent={<EmptyState message="No badges earned yet" icon="🏅" />}
+        ListEmptyComponent={<EmptyState message="No badges earned yet" iconName="medal-outline" />}
         renderItem={({ item }: { item: Badge }) => (
           <View style={[styles.card, { backgroundColor: colors.card }]}>
-            <Text style={styles.badgeIcon}>{item.iconUrl || '🏅'}</Text>
+            {item.iconUrl ? <Text style={styles.badgeIcon}>{item.iconUrl}</Text> : <Ionicons name="medal-outline" size={32} color={colors.textSecondary} style={{ marginRight: 12 }} />}
             <View style={{ flex: 1 }}>
               <Text style={[styles.badgeName, { color: colors.text }]}>{item.name}</Text>
               {item.description && <Text style={[styles.badgeDesc, { color: colors.textSecondary }]}>{item.description}</Text>}

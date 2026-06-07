@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getRewards, redeemReward } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
@@ -10,6 +11,7 @@ import EmptyState from '@/components/EmptyState';
 const typeOptions = ['All', 'product', 'discount', 'shipping', 'gift'];
 
 export default function RewardsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [rewards, setRewards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,19 +53,19 @@ export default function RewardsPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">🎁 Rewards Catalog</div>
-          <div className="header-subtitle">{filtered.length} reward{filtered.length !== 1 ? 's' : ''} available</div>
+          <div className="header-title">{t('rewards.rewardsCatalog')}</div>
+          <div className="header-subtitle">{filtered.length} {t('rewards.rewardsCatalog').toLowerCase()}</div>
         </div>
       </div>
 
       <input
         type="text"
-        placeholder="🔍 Search rewards..."
+        placeholder={t('rewards.search')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{ marginBottom: '8px' }}
@@ -72,13 +74,13 @@ export default function RewardsPage() {
       <div className="tab-bar" style={{ overflowX: 'auto', flexWrap: 'wrap', marginBottom: '12px' }}>
         {typeOptions.map(t => (
           <button key={t} className={`tab ${typeFilter === t ? 'active' : ''}`} onClick={() => setTypeFilter(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === 'All' ? t('common.all') : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🎁" title={search || typeFilter !== 'All' ? 'No rewards match your filters' : 'No rewards available'} action={{ label: 'Check back later', onClick: () => {} }} />
+        <EmptyState icon="🎁" title={search || typeFilter !== 'All' ? t('rewards.noRewardsMatch') : t('rewards.noRewards')} action={{ label: t('rewards.checkBackLater'), onClick: () => {} }} />
       ) : (
         <div className="grid-2">
           {filtered.map((r: any) => (
@@ -101,11 +103,11 @@ export default function RewardsPage() {
                   className="btn btn-primary btn-sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!confirm(`Redeem ${r.name} for ${r.pointsRequired?.toLocaleString()} points?`)) return;
-                    redeemReward(r.id).then(() => { alert('Reward redeemed!'); loadData(); }).catch((err: any) => alert(err.message));
+                    if (!confirm(`${t('rewards.redeem')} ${r.name} ${t('common.for')} ${r.pointsRequired?.toLocaleString()} ${t('common.points')}?`)) return;
+                    redeemReward(r.id).then(() => { alert(t('rewards.redeem') + '!'); loadData(); }).catch((err: any) => alert(err.message));
                   }}
                 >
-                  Redeem
+                  {t('rewards.redeem')}
                 </button>
               </div>
             </div>

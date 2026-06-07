@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getProfile, getWallet, doCheckin, getCheckinStatus, getMissions, getTransactions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [wallet, setWallet] = useState<any>(null);
@@ -54,44 +56,44 @@ export default function DashboardPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">Hi, {profile?.fullName || 'Member'}! 👋</div>
+          <div className="header-title">{t('dashboard.greeting', { name: profile?.fullName || 'Member' })}</div>
           <div className="header-subtitle">{profile?.tier?.name || 'Member'} • {profile?.email}</div>
         </div>
       </div>
 
       <div className="card points-display">
         <div className="points-value">{(wallet?.availablePoints ?? profile?.availablePoints ?? 0).toLocaleString()}</div>
-        <div className="points-label">Available Points</div>
+        <div className="points-label">{t('dashboard.availablePoints')}</div>
       </div>
 
       <div className="grid-2">
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--primary)' }}>{(wallet?.totalPoints ?? profile?.totalPoints ?? 0).toLocaleString()}</div>
-          <div className="stat-label">Total Earned</div>
+          <div className="stat-label">{t('dashboard.totalEarned')}</div>
         </div>
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--info, #0891b2)' }}>{wallet?.transactionCount ?? 0}</div>
-          <div className="stat-label">Transactions</div>
+          <div className="stat-label">{t('dashboard.transactions')}</div>
         </div>
       </div>
 
       {canCheckin ? (
         <button className="btn btn-success" onClick={handleCheckin} disabled={checkinLoading} style={{ marginBottom: '12px' }}>
-          {checkinLoading ? 'Checking in...' : `✅ Daily Check-in${streak > 0 ? ` (${streak} day streak!)` : ''}`}
+          {checkinLoading ? t('dashboard.checkingIn') : `✅ ${t('dashboard.dailyCheckin')}${streak > 0 ? ` (${t('dashboard.streak', { count: streak })}!)` : ''}`}
         </button>
       ) : (
         <div className="card" style={{ textAlign: 'center', background: 'var(--success-bg, #f0fdf4)', borderColor: 'var(--success-border, #bbf7d0)' }}>
-          ✅ Checked in today{streak > 0 ? ` — ${streak} day streak!` : ''}
+          ✅ {t('dashboard.checkedIn')}{streak > 0 ? ` — ${t('dashboard.streak', { count: streak })}!` : ''}
         </div>
       )}
 
       <div className="card">
-        <div style={{ fontWeight: 600, marginBottom: '12px' }}>Quick Actions</div>
+        <div style={{ fontWeight: 600, marginBottom: '12px' }}>{t('dashboard.quickActions')}</div>
         <div className="grid-2">
           <button className="btn btn-outline btn-sm" onClick={() => router.push('/wallet')}>💰 Wallet</button>
           <button className="btn btn-outline btn-sm" onClick={() => router.push('/vouchers')}>🎟️ Vouchers</button>
@@ -102,23 +104,23 @@ export default function DashboardPage() {
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontWeight: 600 }}>Badges</div>
-          <button className="btn btn-sm btn-outline" onClick={() => router.push('/badges')}>See all</button>
+          <div style={{ fontWeight: 600 }}>{t('dashboard.badges')}</div>
+          <button className="btn btn-sm btn-outline" onClick={() => router.push('/badges')}>{t('dashboard.seeAll')}</button>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {(profile as any)?.badges?.slice(0, 4)?.map((b: any) => (
             <span key={b.id} className="badge" style={{ background: 'var(--badge-bg, #f5f3ff)', color: 'var(--badge-color, #7c3aed)' }}>{b.name}</span>
-          )) || <span className="text-muted" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No badges yet</span>}
+          ))           || <span className="text-muted" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboard.noBadges')}</span>}
         </div>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontWeight: 600 }}>Missions</div>
-          <button className="btn btn-sm btn-outline" onClick={() => router.push('/missions')}>View all</button>
+          <div style={{ fontWeight: 600 }}>{t('dashboard.activeMissions')}</div>
+          <button className="btn btn-sm btn-outline" onClick={() => router.push('/missions')}>{t('dashboard.viewAllMissions')}</button>
         </div>
         {missions.length === 0 ? (
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No missions available</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboard.noMissionsAvailable')}</div>
         ) : (
           missions.slice(0, 3).map((m: any) => {
             const progress = m.currentProgress ?? m.progress ?? 0;
@@ -128,7 +130,7 @@ export default function DashboardPage() {
               <div key={m.id} style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                   <span>{m.icon || '🎯'} {m.name}</span>
-                  <span style={{ fontWeight: 600 }}>{m.completed ? '✅ Done' : `${progress}/${target}`}</span>
+                  <span style={{ fontWeight: 600 }}>{m.completed ? `✅ ${t('dashboard.done')}` : `${progress}/${target}`}</span>
                 </div>
                 {!m.completed && (
                   <div className="progress-bar" style={{ marginTop: 4 }}>
@@ -143,11 +145,11 @@ export default function DashboardPage() {
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontWeight: 600 }}>Recent Transactions</div>
-          <button className="btn btn-sm btn-outline" onClick={() => router.push('/wallet')}>View all</button>
+          <div style={{ fontWeight: 600 }}>{t('dashboard.recentTransactions')}</div>
+          <button className="btn btn-sm btn-outline" onClick={() => router.push('/wallet')}>{t('dashboard.viewAll')}</button>
         </div>
         {txs.length === 0 ? (
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No transactions yet</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboard.noTransactions')}</div>
         ) : (
           txs.slice(0, 3).map((tx: any) => (
             <div key={tx.id} className="tx-item" style={{ padding: '8px 0' }}>
@@ -164,7 +166,7 @@ export default function DashboardPage() {
       </div>
 
       <button className="btn btn-outline btn-sm" onClick={() => router.push('/tier-progress')} style={{ width: '100%' }}>
-        🏆 View Tier Progress
+        {t('dashboard.viewTierProgress')}
       </button>
     </MemberLayout>
   );

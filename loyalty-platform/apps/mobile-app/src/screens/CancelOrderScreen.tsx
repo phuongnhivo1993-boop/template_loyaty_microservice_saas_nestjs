@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { orders } from '../services/api';
 
@@ -34,7 +35,7 @@ export default function CancelOrderScreen() {
 
       <View style={styles.content}>
         <View style={styles.warningBox}>
-          <Text style={styles.warningIcon}>⚠️</Text>
+          <Ionicons name="warning-outline" size={24} color="#dc2626" />
           <Text style={styles.warningText}>
             Are you sure you want to cancel this order? This action cannot be undone.
           </Text>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getMyCashback, getCashbackTransactions } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
@@ -11,6 +12,7 @@ const typeFilters = ['All', 'Earned', 'Burned'] as const;
 type TypeFilter = (typeof typeFilters)[number];
 
 export default function CashbackPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [cashback, setCashback] = useState<any>(null);
   const [txs, setTxs] = useState<any[]>([]);
@@ -46,44 +48,44 @@ export default function CashbackPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">💵 Cashback</div>
-          <div className="header-subtitle">Cashback balance & history</div>
+          <div className="header-title">{t('cashback.title')}</div>
+          <div className="header-subtitle">{t('cashback.cashbackBalance')} & {t('cashback.transactionHistory').toLowerCase()}</div>
         </div>
       </div>
 
       <div className="card points-display">
         <div className="points-value">{(cashback?.balance ?? 0).toLocaleString()} {cashback?.currency || 'VND'}</div>
-        <div className="points-label">Cashback Balance</div>
+        <div className="points-label">{t('cashback.cashbackBalance')}</div>
       </div>
 
       <div className="grid-2">
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--success)' }}>+{(cashback?.totalEarned ?? 0).toLocaleString()}</div>
-          <div className="stat-label">Total Earned</div>
+          <div className="stat-label">{t('cashback.totalEarned')}</div>
         </div>
         <div className="card stat-card">
           <div className="stat-value" style={{ color: 'var(--error)' }}>-{(cashback?.totalBurned ?? 0).toLocaleString()}</div>
-          <div className="stat-label">Total Used</div>
+          <div className="stat-label">{t('cashback.totalUsed')}</div>
         </div>
       </div>
 
       <div className="tab-bar">
         {typeFilters.map(f => (
           <button key={f} className={`tab ${typeFilter === f ? 'active' : ''}`} onClick={() => setTypeFilter(f)}>
-            {f}
+            {f === 'All' ? t('common.all') : f === 'Earned' ? t('cashback.earned') : t('cashback.burned')}
           </button>
         ))}
       </div>
 
-      <div style={{ fontWeight: 600, marginBottom: '12px' }}>Transaction History</div>
+      <div style={{ fontWeight: 600, marginBottom: '12px' }}>{t('cashback.transactionHistory')}</div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="📭" title="No transactions yet" action={{ label: 'Earn cashback on purchases', onClick: () => {} }} />
+        <EmptyState icon="📭" title={t('cashback.noTransactions')} action={{ label: t('cashback.earnCashback'), onClick: () => {} }} />
       ) : (
         <div className="card" style={{ padding: '0 20px' }}>
           {filtered.map((tx: any) => (

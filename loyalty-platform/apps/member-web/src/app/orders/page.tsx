@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getMyOrders } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
@@ -18,6 +19,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function OrdersPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,19 +73,19 @@ export default function OrdersPage() {
       {error && (
         <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">🛒 My Orders</div>
-          <div className="header-subtitle">{filtered.length} order{filtered.length !== 1 ? 's' : ''}</div>
+          <div className="header-title">{t('orders.title')}</div>
+          <div className="header-subtitle">{filtered.length} {t('orders.title').toLowerCase()}</div>
         </div>
       </div>
 
       <input
         type="text"
-        placeholder="🔍 Search orders..."
+        placeholder={t('orders.search')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{ marginBottom: '12px' }}
@@ -92,13 +94,13 @@ export default function OrdersPage() {
       <div className="tab-bar" style={{ overflowX: 'auto', flexWrap: 'wrap' }}>
         {statusFilters.map(f => (
           <button key={f} className={`tab ${statusFilter === f ? 'active' : ''}`} onClick={() => handleStatusFilter(f)}>
-            {f}
+            {f === 'All' ? t('common.all') : f}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="📦" title={search ? 'No orders match your search' : 'No orders yet'} action={{ label: 'Start shopping', onClick: () => router.push('/orders/create') }} />
+        <EmptyState icon="📦" title={search ? t('orders.noOrdersMatch') : t('orders.noOrders')} action={{ label: t('orders.startShopping'), onClick: () => router.push('/orders/create') }} />
       ) : (
         <>
           {paginated.map((o: any) => (
@@ -110,7 +112,7 @@ export default function OrdersPage() {
               <span className="badge" style={{ background: `${statusColors[o.status] || '#94a3b8'}20`, color: statusColors[o.status] || '#64748b' }}>{o.status}</span>
               <div className="order-meta" style={{ marginTop: '8px' }}>
                 <span>{o.items?.length || 0} item{(o.items?.length || 0) !== 1 ? 's' : ''}</span>
-                <span>🪙 +{o.pointsEarned || 0} pts</span>
+                <span>🪙 +{o.pointsEarned || 0} {t('common.points')}</span>
                 <span>{new Date(o.createdAt).toLocaleDateString('vi-VN')}</span>
               </div>
               {o.couponCode && <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--primary)' }}>🏷️ {o.couponCode}</div>}
@@ -125,7 +127,7 @@ export default function OrdersPage() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 style={{ width: 'auto', opacity: page <= 1 ? 0.5 : 1 }}
               >
-                Previous
+                {t('common.previous')}
               </button>
               <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
                 {page} / {totalPages}
@@ -136,7 +138,7 @@ export default function OrdersPage() {
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 style={{ width: 'auto', opacity: page >= totalPages ? 0.5 : 1 }}
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           )}

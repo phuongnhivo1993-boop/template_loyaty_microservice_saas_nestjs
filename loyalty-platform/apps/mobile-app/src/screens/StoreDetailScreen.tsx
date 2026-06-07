@@ -1,4 +1,5 @@
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import type { Store } from '../services/types';
 
@@ -27,14 +28,14 @@ export default function StoreDetailScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>🏪</Text>
+            <Ionicons name="storefront-outline" size={36} color="#2563eb" />
           </View>
           <Text style={styles.name}>{store.name}</Text>
         </View>
 
         <View style={styles.section}>
           <View style={styles.row}>
-            <Text style={styles.rowIcon}>📍</Text>
+            <Ionicons name="location-outline" size={20} color="#94a3b8" style={{ marginRight: 14, width: 28, textAlign: 'center' }} />
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>Address</Text>
               <Text style={styles.rowValue}>{store.address}</Text>
@@ -43,7 +44,7 @@ export default function StoreDetailScreen() {
 
           {store.phone && (
             <TouchableOpacity style={styles.row} onPress={callStore}>
-              <Text style={styles.rowIcon}>📞</Text>
+              <Ionicons name="call-outline" size={20} color="#94a3b8" style={{ marginRight: 14, width: 28, textAlign: 'center' }} />
               <View style={styles.rowContent}>
                 <Text style={styles.rowLabel}>Phone</Text>
                 <Text style={[styles.rowValue, styles.linkText]}>{store.phone}</Text>
@@ -53,7 +54,7 @@ export default function StoreDetailScreen() {
 
           {store.hours && (
             <View style={styles.row}>
-              <Text style={styles.rowIcon}>🕐</Text>
+              <Ionicons name="time-outline" size={20} color="#94a3b8" style={{ marginRight: 14, width: 28, textAlign: 'center' }} />
               <View style={styles.rowContent}>
                 <Text style={styles.rowLabel}>Hours</Text>
                 <Text style={styles.rowValue}>{store.hours}</Text>
@@ -64,7 +65,7 @@ export default function StoreDetailScreen() {
 
         {store.lat && store.lng && (
           <TouchableOpacity style={styles.mapButton} onPress={openMap}>
-            <Text style={styles.mapButtonIcon}>🗺️</Text>
+            <Ionicons name="map-outline" size={20} color="white" style={{ marginRight: 8 }} />
             <Text style={styles.mapButtonText}>Open in Maps</Text>
           </TouchableOpacity>
         )}

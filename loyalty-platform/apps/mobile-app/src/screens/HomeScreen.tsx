@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { members, analytics, auth } from '../services/api';
 import { useAuthStore } from '../services/authStore';
@@ -64,10 +65,10 @@ export default function HomeScreen() {
             styles.wsDisconnected
           ]} />
           <TouchableOpacity onPress={() => navigation.navigate('CreateOrder')}>
-            <Text style={styles.createOrderIcon}>🛒</Text>
+            <Ionicons name="cart-outline" size={22} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-            <Text style={styles.notifIcon}>🔔</Text>
+            <Ionicons name="notifications-outline" size={22} color="white" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout}><Text style={styles.logout}>Logout</Text></TouchableOpacity>
         </View>
@@ -81,25 +82,25 @@ export default function HomeScreen() {
 
       <View style={styles.menuGrid}>
         {[
-          { label: 'Wallet', icon: '⭐', screen: 'Wallet' },
-          { label: 'Cashback', icon: '💵', screen: 'Cashback' },
-          { label: 'Rewards', icon: '🎁', screen: 'Rewards' },
-          { label: 'Check-in', icon: '📅', screen: 'Checkin' },
-          { label: 'Stores', icon: '📍', screen: 'Stores' },
-          { label: 'Referrals', icon: '🔗', screen: 'Referrals' },
-          { label: 'Vouchers', icon: '🎟️', screen: 'Vouchers' },
-          { label: 'Badges', icon: '🏅', screen: 'Badges' },
-          { label: 'Missions', icon: '🎯', screen: 'Missions' },
-          { label: 'Feedback', icon: '⭐', screen: 'Feedback' },
-          { label: 'Membership', icon: '💳', screen: 'MembershipCard' },
-          { label: 'Tiers', icon: '📊', screen: 'TierProgress' },
-          { label: 'KYC', icon: '✅', screen: 'KYCUpload' },
-          { label: 'Settings', icon: '⚙️', screen: 'Settings' },
-          { label: 'Gift Cards', icon: '🎴', screen: 'GiftCards' },
-          { label: 'Profile', icon: '👤', screen: 'Profile' },
+          { label: 'Wallet', icon: 'wallet-outline', screen: 'Wallet' },
+          { label: 'Cashback', icon: 'cash-outline', screen: 'Cashback' },
+          { label: 'Rewards', icon: 'gift-outline', screen: 'Rewards' },
+          { label: 'Check-in', icon: 'calendar-outline', screen: 'Checkin' },
+          { label: 'Stores', icon: 'location-outline', screen: 'Stores' },
+          { label: 'Referrals', icon: 'link-outline', screen: 'Referrals' },
+          { label: 'Vouchers', icon: 'ticket-outline', screen: 'Vouchers' },
+          { label: 'Badges', icon: 'medal-outline', screen: 'Badges' },
+          { label: 'Missions', icon: 'navigate-outline', screen: 'Missions' },
+          { label: 'Feedback', icon: 'star-outline', screen: 'Feedback' },
+          { label: 'Membership', icon: 'card-outline', screen: 'MembershipCard' },
+          { label: 'Tiers', icon: 'bar-chart-outline', screen: 'TierProgress' },
+          { label: 'KYC', icon: 'checkmark-circle-outline', screen: 'KYCUpload' },
+          { label: 'Settings', icon: 'settings-outline', screen: 'Settings' },
+          { label: 'Gift Cards', icon: 'albums-outline', screen: 'GiftCards' },
+          { label: 'Profile', icon: 'person-outline', screen: 'Profile' },
         ].map((item) => (
           <TouchableOpacity key={item.screen} style={[styles.menuItem, { backgroundColor: colors.card }]} onPress={() => navigation.navigate(item.screen)}>
-            <Text style={styles.menuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon as any} size={32} color={colors.text} />
             <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -107,7 +108,7 @@ export default function HomeScreen() {
 
       {leaderboard.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>🏆 Leaderboard</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}><Ionicons name="trophy-outline" size={20} color={colors.text} /> Leaderboard</Text>
           {leaderboard.map((m: any) => (
             <View key={m.id} style={[styles.leaderboardRow, { backgroundColor: colors.card }]}>
               <View style={[styles.rankBadge, { backgroundColor: m.rank <= 3 ? '#f59e0b' : colors.border }]}>

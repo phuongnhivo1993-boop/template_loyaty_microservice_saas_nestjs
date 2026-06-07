@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import MemberLayout from '../member-layout';
 import { getProfile, uploadFile } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
 
 export default function KycPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,9 @@ export default function KycPage() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.fullName.trim()) e.fullName = 'Full name is required';
-    if (!form.idNumber.trim()) e.idNumber = 'ID number is required';
-    else if (form.idNumber.trim().length < 6) e.idNumber = 'ID number must be at least 6 characters';
+    if (!form.fullName.trim()) e.fullName = t('kyc.fullNameRequired');
+    if (!form.idNumber.trim()) e.idNumber = t('kyc.idNumberRequired');
+    else if (form.idNumber.trim().length < 6) e.idNumber = t('kyc.idNumberMinLength');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -74,7 +76,7 @@ export default function KycPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Submission failed');
-      setMessage('KYC submitted successfully! Pending verification.');
+      setMessage(t('kyc.kycSubmitted'));
       loadData();
     } catch (err: any) {
       setMessage(err.message || 'Failed to submit KYC');
@@ -94,43 +96,43 @@ export default function KycPage() {
       {error && (
         <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
-          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>{t('common.retry')}</button>
         </div>
       )}
       <div className="header">
         <div>
-          <div className="header-title">🪪 KYC Verification</div>
-          <div className="header-subtitle">Know Your Customer</div>
+          <div className="header-title">{t('kyc.title')}</div>
+          <div className="header-subtitle">{t('kyc.knowYourCustomer')}</div>
         </div>
       </div>
 
       {isVerified ? (
         <div className="card" style={{ textAlign: 'center', border: '2px solid var(--success, #10b981)' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
-          <div style={{ fontWeight: 700, fontSize: '18px', color: 'var(--success, #10b981)' }}>Verified</div>
+          <div style={{ fontWeight: 700, fontSize: '18px', color: 'var(--success, #10b981)' }}>{t('kyc.verifiedTitle')}</div>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Your identity has been verified.
+            {t('kyc.verified')}
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="card">
-            <div style={{ fontWeight: 600, marginBottom: '16px' }}>Identity Verification</div>
+            <div style={{ fontWeight: 600, marginBottom: '16px' }}>{t('kyc.identityVerification')}</div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Full Name (as on ID) <span style={{ color: 'var(--error)' }}>*</span></label>
-              <input value={form.fullName} onChange={e => { setForm({ ...form, fullName: e.target.value }); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }} placeholder="Enter your full legal name" style={{ borderColor: errors.fullName ? 'var(--error)' : undefined }} />
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>{t('kyc.fullName')} <span style={{ color: 'var(--error)' }}>*</span></label>
+              <input value={form.fullName} onChange={e => { setForm({ ...form, fullName: e.target.value }); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }} placeholder={t('kyc.enterFullName')} style={{ borderColor: errors.fullName ? 'var(--error)' : undefined }} />
               {errors.fullName && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.fullName}</div>}
             </div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>ID Number <span style={{ color: 'var(--error)' }}>*</span></label>
-              <input value={form.idNumber} onChange={e => { setForm({ ...form, idNumber: e.target.value }); if (errors.idNumber) setErrors(prev => ({ ...prev, idNumber: '' })); }} placeholder="Enter your ID number" style={{ borderColor: errors.idNumber ? 'var(--error)' : undefined }} />
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>{t('kyc.idNumber')} <span style={{ color: 'var(--error)' }}>*</span></label>
+              <input value={form.idNumber} onChange={e => { setForm({ ...form, idNumber: e.target.value }); if (errors.idNumber) setErrors(prev => ({ ...prev, idNumber: '' })); }} placeholder={t('kyc.enterIdNumber')} style={{ borderColor: errors.idNumber ? 'var(--error)' : undefined }} />
               {errors.idNumber && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{errors.idNumber}</div>}
             </div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Front of ID</label>
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>{t('kyc.frontOfId')}</label>
               <input
                 type="file"
                 accept="image/*"
@@ -141,7 +143,7 @@ export default function KycPage() {
             </div>
 
             <div className="field" style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Back of ID</label>
+              <label style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>{t('kyc.backOfId')}</label>
               <input
                 type="file"
                 accept="image/*"
@@ -152,13 +154,13 @@ export default function KycPage() {
             </div>
 
             {message && (
-              <div style={{ fontSize: '14px', color: message.includes('successfully') ? 'var(--success)' : 'var(--error)', marginBottom: '8px', padding: '8px', background: message.includes('successfully') ? 'var(--success-bg, #dcfce7)' : 'var(--error-bg, #fef2f2)', borderRadius: '6px' }}>
+              <div style={{ fontSize: '14px', color: message.includes('successfully') || message.includes('thành công') ? 'var(--success)' : 'var(--error)', marginBottom: '8px', padding: '8px', background: message.includes('successfully') || message.includes('thành công') ? 'var(--success-bg, #dcfce7)' : 'var(--error-bg, #fef2f2)', borderRadius: '6px' }}>
                 {message}
               </div>
             )}
 
             <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%' }}>
-              {submitting ? 'Submitting...' : 'Submit KYC'}
+              {submitting ? t('kyc.submitting') : t('kyc.submitKyc')}
             </button>
           </div>
         </form>
