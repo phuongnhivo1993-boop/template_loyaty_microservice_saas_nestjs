@@ -19,7 +19,7 @@ const backdropStyle: React.CSSProperties = {
 };
 
 const modalStyle: React.CSSProperties = {
-  background: 'white', borderRadius: '12px', padding: '32px', width: '420px',
+  background: 'var(--bg-card, white)', borderRadius: '12px', padding: '32px', width: '420px',
   maxHeight: '80vh', overflow: 'auto',
 };
 
@@ -57,7 +57,7 @@ export default function ConfirmModal({
               onClick={onCancel}
               style={{
                 padding: '10px 20px', border: '1px solid #cbd5e1', borderRadius: '8px',
-                background: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 500,
+                background: 'var(--bg-card, white)', cursor: 'pointer', fontSize: '14px', fontWeight: 500,
                 color: '#475569',
               }}
             >

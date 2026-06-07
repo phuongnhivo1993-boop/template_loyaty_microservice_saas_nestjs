@@ -89,9 +89,7 @@ export class MemberSegmentationService {
       where: { tenantId },
       select: { id: true },
     });
-    for (const member of members) {
-      await this.computeRFM(member.id);
-    }
+    await Promise.all(members.map(m => this.computeRFM(m.id)));
     return { tenantId, recomputed: members.length };
   }
 
@@ -167,70 +165,78 @@ export class MemberSegmentationService {
     sort?: string; search?: string; period?: string;
   }) {
     const { tenantId, page = 1, limit = 20, segment, sort, search, period } = params;
-    const memberWhere: any = {};
-    if (tenantId) memberWhere.tenantId = tenantId;
+    const where: any = {};
+    if (tenantId) where.tenantId = tenantId;
     if (search) {
-      memberWhere.OR = [
+      where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
+    const total = await this.prisma.member.count({ where });
+
     const members = await this.prisma.member.findMany({
-      where: memberWhere,
-      include: {
-        tier: true,
-        orders: { orderBy: { createdAt: 'desc' }, take: 1 },
-        _count: { select: { orders: { where: { status: { notIn: ['CANCELLED', 'REFUNDED'] } } } } },
-      },
+      where,
+      include: { tier: true },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
+    if (members.length === 0) {
+      return { data: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+    }
+
+    const memberIds = members.map(m => m.id);
+    const orderAggs = await this.prisma.order.groupBy({
+      by: ['memberId'],
+      where: { memberId: { in: memberIds }, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
+      _count: { id: true },
+      _sum: { total: true },
+      _max: { createdAt: true },
+    });
+
+    const orderMap = new Map(orderAggs.map(o => [o.memberId, o]));
     const now = new Date();
-    let results = await Promise.all(
-      members.map(async (member) => {
-        const lastOrder = (member as any).orders[0];
-        const daysSinceLastOrder = lastOrder
-          ? Math.floor((now.getTime() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24))
-          : 999;
 
-        const aggregate = await this.prisma.order.aggregate({
-          where: { memberId: member.id, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
-          _sum: { total: true },
-        });
+    let results = members.map(member => {
+      const agg = orderMap.get(member.id);
+      const lastOrderDate = agg?._max?.createdAt;
+      const daysSinceLastOrder = lastOrderDate
+        ? Math.floor((now.getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 999;
+      const orderCount = agg?._count?.id || 0;
+      const totalSpend = agg?._sum?.total || 0;
 
-        const orderCount = (member as any)._count.orders;
-        const totalSpend = aggregate._sum.total || 0;
+      const r = scoreRecency(daysSinceLastOrder);
+      const f = scoreFrequency(orderCount);
+      const m = scoreMonetary(totalSpend);
+      const rfmScore = r + f + m;
+      const segmentInfo = assignSegment(rfmScore);
 
-        const r = scoreRecency(daysSinceLastOrder);
-        const f = scoreFrequency(orderCount);
-        const m = scoreMonetary(totalSpend);
-        const rfmScore = r + f + m;
-        const segmentInfo = assignSegment(rfmScore);
-
-        return {
-          memberId: member.id,
-          fullName: member.fullName,
-          email: member.email,
-          phone: member.phone,
-          avatar: member.avatar,
-          tier: member.tier,
-          status: member.status,
-          totalPoints: member.totalPoints,
-          availablePoints: member.availablePoints,
-          createdAt: member.createdAt,
-          rfm: { recency: r, frequency: f, monetary: m, totalScore: rfmScore },
-          daysSinceLastOrder,
-          orderCount,
-          totalSpend,
-          segment: segmentInfo.label,
-          segmentDescription: segmentInfo.description,
-          segmentColor: segmentInfo.color,
-        };
-      })
-    );
+      return {
+        memberId: member.id,
+        fullName: member.fullName,
+        email: member.email,
+        phone: member.phone,
+        avatar: member.avatar,
+        tier: member.tier,
+        status: member.status,
+        totalPoints: member.totalPoints,
+        availablePoints: member.availablePoints,
+        createdAt: member.createdAt,
+        rfm: { recency: r, frequency: f, monetary: m, totalScore: rfmScore },
+        daysSinceLastOrder,
+        orderCount,
+        totalSpend,
+        segment: segmentInfo.label,
+        segmentDescription: segmentInfo.description,
+        segmentColor: segmentInfo.color,
+      };
+    });
 
     if (segment) {
-      results = results.filter((r) => r.segment === segment);
+      results = results.filter(r => r.segment === segment);
     }
 
     const { orderBy, orderDirection } = parseSort(sort || 'rfmScore_desc');
@@ -245,12 +251,8 @@ export class MemberSegmentationService {
       return orderDirection === 'desc' ? -cmp : cmp;
     });
 
-    const total = results.length;
-    const start = (page - 1) * limit;
-    const data = results.slice(start, start + limit);
-
     return {
-      data,
+      data: results,
       pagination: { page, limit, totalItems: total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -262,33 +264,35 @@ export class MemberSegmentationService {
 
     const members = await this.prisma.member.findMany({
       where: memberWhere,
-      include: {
-        orders: { orderBy: { createdAt: 'desc' }, take: 1 },
-        _count: { select: { orders: { where: { status: { notIn: ['CANCELLED', 'REFUNDED'] } } } } },
-      },
+      select: { id: true, totalPoints: true, createdAt: true },
     });
 
+    if (members.length === 0) {
+      return { summary: SEGMENTS.map(s => ({ ...s, count: 0, totalSpend: 0, totalPoints: 0 })), totalMembers: 0 };
+    }
+
+    const memberIds = members.map(m => m.id);
+    const orderAggs = await this.prisma.order.groupBy({
+      by: ['memberId'],
+      where: { memberId: { in: memberIds }, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
+      _count: { id: true },
+      _sum: { total: true },
+      _max: { createdAt: true },
+    });
+
+    const orderMap = new Map(orderAggs.map(o => [o.memberId, o]));
     const now = new Date();
     const segmentCounts: Record<string, { count: number; totalSpend: number; totalPoints: number }> = {};
 
     for (const member of members) {
-      const lastOrder = (member as any).orders[0];
-      const daysSinceLastOrder = lastOrder
-        ? Math.floor((now.getTime() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+      const agg = orderMap.get(member.id);
+      const daysSinceLastOrder = agg?._max?.createdAt
+        ? Math.floor((now.getTime() - agg._max.createdAt.getTime()) / (1000 * 60 * 60 * 24))
         : 999;
+      const orderCount = agg?._count?.id || 0;
+      const totalSpend = agg?._sum?.total || 0;
 
-      const aggregate = await this.prisma.order.aggregate({
-        where: { memberId: member.id, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
-        _sum: { total: true },
-      });
-
-      const orderCount = (member as any)._count.orders;
-      const totalSpend = aggregate._sum.total || 0;
-
-      const r = scoreRecency(daysSinceLastOrder);
-      const f = scoreFrequency(orderCount);
-      const m = scoreMonetary(totalSpend);
-      const rfmScore = r + f + m;
+      const rfmScore = scoreRecency(daysSinceLastOrder) + scoreFrequency(orderCount) + scoreMonetary(totalSpend);
       const segmentInfo = assignSegment(rfmScore);
 
       if (!segmentCounts[segmentInfo.label]) {
@@ -299,12 +303,9 @@ export class MemberSegmentationService {
       segmentCounts[segmentInfo.label].totalPoints += member.totalPoints;
     }
 
-    const summary = SEGMENTS.map((s) => ({
-      label: s.label,
-      description: s.description,
-      color: s.color,
-      minScore: s.minScore,
-      count: segmentCounts[s.label]?.count || 0,
+    const summary = SEGMENTS.map(s => ({
+      label: s.label, description: s.description, color: s.color,
+      minScore: s.minScore, count: segmentCounts[s.label]?.count || 0,
       totalSpend: segmentCounts[s.label]?.totalSpend || 0,
       totalPoints: segmentCounts[s.label]?.totalPoints || 0,
     }));

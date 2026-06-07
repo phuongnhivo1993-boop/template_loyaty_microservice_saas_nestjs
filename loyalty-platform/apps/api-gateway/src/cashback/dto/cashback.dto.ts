@@ -8,6 +8,7 @@ export class CreateCashbackConfigDto {
   @ApiProperty() @IsNumber() @Min(0) @Type(() => Number) rate: number;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() @Min(0) @Type(() => Number) minAmount?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() @Min(0) @Type(() => Number) maxAmount?: number;
+  @ApiProperty() @IsString() tenantId: string;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() @Min(0) @Type(() => Number) minPointsBalance?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() startDate?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() endDate?: string;

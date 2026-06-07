@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useAuthStore } from './src/services/authStore';
 import { useWsStore } from './src/services/wsStore';
+import { ThemeProvider } from './src/theme';
 
 const TOKEN_KEY = 'auth_token';
 const queryClient = new QueryClient();
@@ -42,8 +43,10 @@ export default function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppContent />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

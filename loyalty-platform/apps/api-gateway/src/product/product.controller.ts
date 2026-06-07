@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -61,6 +61,13 @@ export class ProductController {
   @ApiOperation({ summary: 'Update product' })
   update(@Param('id') id: string, @Body() body: UpdateProductDto) {
     return this.productService.update(id, body);
+  }
+
+  @Patch(':id/restore')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Restore a soft-deleted product' })
+  restore(@Param('id') id: string) {
+    return this.productService.restore(id);
   }
 
   @Delete(':id')

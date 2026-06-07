@@ -11,6 +11,13 @@ import { Roles } from '../auth/roles.decorator';
 export class BulkController {
   constructor(private bulkService: BulkService) {}
 
+  @Post('restore')
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Bulk restore soft-deleted records by IDs' })
+  bulkRestore(@Body() body: { entity: string; ids: string[]; tenantId?: string }) {
+    return this.bulkService.bulkRestore(body.entity, body.ids, body.tenantId);
+  }
+
   @Post('delete')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Bulk delete records by IDs' })

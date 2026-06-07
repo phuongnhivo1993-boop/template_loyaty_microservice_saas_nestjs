@@ -12,6 +12,8 @@ export class CreateWebhookEndpointDto {
   @ApiProperty({ type: [String] }) @IsArray() @IsString({ each: true }) events: string[];
 
   @ApiProperty({ required: false, default: true }) @IsOptional() @IsBoolean() @Type(() => Boolean) active?: boolean;
+
+  @ApiProperty() @IsString() tenantId: string;
 }
 
 export class UpdateWebhookEndpointDto {

@@ -86,6 +86,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tenantId, setTenantId] = useState<string>('');
   const [role, setRole] = useState<string>('');
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -95,6 +96,11 @@ export default function Sidebar() {
       setTenantId(payload.tenantId || '');
       setRole(payload.role || '');
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    setTheme(current);
   }, []);
 
   const handleTenantSwitch = (newTenantId: string) => {
@@ -151,6 +157,8 @@ export default function Sidebar() {
                     key={item.href}
                     onClick={() => navigate(item.href)}
                     className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <span style={{ fontSize: '18px' }}>{item.icon}</span>
                     {item.label}
@@ -166,13 +174,15 @@ export default function Sidebar() {
             onClick={() => {
               const html = document.documentElement;
               const current = html.getAttribute('data-theme');
-              html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
-              localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
+              const next = current === 'dark' ? 'light' : 'dark';
+              html.setAttribute('data-theme', next);
+              localStorage.setItem('theme', next);
+              setTheme(next);
             }}
             className="sidebar-logout"
             style={{ color: '#94a3b8', marginBottom: '4px' }}
           >
-            <span>🌙</span> Dark Mode
+            <span>{theme === 'dark' ? '☀️' : '🌙'}</span> {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
           <button onClick={handleLogout} className="sidebar-logout">
             <span>🚪</span> Logout

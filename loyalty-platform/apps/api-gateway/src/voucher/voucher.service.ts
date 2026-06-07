@@ -63,6 +63,20 @@ export class VoucherService {
     return this.prisma.voucher.update({ where: { id }, data });
   }
 
+  async duplicate(id: string) {
+    const voucher = await this.findOne(id);
+    const { id: _, createdAt, updatedAt, usedCount, ...data } = voucher;
+    const suffix = randomBytes(3).toString('hex').toUpperCase();
+    return this.prisma.voucher.create({
+      data: {
+        ...data,
+        code: `${data.code}-${suffix}`,
+        usedCount: 0,
+        expiresAt: data.expiresAt || null,
+      },
+    });
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.voucher.delete({ where: { id } });

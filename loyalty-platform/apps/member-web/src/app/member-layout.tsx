@@ -15,8 +15,14 @@ const navItems = [
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [theme, setTheme] = useState('light');
   const [refreshing, setRefreshing] = useState(false);
   const touchStartY = useRef(0);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored) setTheme(stored);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
@@ -44,8 +50,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   const toggleTheme = () => {
     const html = document.documentElement;
     const current = html.getAttribute('data-theme');
-    html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
-    localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    setTheme(next);
   };
 
   return (
@@ -66,7 +74,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         }}
         aria-label="Toggle theme"
       >
-        🌙
+        {theme === 'dark' ? '☀️' : '🌙'}
       </button>
       <div className="content">
         {children}

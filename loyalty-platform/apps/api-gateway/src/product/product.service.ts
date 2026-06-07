@@ -58,6 +58,16 @@ export class ProductService {
     return this.prisma.product.update({ where: { id }, data });
   }
 
+  async restore(id: string) {
+    const product = await this.prisma.product.findUnique({ where: { id } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (!product.deletedAt) throw new BadRequestException('Product is not deleted');
+    return this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: null, status: 'ACTIVE' },
+    });
+  }
+
   async softRemove(id: string) {
     await this.findOne(id);
     return this.prisma.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } });

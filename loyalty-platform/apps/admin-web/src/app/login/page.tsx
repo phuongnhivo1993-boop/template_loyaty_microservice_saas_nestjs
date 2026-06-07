@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('host@loyalty.vn');
-  const [password, setPassword] = useState('Host@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,13 +39,13 @@ export default function LoginPage() {
       localStorage.setItem('token', data.accessToken);
       router.push('/dashboard');
     } catch {
-      setError('Cannot connect to server. Make sure the API Gateway is running on port 3001.');
+      setError('Cannot connect to server. Please try again later.');
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary, #f1f5f9)', padding: '20px' }}>
       <div className="card" style={{ padding: '40px', maxWidth: '420px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 className="card-title" style={{ textAlign: 'center', fontSize: '28px' }}>
@@ -67,7 +67,6 @@ export default function LoginPage() {
             alignItems: 'center',
             gap: '8px',
           }}>
-            <span>⚠️</span>
             <span>{error}</span>
           </div>
         )}

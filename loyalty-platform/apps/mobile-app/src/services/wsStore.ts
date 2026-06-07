@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import { create } from 'zustand';
 import type { WsConnectionStatus } from './types';
 
-const WS_URL = 'http://localhost:3001/ws';
+const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'http://localhost:3001/ws';
 
 interface WsStore {
   socket: Socket | null;

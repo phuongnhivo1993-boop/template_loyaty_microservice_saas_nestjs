@@ -57,6 +57,16 @@ export class RewardController {
     return this.rewardService.redeem(id, body.memberId, body.quantity);
   }
 
+  @Post(':id/duplicate')
+  @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Reward ID' })
+  @ApiOperation({ summary: 'Duplicate a reward' })
+  @ApiResponse({ status: 201, description: 'Reward duplicated' })
+  @ApiResponse({ status: 404, description: 'Reward not found' })
+  duplicate(@Param('id') id: string) {
+    return this.rewardService.duplicate(id);
+  }
+
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiParam({ name: 'id', type: String, description: 'Reward ID' })

@@ -78,7 +78,7 @@ export default function DataTable<T extends Record<string, any>>({
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--bg-card, white)', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#f8fafc', textAlign: 'left' }}>

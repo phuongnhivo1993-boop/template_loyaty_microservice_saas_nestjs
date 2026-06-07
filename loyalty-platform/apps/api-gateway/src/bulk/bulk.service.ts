@@ -9,6 +9,7 @@ const ENTITY_MAP: Record<string, string> = {
   campaigns: 'campaign',
   rewards: 'reward',
   vouchers: 'voucher',
+  products: 'product',
   promotions: 'promotion',
   referrals: 'referral',
   badges: 'badge',
@@ -44,6 +45,23 @@ export class BulkService {
 
     const result = await model.deleteMany({ where });
     return { deleted: result.count, total: ids.length, soft: false };
+  }
+
+  async bulkRestore(entity: string, ids: string[], tenantId?: string) {
+    const modelName = ENTITY_MAP[entity];
+    if (!modelName) throw new BadRequestException(`Unsupported entity: ${entity}`);
+    const model = (this.prisma as any)[modelName];
+    if (!model) throw new BadRequestException(`Model not found: ${modelName}`);
+
+    const where: any = { id: { in: ids }, deletedAt: { not: null } };
+    if (tenantId) where.tenantId = tenantId;
+
+    const result = await model.updateMany({
+      where,
+      data: { deletedAt: null, status: 'ACTIVE' },
+    });
+
+    return { restored: result.count, total: ids.length };
   }
 
   async bulkUpdateStatus(entity: string, ids: string[], status: string, tenantId?: string) {

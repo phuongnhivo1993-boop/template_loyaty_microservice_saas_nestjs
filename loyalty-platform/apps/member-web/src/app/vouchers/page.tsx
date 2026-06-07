@@ -31,7 +31,7 @@ export default function VouchersPage() {
   return (
     <MemberLayout>
       {error && (
-        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
           <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
         </div>
@@ -57,18 +57,18 @@ export default function VouchersPage() {
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{v.voucher?.type || v.type} • {v.voucher?.value || v.value}</div>
               </div>
               <span className="badge" style={{
-                background: v.redeemed ? '#f1f5f9' : '#dcfce7',
+                background: v.redeemed ? 'var(--bg-secondary, #f1f5f9)' : 'var(--success-bg, #dcfce7)',
                 color: v.redeemed ? 'var(--text-muted)' : 'var(--success)',
               }}>
                 {v.redeemed ? 'Used' : 'Active'}
               </span>
             </div>
             {v.qrCode && (
-              <div style={{ marginTop: '12px', textAlign: 'center', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+              <div style={{ marginTop: '12px', textAlign: 'center', padding: '16px', background: 'var(--bg-secondary, #f8fafc)', borderRadius: '12px', border: '1px dashed var(--border, #cbd5e1)' }}>
                 <div style={{
-                  display: 'inline-block', padding: '12px', background: 'white', borderRadius: '8px',
+                  display: 'inline-block', padding: '12px', background: 'var(--bg-card, white)', borderRadius: '8px',
                   fontFamily: 'monospace', fontSize: '11px', lineHeight: '1.6', letterSpacing: '1px',
-                  color: '#1e293b', border: '1px solid #e2e8f0',
+                  color: 'var(--text-primary, #1e293b)', border: '1px solid var(--border, #e2e8f0)',
                 }}>
                   {v.qrCode.replace(/.{8}/g, '$& ').trim().split(' ').map((chunk: string, i: number) => (
                     <div key={i}>{chunk}</div>

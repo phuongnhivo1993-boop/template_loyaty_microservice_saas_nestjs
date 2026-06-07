@@ -84,6 +84,17 @@ export class RewardService {
     return this.prisma.reward.update({ where: { id }, data });
   }
 
+  async duplicate(id: string) {
+    const reward = await this.findOne(id);
+    const { id: _, createdAt, updatedAt, ...data } = reward;
+    return this.prisma.reward.create({
+      data: {
+        ...data,
+        name: `${data.name} (Copy)`,
+      },
+    });
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.reward.delete({ where: { id } });

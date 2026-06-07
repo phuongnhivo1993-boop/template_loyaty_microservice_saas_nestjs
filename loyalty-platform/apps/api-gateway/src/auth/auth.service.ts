@@ -12,6 +12,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { ErrorCodes, ServiceException } from '../common/errors/error-codes';
+import { NotificationService } from '../notification/notification.service';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
@@ -25,6 +26,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private tokenBlacklist: TokenBlacklistService,
+    private notificationService: NotificationService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -252,6 +254,10 @@ export class AuthService {
       return { message: 'If the email exists, a reset link has been sent' };
     }
     const resetToken = this.jwtService.sign({ email, type: 'reset' }, { expiresIn: '15m' });
+    this.notificationService.send({
+      templateId: '', recipient: email, channel: 'email',
+      variables: { resetToken, email },
+    }).catch((err) => this.logger.warn(`Password reset notification failed: ${err.message}`));
     this.logger.log(`Password reset requested for: ${email}`);
     return { message: 'If the email exists, a reset link has been sent' };
   }

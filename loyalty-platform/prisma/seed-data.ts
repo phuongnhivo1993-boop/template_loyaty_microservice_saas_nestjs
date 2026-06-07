@@ -3,7 +3,7 @@
 // =============================================================================
 
 export const HOSTS = [
-  { email: 'admin@loyalty.vn', password: 'Admin@123', name: 'Super Admin' },
+  { email: 'admin@loyalty.vn', password: process.env.SEED_ADMIN_PASSWORD || 'changeme_in_production', name: 'Super Admin' },
 ];
 
 export const TENANTS: TenantSeed[] = [
@@ -27,7 +27,7 @@ export const TENANTS: TenantSeed[] = [
       maxStores: 1,
       features: { referral: false, gamification: false, apiAccess: false, customDomain: false, whiteLabel: false, advancedAnalytics: false },
     },
-    admin: { email: 'admin@thuonghieuxanh.vn', password: 'Admin@123', fullName: 'Nguyễn Thị Minh', phone: '0903123456', role: 'ADMIN' as const },
+    admin: { email: 'admin@thuonghieuxanh.vn', password: process.env.SEED_ADMIN_PASSWORD || 'changeme_in_production', fullName: 'Nguyễn Thị Minh', phone: '0903123456', role: 'ADMIN' as const },
   },
   {
     name: 'Cafe Sài Gòn',
@@ -49,7 +49,7 @@ export const TENANTS: TenantSeed[] = [
       maxStores: 5,
       features: { referral: true, gamification: false, apiAccess: true, customDomain: false, whiteLabel: false, advancedAnalytics: false },
     },
-    admin: { email: 'admin@cafesaigon.vn', password: 'Admin@123', fullName: 'Trần Văn Hùng', phone: '0909988776', role: 'ADMIN' as const },
+    admin: { email: 'admin@cafesaigon.vn', password: process.env.SEED_ADMIN_PASSWORD || 'changeme_in_production', fullName: 'Trần Văn Hùng', phone: '0909988776', role: 'ADMIN' as const },
   },
   {
     name: 'Fitness Pro',
@@ -71,7 +71,7 @@ export const TENANTS: TenantSeed[] = [
       maxStores: 20,
       features: { referral: true, gamification: true, apiAccess: true, customDomain: true, whiteLabel: false, advancedAnalytics: true },
     },
-    admin: { email: 'admin@fitnesspro.vn', password: 'Admin@123', fullName: 'Lê Quốc Bảo', phone: '0912345678', role: 'ADMIN' as const },
+    admin: { email: 'admin@fitnesspro.vn', password: process.env.SEED_ADMIN_PASSWORD || 'changeme_in_production', fullName: 'Lê Quốc Bảo', phone: '0912345678', role: 'ADMIN' as const },
   },
 ];
 

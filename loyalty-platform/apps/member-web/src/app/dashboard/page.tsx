@@ -47,7 +47,7 @@ export default function DashboardPage() {
   return (
     <MemberLayout>
       {error && (
-        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
           <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
         </div>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
           <div className="stat-label">Total Earned</div>
         </div>
         <div className="card stat-card">
-          <div className="stat-value" style={{ color: '#0891b2' }}>{wallet?.transactionCount ?? 0}</div>
+          <div className="stat-value" style={{ color: 'var(--info, #0891b2)' }}>{wallet?.transactionCount ?? 0}</div>
           <div className="stat-label">Transactions</div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
           {checkinLoading ? 'Checking in...' : `✅ Daily Check-in${streak > 0 ? ` (${streak} day streak!)` : ''}`}
         </button>
       ) : (
-        <div className="card" style={{ textAlign: 'center', background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+        <div className="card" style={{ textAlign: 'center', background: 'var(--success-bg, #f0fdf4)', borderColor: 'var(--success-border, #bbf7d0)' }}>
           ✅ Checked in today{streak > 0 ? ` — ${streak} day streak!` : ''}
         </div>
       )}
@@ -99,7 +99,7 @@ export default function DashboardPage() {
         <div style={{ fontWeight: 600, marginBottom: '8px' }}>Badges</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {(profile as any)?.badges?.slice(0, 4)?.map((b: any) => (
-            <span key={b.id} className="badge" style={{ background: '#f5f3ff', color: '#7c3aed' }}>{b.name}</span>
+            <span key={b.id} className="badge" style={{ background: 'var(--badge-bg, #f5f3ff)', color: 'var(--badge-color, #7c3aed)' }}>{b.name}</span>
           )) || <span className="text-muted" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No badges yet</span>}
         </div>
       </div>

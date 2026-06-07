@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [topMembers, setTopMembers] = useState<any[]>([]);
   const [voucherStats, setVoucherStats] = useState<any>(null);
   const [expiringPoints, setExpiringPoints] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
@@ -37,7 +38,9 @@ export default function DashboardPage() {
         if (vStats) setVoucherStats(vStats);
         if (Array.isArray(expiring)) setExpiringPoints(expiring);
       })
-      .catch(() => {})
+      .catch((err: any) => {
+        setError(err?.message || 'Failed to load dashboard data. Please try again.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -55,6 +58,31 @@ export default function DashboardPage() {
     { label: 'KYC Rate', value: `${stats.kycRate || 0}%`, color: '#f97316', icon: '🪪' },
     { label: 'Referrals', value: String(stats.referrals || '--'), color: '#6366f1', icon: '🔗' },
   ];
+
+  if (error) {
+    return (
+      <div className="page-layout">
+        <Sidebar />
+        <main className="main-content">
+          <PageHeader title="Dashboard" subtitle="Welcome to Loyalty Platform Admin" />
+          <div style={{
+            background: 'var(--bg-card, white)',
+            borderRadius: '12px',
+            padding: '40px',
+            textAlign: 'center',
+            color: 'var(--text-secondary, #64748b)',
+            marginTop: '24px',
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>!</div>
+            <p style={{ fontSize: '16px', marginBottom: '16px' }}>{error}</p>
+            <button onClick={() => window.location.reload()} className="btn-primary" style={{ padding: '12px 24px', cursor: 'pointer' }}>
+              Retry
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

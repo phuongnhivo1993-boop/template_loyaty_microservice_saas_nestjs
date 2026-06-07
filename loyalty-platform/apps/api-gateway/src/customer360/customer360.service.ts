@@ -58,16 +58,17 @@ export class Customer360Service {
       this.prisma.order.findMany({ where: { memberId }, orderBy: { createdAt: 'desc' }, take: 20 }),
       this.prisma.referral.findMany({ where: { referrerId: memberId }, orderBy: { createdAt: 'desc' }, take: 20 }),
       this.prisma.dailyCheckin.findMany({ where: { memberId }, orderBy: { date: 'desc' }, take: 30 }),
-      this.prisma.reward.findMany({
-        where: { redemptions: { some: { memberId } } },
+      this.prisma.memberVoucher.findMany({
+        where: { memberId },
+        orderBy: { createdAt: 'desc' },
         take: 20,
       }),
     ]);
     const events: Array<{ type: string; description: string; date: Date; amount?: number; reference?: string }> = [];
-    transactions.forEach((t) => events.push({ type: t.type === 'EARN' ? 'points_earned' : 'points_burned', description: `${t.type === 'EARN' ? 'Earned' : 'Burned'} ${t.amount} points${t.reason ? `: ${t.reason}` : ''}`, date: t.createdAt, amount: t.amount, reference: t.reference }));
+    transactions.forEach((t) => events.push({ type: t.type === 'EARN' ? 'points_earned' : 'points_burned', description: `${t.type === 'EARN' ? 'Earned' : 'Burned'} ${t.amount} points${t.reason ? `: ${t.reason}` : ''}`, date: t.createdAt, amount: t.amount, reference: t.reference ?? undefined }));
     orders.forEach((o) => events.push({ type: 'order', description: `Order #${o.orderCode} - ${o.status} (${o.total.toLocaleString()} VND)`, date: o.createdAt, amount: o.total }));
     referrals.forEach((r) => events.push({ type: 'referral', description: `Referral ${r.code} - ${r.status}`, date: r.createdAt }));
-    checkins.forEach((c) => events.push({ type: 'checkin', description: `Daily check-in (streak: ${c.streak})`, date: c.date }));
+    checkins.forEach((c) => events.push({ type: 'checkin' as const, description: `Daily check-in (streak: ${c.streak})`, date: c.date instanceof Date ? c.date : new Date(c.date) }));
     events.sort((a, b) => b.date.getTime() - a.date.getTime());
     return events.slice(0, 100);
   }

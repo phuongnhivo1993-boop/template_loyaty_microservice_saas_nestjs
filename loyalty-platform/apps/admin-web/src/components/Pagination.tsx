@@ -16,7 +16,7 @@ export default function Pagination({ page, totalPages, onPageChange, pageSize, o
 
   const btnStyle = (active = false, disabled = false): React.CSSProperties => ({
     padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '6px',
-    background: active ? '#2563eb' : disabled ? '#f1f5f9' : 'white',
+    background: active ? '#2563eb' : disabled ? '#f1f5f9' : 'var(--bg-card, white)',
     color: active ? 'white' : disabled ? '#94a3b8' : '#475569',
     cursor: disabled ? 'not-allowed' : 'pointer', fontWeight: active ? 600 : 500,
   });
@@ -39,7 +39,7 @@ export default function Pagination({ page, totalPages, onPageChange, pageSize, o
             onChange={e => onPageSizeChange(Number(e.target.value))}
             style={{
               padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px',
-              fontSize: '13px', background: 'white', cursor: 'pointer', outline: 'none',
+              fontSize: '13px', background: 'var(--bg-card, white)', cursor: 'pointer', outline: 'none',
             }}
           >
             {[10, 20, 50, 100].map(s => (

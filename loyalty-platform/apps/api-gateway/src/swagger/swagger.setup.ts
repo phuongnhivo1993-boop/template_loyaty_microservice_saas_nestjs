@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { SecuritySchemeObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+
 
 export function setupSwagger(app: INestApplication, appUrl: string): void {
   const options = new DocumentBuilder()
@@ -8,7 +8,7 @@ export function setupSwagger(app: INestApplication, appUrl: string): void {
     .setDescription('Multi-tenant loyalty platform API')
     .setVersion('1.0')
     .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } as SecuritySchemeObject,
+      { type: 'http' as const, scheme: 'bearer' as const, bearerFormat: 'JWT' },
       'JWT-auth',
     )
     .addApiKey(

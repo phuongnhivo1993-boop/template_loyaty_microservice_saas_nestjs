@@ -35,6 +35,10 @@ export class CreateGiftCardDto {
   @IsOptional()
   @IsDateString()
   expiresAt?: string;
+
+  @ApiProperty()
+  @IsString()
+  tenantId: string;
 }
 
 export class UpdateGiftCardDto {

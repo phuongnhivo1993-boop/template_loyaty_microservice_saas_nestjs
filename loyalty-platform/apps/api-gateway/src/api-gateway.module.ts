@@ -52,7 +52,7 @@ import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: parseInt(process.env.RATE_LIMIT_MAX || '30', 10) }]),
     MulterModule.register({ dest: './uploads' }),
     ScheduleModule.forRoot(),
     PrismaModule,

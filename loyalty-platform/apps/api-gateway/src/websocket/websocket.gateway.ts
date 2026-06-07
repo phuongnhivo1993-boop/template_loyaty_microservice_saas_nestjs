@@ -17,7 +17,10 @@ interface AuthenticatedSocket extends Socket {
 
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: { 
+    origin: process.env.WS_CORS_ORIGIN?.split(',') || (process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000', 'http://localhost:3001']), 
+    credentials: true 
+  },
   namespace: '/ws',
 })
 export class WebSocketGatewayImpl implements OnGatewayConnection, OnGatewayDisconnect {

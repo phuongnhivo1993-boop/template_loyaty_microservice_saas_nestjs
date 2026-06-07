@@ -19,8 +19,8 @@ export class EncryptionService {
     if (!text) return text;
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(this.algorithm, this.key, iv);
-    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
-    const authTag = cipher.getAuthTag();
+    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), (cipher as any).final()]);
+    const authTag = (cipher as any).getAuthTag();
     const combined = Buffer.concat([iv, authTag, encrypted]);
     return combined.toString('base64');
   }
@@ -32,7 +32,7 @@ export class EncryptionService {
     const authTag = combined.subarray(16, 32);
     const encrypted = combined.subarray(32);
     const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
-    decipher.setAuthTag(authTag);
+    (decipher as any).setAuthTag(authTag);
     const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
     return decrypted.toString('utf8');
   }

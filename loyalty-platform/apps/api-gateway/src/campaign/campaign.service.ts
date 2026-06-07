@@ -44,6 +44,18 @@ export class CampaignService {
     return this.prisma.campaign.update({ where: { id }, data });
   }
 
+  async duplicate(id: string) {
+    const campaign = await this.findOne(id);
+    const { id: _, createdAt, updatedAt, ...data } = campaign;
+    return this.prisma.campaign.create({
+      data: {
+        ...data,
+        name: `${data.name} (Copy)`,
+        status: 'DRAFT',
+      },
+    });
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.campaign.delete({ where: { id } });

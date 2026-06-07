@@ -25,6 +25,8 @@ export class CreateStoreDto {
   @ApiProperty({ required: false }) @IsOptional() @IsJSON() openingHours?: string;
 
   @ApiProperty({ required: false, enum: StoreStatus }) @IsOptional() @IsEnum(StoreStatus) status?: StoreStatus;
+
+  @ApiProperty() @IsString() tenantId: string;
 }
 
 export class UpdateStoreDto {

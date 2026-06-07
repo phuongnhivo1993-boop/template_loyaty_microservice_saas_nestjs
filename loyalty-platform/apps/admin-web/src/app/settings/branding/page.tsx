@@ -31,7 +31,7 @@ export default function BrandingSettingsPage() {
     if (!tenantId) return;
     setLoading(true);
     try {
-      const res = await getTenantSettings(tenantId);
+      const res: any = await getTenantSettings(tenantId);
       const theme = res?.theme || {};
       setBrandName(theme.brandName || '');
       setPrimaryColor(theme.primaryColor || '#2563eb');

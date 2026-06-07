@@ -10,7 +10,7 @@ export enum RewardType {
 
 export class CreatePartnerBrandDto {
   @ApiProperty() @IsString() name: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() code?: string;
+  @ApiProperty() @IsString() code: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() logo?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() website?: string;
@@ -18,6 +18,7 @@ export class CreatePartnerBrandDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() contactPhone?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsNumber() @Min(0) @Type(() => Number) commissionRate?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() status?: string;
+  @ApiProperty() @IsString() tenantId: string;
 }
 
 export class UpdatePartnerBrandDto {

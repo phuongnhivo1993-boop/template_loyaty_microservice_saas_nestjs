@@ -57,7 +57,7 @@ export default function ProfilePage() {
   return (
     <MemberLayout>
       {error && (
-        <div className="card" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div className="card" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error, #dc2626)', border: '1px solid var(--error-border, #fecaca)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
           ⚠️ {error}
           <button className="btn btn-sm btn-outline" style={{ marginLeft: '12px' }} onClick={loadData}>Retry</button>
         </div>
@@ -73,7 +73,7 @@ export default function ProfilePage() {
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <div style={{ fontSize: '48px', marginBottom: '8px' }}>{profile?.avatar ? '🖼️' : '👤'}</div>
           <div style={{ fontWeight: 700, fontSize: '18px' }}>{profile?.fullName}</div>
-          <div className="badge" style={{ background: '#f5f3ff', color: '#7c3aed', marginTop: '4px' }}>{profile?.tier?.name || 'Member'}</div>
+          <div className="badge" style={{ background: 'var(--badge-bg, #f5f3ff)', color: 'var(--badge-color, #7c3aed)', marginTop: '4px' }}>{profile?.tier?.name || 'Member'}</div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>🪙 {profile?.availablePoints?.toLocaleString()} points</div>
         </div>
       </div>

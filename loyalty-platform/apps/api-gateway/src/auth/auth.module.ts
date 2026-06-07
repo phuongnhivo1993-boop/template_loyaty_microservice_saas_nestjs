@@ -7,12 +7,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
 import { TenantGuard } from './tenant.guard';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
-      useFactory: () => {
+      useFactory: (): any => {
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
           throw new Error('JWT_SECRET environment variable is required');

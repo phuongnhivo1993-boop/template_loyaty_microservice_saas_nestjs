@@ -37,6 +37,15 @@ export class CouponController {
     return this.couponService.findOne(id);
   }
 
+  @Post(':id/duplicate')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN')
+  @ApiOperation({ summary: 'Duplicate a coupon' })
+  duplicate(@Param('id') id: string) {
+    return this.couponService.duplicate(id);
+  }
+
   @Put(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

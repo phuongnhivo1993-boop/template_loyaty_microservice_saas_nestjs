@@ -156,6 +156,21 @@ export class CouponService {
     return this.prisma.coupon.update({ where: { id }, data: updateData });
   }
 
+  async duplicate(id: string) {
+    const coupon = await this.findOne(id);
+    const { id: _, createdAt, updatedAt, usedCount, ...data } = coupon;
+    const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return this.prisma.coupon.create({
+      data: {
+        ...data,
+        code: `${data.code}-${suffix}`,
+        usedCount: 0,
+        startDate: data.startDate || null,
+        endDate: data.endDate || null,
+      },
+    });
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.coupon.delete({ where: { id } });

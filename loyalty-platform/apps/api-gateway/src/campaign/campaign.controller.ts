@@ -57,6 +57,16 @@ export class CampaignController {
     return this.campaignService.update(id, body);
   }
 
+  @Post(':id/duplicate')
+  @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Campaign ID' })
+  @ApiOperation({ summary: 'Duplicate a campaign' })
+  @ApiResponse({ status: 201, description: 'Campaign duplicated' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  duplicate(@Param('id') id: string) {
+    return this.campaignService.duplicate(id);
+  }
+
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
   @ApiParam({ name: 'id', type: String, description: 'Campaign ID' })

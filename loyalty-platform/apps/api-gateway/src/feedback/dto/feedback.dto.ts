@@ -3,10 +3,9 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFeedbackDto {
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiProperty()
   @IsString()
-  memberId?: string;
+  memberId: string;
 
   @ApiProperty()
   @IsString()

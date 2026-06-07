@@ -64,6 +64,16 @@ export class VoucherController {
     return this.voucherService.redeem(id);
   }
 
+  @Post(':id/duplicate')
+  @Roles('HOST', 'ADMIN')
+  @ApiParam({ name: 'id', type: String, description: 'Voucher ID' })
+  @ApiOperation({ summary: 'Duplicate a voucher' })
+  @ApiResponse({ status: 201, description: 'Voucher duplicated' })
+  @ApiResponse({ status: 404, description: 'Voucher not found' })
+  duplicate(@Param('id') id: string) {
+    return this.voucherService.duplicate(id);
+  }
+
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiParam({ name: 'id', type: String, description: 'Voucher ID' })
