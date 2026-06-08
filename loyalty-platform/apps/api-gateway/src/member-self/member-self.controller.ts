@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Body, UseGuards, Req, Query } from '@nest
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MemberSelfService } from './member-self.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Member Self-Service')
 @Controller('me')
@@ -11,6 +12,7 @@ export class MemberSelfController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own member profile' })
   getProfile(@Req() req: any) {
     return this.memberSelfService.getProfile(req.user.id);
@@ -19,6 +21,7 @@ export class MemberSelfController {
   @Get('wallet')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own wallet (points + transactions)' })
   getWallet(@Req() req: any) {
     return this.memberSelfService.getWallet(req.user.id);
@@ -27,6 +30,7 @@ export class MemberSelfController {
   @Post('set-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Set initial password' })
   setPassword(@Req() req: any, @Body() body: { password: string }) {
     return this.memberSelfService.setPassword(req.user.id, body.password);
@@ -35,6 +39,7 @@ export class MemberSelfController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Change own password' })
   changePassword(
     @Req() req: any,
@@ -50,6 +55,7 @@ export class MemberSelfController {
   @Get('badges')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own badges' })
   getBadges(@Req() req: any) {
     return this.memberSelfService.getBadges(req.user.id);
@@ -58,6 +64,7 @@ export class MemberSelfController {
   @Get('referrals')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own referral links and stats' })
   getReferrals(@Req() req: any) {
     return this.memberSelfService.getReferrals(req.user.id);
@@ -66,6 +73,7 @@ export class MemberSelfController {
   @Get('vouchers')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own vouchers' })
   getVouchers(@Req() req: any) {
     return this.memberSelfService.getVouchers(req.user.id);
@@ -74,6 +82,7 @@ export class MemberSelfController {
   @Get('missions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own missions' })
   getMissions(@Req() req: any) {
     return this.memberSelfService.getMissions(req.user.id);
@@ -82,6 +91,7 @@ export class MemberSelfController {
   @Get('notifications')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own notifications' })
   getNotifications(@Req() req: any) {
     return this.memberSelfService.getNotifications(req.user.id);
@@ -90,6 +100,7 @@ export class MemberSelfController {
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Update own profile' })
   updateProfile(@Req() req: any, @Body() body: { fullName?: string; phone?: string }) {
     return this.memberSelfService.updateProfile(req.user.id, body);
@@ -98,6 +109,7 @@ export class MemberSelfController {
   @Post('cart-redeem')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Redeem multiple rewards in one cart' })
   cartRedeem(@Req() req: any, @Body() body: { items: { rewardId: string; quantity: number }[] }) {
     return this.memberSelfService.cartRedeem(req.user.id, body.items);
@@ -106,6 +118,7 @@ export class MemberSelfController {
   @Get('transactions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own point transactions (paginated, filterable)' })
   getTransactions(
     @Req() req: any,
@@ -119,6 +132,7 @@ export class MemberSelfController {
   @Get('cashback')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own cashback balance and transactions' })
   getCashback(@Req() req: any) {
     return this.memberSelfService.getCashback(req.user.id);
@@ -127,6 +141,7 @@ export class MemberSelfController {
   @Get('gift-cards')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own gift cards' })
   getGiftCards(@Req() req: any) {
     return this.memberSelfService.getGiftCards(req.user.id);
@@ -135,6 +150,7 @@ export class MemberSelfController {
   @Get('tier-progress')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get tier progress (current tier, next tier, points to next)' })
   getTierProgress(@Req() req: any) {
     return this.memberSelfService.getTierProgress(req.user.id);
@@ -143,6 +159,7 @@ export class MemberSelfController {
   @Get('stores')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get nearby stores / store list' })
   getStores(@Req() req: any) {
     return this.memberSelfService.getStores(req.user.id);
@@ -151,6 +168,7 @@ export class MemberSelfController {
   @Post('feedback')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Submit feedback/review' })
   createFeedback(@Req() req: any, @Body() body: { entityType: string; entityId: string; rating: number; content?: string }) {
     return this.memberSelfService.createFeedback(req.user.id, body);
@@ -159,6 +177,7 @@ export class MemberSelfController {
   @Get('orders')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own orders' })
   getOrders(
     @Req() req: any,
@@ -172,6 +191,7 @@ export class MemberSelfController {
   @Get('feedback')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Roles('MEMBER')
   @ApiOperation({ summary: 'Get own feedback history' })
   getFeedback(@Req() req: any) {
     return this.memberSelfService.getFeedback(req.user.id);

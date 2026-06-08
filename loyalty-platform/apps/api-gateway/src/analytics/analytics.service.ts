@@ -10,6 +10,9 @@ export class AnalyticsService {
   ) {}
 
   async getPointsTrend(days: number, tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:points-trend:${tenantId}:${days}` : `analytics:points-trend:global:${days}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const transactions = await this.prisma.pointTransaction.findMany({
@@ -27,13 +30,18 @@ export class AnalyticsService {
         if (t.amount > 0) daily[day].earned += t.amount;
         else daily[day].burned += Math.abs(t.amount);
       }
-      return Object.entries(daily).map(([date, val]) => ({ date, ...val }));
+      const result = Object.entries(daily).map(([date, val]) => ({ date, ...val }));
+      await this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load points trend');
     }
   }
 
   async getMemberGrowth(days: number, tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:member-growth:${tenantId}:${days}` : `analytics:member-growth:global:${days}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const where = { createdAt: { gte: since }, ...(tenantId ? { tenantId } : {}) };
@@ -44,10 +52,12 @@ export class AnalyticsService {
         daily[day] = (daily[day] || 0) + 1;
       }
       let cumulative = 0;
-      return Object.entries(daily).map(([date, count]) => {
+      const result = Object.entries(daily).map(([date, count]) => {
         cumulative += count;
         return { date, newMembers: count, totalMembers: cumulative };
       });
+      await this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load member growth');
     }
@@ -64,7 +74,7 @@ export class AnalyticsService {
       const active = campaigns.filter(c => c.status === 'ACTIVE').length;
       const completed = campaigns.filter(c => c.status === 'ENDED').length;
       const result = { total, active, completed, draft: total - active - completed };
-      this.cache.set(cacheKey, result, 180);
+      await this.cache.set(cacheKey, result, 180);
       return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load campaign performance');
@@ -81,7 +91,7 @@ export class AnalyticsService {
         where, orderBy: { totalPoints: 'desc' }, take: limit,
         include: { tier: { select: { name: true, color: true } } },
       });
-      this.cache.set(cacheKey, result, 120);
+      await this.cache.set(cacheKey, result, 120);
       return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load top members');
@@ -97,7 +107,7 @@ export class AnalyticsService {
       const total = await this.prisma.voucher.count({ where });
       const used = await this.prisma.voucher.count({ where: { ...where, usedCount: { gt: 0 } } });
       const result = { total, used, remaining: total - used, usageRate: total > 0 ? ((used / total) * 100).toFixed(1) : '0' };
-      this.cache.set(cacheKey, result, 180);
+      await this.cache.set(cacheKey, result, 180);
       return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load voucher stats');
@@ -105,6 +115,9 @@ export class AnalyticsService {
   }
 
   async getExpiringPoints(tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:expiring-points:${tenantId}` : 'analytics:expiring-points:global';
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const where = tenantId ? { tenantId } : {};
       const members = await this.prisma.member.findMany({
@@ -114,21 +127,28 @@ export class AnalyticsService {
         take: 10,
       });
 
-      const membersWithExpiry = await Promise.all(members.map(async (m) => {
-        const oldestEarn = await this.prisma.pointTransaction.findFirst({
-          where: { memberId: m.id, type: 'EARN' },
-          orderBy: { createdAt: 'asc' },
-        });
+      const memberIds = members.map(m => m.id);
+      const oldestEarns = await this.prisma.pointTransaction.groupBy({
+        by: ['memberId'],
+        where: { memberId: { in: memberIds }, type: 'EARN' },
+        _min: { createdAt: true },
+      });
+      const expiryMap = new Map(oldestEarns.map(e => [e.memberId, e._min.createdAt]));
+
+      const membersWithExpiry = members.map(m => {
+        const oldestEarnDate = expiryMap.get(m.id) || null;
         return {
           ...m,
-          oldestEarnDate: oldestEarn?.createdAt || null,
-          daysSinceOldestEarn: oldestEarn
-            ? Math.floor((Date.now() - oldestEarn.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+          oldestEarnDate,
+          daysSinceOldestEarn: oldestEarnDate
+            ? Math.floor((Date.now() - oldestEarnDate.getTime()) / (1000 * 60 * 60 * 24))
             : null,
         };
-      }));
+      });
 
-      return membersWithExpiry.filter(m => m.daysSinceOldestEarn !== null && m.daysSinceOldestEarn > 300);
+      const result = membersWithExpiry.filter(m => m.daysSinceOldestEarn !== null && m.daysSinceOldestEarn > 300);
+      await this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load expiring points');
     }
@@ -157,7 +177,7 @@ export class AnalyticsService {
         tier: m.tier?.name || 'Bronze',
         tierColor: m.tier?.color || '#94a3b8',
       }));
-      this.cache.set(cacheKey, result, 120);
+      await this.cache.set(cacheKey, result, 120);
       return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load leaderboard');
@@ -165,6 +185,9 @@ export class AnalyticsService {
   }
 
   async getVoucherAnalytics(days = 30, tenantId?: string) {
+    const cacheKey = tenantId ? `analytics:voucher-analytics:${tenantId}:${days}` : `analytics:voucher-analytics:global:${days}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
     try {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const memberVoucherWhere: any = { redeemedAt: { gte: since } };
@@ -189,12 +212,14 @@ export class AnalyticsService {
         popular[key].count++;
       }
 
-      return {
+      const result = {
         totalRedemptions: redemptions.length,
         dailyTrend: Object.entries(daily).map(([date, count]) => ({ date, count })),
         byType: Object.entries(typeCount).map(([type, count]) => ({ type, count })),
         popular: Object.values(popular).sort((a, b) => b.count - a.count).slice(0, 10),
       };
+      await this.cache.set(cacheKey, result, 180);
+      return result;
     } catch (e) {
       throw new InternalServerErrorException('Failed to load voucher analytics');
     }

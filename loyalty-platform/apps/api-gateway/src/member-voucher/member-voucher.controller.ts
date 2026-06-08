@@ -19,12 +19,14 @@ export class MemberVoucherController {
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List member-voucher assignments' })
   findAll(@Req() req: any, @Query('memberId') memberId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string) {
     return this.memberVoucherService.findAll(memberId, page, limit, search);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get member-voucher assignment by ID' })
   findOne(@Param('id') id: string) {
     return this.memberVoucherService.findOne(id);

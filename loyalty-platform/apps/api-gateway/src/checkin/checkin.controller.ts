@@ -18,12 +18,14 @@ export class CheckinController {
   }
 
   @Get('stats')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
   @ApiOperation({ summary: 'Get check-in stats (current streak, total)' })
   getStats(@Req() req: any) {
     return this.checkinService.getStats(req.user.id);
   }
 
   @Get('history')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
   @ApiOperation({ summary: 'Get check-in history for this month' })
   getHistory(@Req() req: any) {
     return this.checkinService.getHistory(req.user.id);
@@ -33,6 +35,6 @@ export class CheckinController {
   @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Admin: check-in analytics (streaks, trends)' })
   getAdminStats(@Req() req: any, @Query('tenantId') tenantId?: string) {
-    return this.checkinService.getAdminStats(req.tenantId ?? tenantId);
+    return this.checkinService.getAdminStats(req.tenantId);
   }
 }

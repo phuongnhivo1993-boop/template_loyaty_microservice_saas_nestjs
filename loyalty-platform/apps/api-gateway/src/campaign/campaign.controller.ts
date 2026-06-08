@@ -20,10 +20,11 @@ export class CampaignController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreateCampaignDto) {
-    return this.campaignService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.campaignService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List campaigns (with pagination & sort)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -33,16 +34,17 @@ export class CampaignController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of campaigns' })
   findAll(@Req() req: any, @Query() query: CampaignQueryDto) {
-    return this.campaignService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.status, query.search, query.sort);
+    return this.campaignService.findAll(req.tenantId, query.page, query.limit, query.status, query.search, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Campaign ID' })
   @ApiOperation({ summary: 'Get campaign by ID' })
   @ApiResponse({ status: 200, description: 'Campaign found' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  findOne(@Param('id') id: string) {
-    return this.campaignService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.campaignService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
@@ -53,8 +55,8 @@ export class CampaignController {
   @ApiResponse({ status: 200, description: 'Campaign updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  update(@Param('id') id: string, @Body() body: UpdateCampaignDto) {
-    return this.campaignService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateCampaignDto) {
+    return this.campaignService.update(id, body, req.tenantId);
   }
 
   @Post(':id/duplicate')
@@ -63,8 +65,8 @@ export class CampaignController {
   @ApiOperation({ summary: 'Duplicate a campaign' })
   @ApiResponse({ status: 201, description: 'Campaign duplicated' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  duplicate(@Param('id') id: string) {
-    return this.campaignService.duplicate(id);
+  duplicate(@Req() req: any, @Param('id') id: string) {
+    return this.campaignService.duplicate(id, req.tenantId);
   }
 
   @Delete(':id')
@@ -74,8 +76,8 @@ export class CampaignController {
   @ApiResponse({ status: 200, description: 'Campaign deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  remove(@Param('id') id: string) {
-    return this.campaignService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.campaignService.remove(id, req.tenantId);
   }
 
   @Get(':id/performance')
@@ -84,7 +86,7 @@ export class CampaignController {
   @ApiOperation({ summary: 'Get campaign performance metrics' })
   @ApiResponse({ status: 200, description: 'Campaign performance data' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  getPerformance(@Param('id') id: string) {
-    return this.campaignService.getPerformance(id);
+  getPerformance(@Req() req: any, @Param('id') id: string) {
+    return this.campaignService.getPerformance(id, req.tenantId);
   }
 }

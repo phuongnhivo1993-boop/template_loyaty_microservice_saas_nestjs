@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -7,12 +8,20 @@ async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
 
+function getEnvPassword(key: string, fallback: string): string {
+  return process.env[key] || fallback;
+}
+
 async function main() {
   console.log('Seeding database...');
 
-  const hostPass = await hashPassword('Host@123456');
-  const adminPass = await hashPassword('Admin@123456');
-  const memberPass = await hashPassword('Member@123456');
+  const hostPass = await hashPassword(getEnvPassword('SEED_HOST_PASSWORD', crypto.randomBytes(16).toString('hex')));
+  const adminPass = await hashPassword(getEnvPassword('SEED_ADMIN_PASSWORD', crypto.randomBytes(16).toString('hex')));
+  const memberPass = await hashPassword(getEnvPassword('SEED_MEMBER_PASSWORD', crypto.randomBytes(16).toString('hex')));
+
+  if (!process.env.SEED_HOST_PASSWORD && !process.env.SEED_ADMIN_PASSWORD && !process.env.SEED_MEMBER_PASSWORD) {
+    console.warn('  ⚠️ No SEED_*_PASSWORD env vars set. Using random passwords. Check .env file for actual credentials.');
+  }
 
   const host = await prisma.host.upsert({
     where: { email: 'host@loyalty.vn' },
@@ -335,9 +344,7 @@ async function main() {
   console.log('  ✓ Coupon created:', coupon3.code);
 
   console.log('\n✅ Seeding complete!');
-  console.log('   Host: host@loyalty.vn / Host@123456');
-  console.log('   Admin: admin@sunshine.vn / Admin@123456');
-  console.log('   Member: nguyen.van.a@sunshine.vn / Member@123456');
+  console.log('   Default accounts created. Please change passwords immediately.');
 }
 
 main()

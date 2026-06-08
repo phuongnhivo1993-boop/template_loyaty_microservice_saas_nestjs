@@ -1,10 +1,41 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, InternalServerErrorException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseSort } from '../common/utils/sort.util';
 
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3010';
+
+function getInternalApiKey(): string {
+  const key = process.env.INTERNAL_API_KEY;
+  if (!key) {
+    throw new Error('INTERNAL_API_KEY environment variable is required');
+  }
+  return key;
+}
+
 @Injectable()
 export class NotificationService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private httpService: HttpService,
+  ) {}
+
+  private async dispatchToService(endpoint: string, payload: any): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.httpService.post(`${NOTIFICATION_SERVICE_URL}/api/v1/notifications${endpoint}`, payload, {
+          headers: { 'x-api-key': getInternalApiKey(), 'Content-Type': 'application/json' },
+          timeout: 10000,
+        }),
+      );
+    } catch (err: any) {
+      this.logger.error(`Notification service call failed (${endpoint}): ${err.message}`);
+      throw new Error(`Failed to send notification: ${err.message}`);
+    }
+  }
 
   async createTemplate(data: { name: string; type: string; subject: string; content: string; variables?: string; tenantId: string }) {
     return this.prisma.notificationTemplate.create({ data });
@@ -53,6 +84,15 @@ export class NotificationService {
       ? Object.entries(data.variables).reduce((acc, [key, val]) => acc.replace(new RegExp(`{{${key}}}`, 'g'), val), template.content)
       : template.content;
 
+    if (data.channel === 'email') {
+      await this.dispatchToService('/send', {
+        recipient: data.recipient,
+        channel: 'email',
+        subject: template.subject,
+        content,
+      });
+    }
+
     const log = await this.prisma.notificationLog.create({
       data: {
         templateId: data.templateId,
@@ -66,6 +106,29 @@ export class NotificationService {
       },
     });
     return { logId: log.id, channel: data.channel, recipient: data.recipient, status: 'SENT' };
+  }
+
+  async sendDirect(data: { recipient: string; subject: string; content: string }) {
+    await this.dispatchToService('/send', {
+      recipient: data.recipient,
+      channel: 'email',
+      subject: data.subject,
+      content: data.content,
+    });
+
+    const log = await this.prisma.notificationLog.create({
+      data: {
+        templateId: '',
+        recipient: data.recipient,
+        channel: 'email',
+        subject: data.subject,
+        content: data.content,
+        status: 'SENT',
+        sentAt: new Date(),
+        tenantId: '',
+      },
+    });
+    return { logId: log.id, channel: 'email', recipient: data.recipient, status: 'SENT' };
   }
 
   async listLogs(tenantId?: string, page = 1, limit = 20, search?: string, sort?: string) {
@@ -114,6 +177,15 @@ export class NotificationService {
         tenantId: data.tenantId,
       };
     });
+
+    if (data.channel === 'email') {
+      await this.dispatchToService('/broadcast', {
+        templateId: data.templateId,
+        channel: 'email',
+        variables: data.variables,
+        tenantId: data.tenantId,
+      });
+    }
 
     await this.prisma.notificationLog.createMany({ data: logs });
 

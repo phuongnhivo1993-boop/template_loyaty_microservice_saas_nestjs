@@ -6,7 +6,10 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { SkipTenantCheck } from './skip-tenant.decorator';
-import { LoginDto, RegisterHostDto } from '../common/dto/common.dto';
+import {
+  LoginDto, RegisterHostDto, ForgotPasswordDto,
+  ResetPasswordDto, ChangePasswordDto, RefreshTokenDto,
+} from '../common/dto/common.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -81,24 +84,24 @@ export class AuthController {
   @Post('refresh')
   @SkipTenantCheck()
   @HttpCode(HttpStatus.OK)
-  @ApiBody({ schema: { type: 'object', properties: { refreshToken: { type: 'string' } } } })
+  @ApiBody({ type: RefreshTokenDto })
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  refresh(@Body() body: { refreshToken: string }) {
+  refresh(@Body() body: RefreshTokenDto) {
     return this.authService.refreshToken(body.refreshToken);
   }
 
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiBody({ schema: { type: 'object', properties: { oldPassword: { type: 'string' }, newPassword: { type: 'string' } } } })
+  @ApiBody({ type: ChangePasswordDto })
   @ApiOperation({ summary: 'Change password for authenticated user' })
   @ApiResponse({ status: 201, description: 'Password changed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async changePassword(
     @Request() req: any,
-    @Body() body: { oldPassword: string; newPassword: string },
+    @Body() body: ChangePasswordDto,
   ) {
     return this.authService.changePassword(req.user, body.oldPassword, body.newPassword);
   }
@@ -107,22 +110,22 @@ export class AuthController {
   @SkipTenantCheck()
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' } } } })
+  @ApiBody({ type: ForgotPasswordDto })
   @ApiOperation({ summary: 'Request password reset (sends email with reset token)' })
   @ApiResponse({ status: 200, description: 'Reset email sent' })
   @ApiResponse({ status: 400, description: 'Email not found' })
-  forgotPassword(@Body() body: { email: string }) {
+  forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
   @SkipTenantCheck()
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @ApiBody({ schema: { type: 'object', properties: { token: { type: 'string' }, newPassword: { type: 'string' } } } })
+  @ApiBody({ type: ResetPasswordDto })
   @ApiOperation({ summary: 'Reset password using reset token' })
   @ApiResponse({ status: 201, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  resetPassword(@Body() body: { token: string; newPassword: string }) {
+  resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body.token, body.newPassword);
   }
 }

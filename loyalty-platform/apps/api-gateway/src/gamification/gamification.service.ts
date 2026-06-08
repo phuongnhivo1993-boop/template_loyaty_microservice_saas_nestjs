@@ -28,28 +28,28 @@ export class GamificationService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateBadge(id: string, data: { name?: string; description?: string; iconUrl?: string; criteria?: any }) {
-    await this.findBadge(id);
+  async updateBadge(id: string, data: { name?: string; description?: string; iconUrl?: string; criteria?: any }, tenantId?: string) {
+    await this.findBadge(id, tenantId);
     return this.prisma.badge.update({ where: { id }, data });
   }
 
-  async removeBadge(id: string) {
-    await this.findBadge(id);
+  async removeBadge(id: string, tenantId?: string) {
+    await this.findBadge(id, tenantId);
     return this.prisma.badge.delete({ where: { id } });
   }
 
-  async findOneBadge(id: string) {
-    const badge = await this.prisma.badge.findUnique({ where: { id } });
+  async findOneBadge(id: string, tenantId?: string) {
+    const badge = await this.prisma.badge.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!badge) throw new NotFoundException('Badge not found');
     return badge;
   }
 
-  private async findBadge(id: string) {
-    return this.findOneBadge(id);
+  private async findBadge(id: string, tenantId?: string) {
+    return this.findOneBadge(id, tenantId);
   }
 
-  async assignBadge(badgeId: string, memberIds: string[]) {
-    const badge = await this.findOneBadge(badgeId);
+  async assignBadge(badgeId: string, memberIds: string[], tenantId?: string) {
+    const badge = await this.findOneBadge(badgeId, tenantId);
     const members = await this.prisma.member.findMany({
       where: { id: { in: memberIds }, tenantId: badge.tenantId },
     });
@@ -74,8 +74,8 @@ export class GamificationService {
     return badges;
   }
 
-  async unassignBadge(badgeId: string, memberId: string) {
-    const badge = await this.findOneBadge(badgeId);
+  async unassignBadge(badgeId: string, memberId: string, tenantId?: string) {
+    const badge = await this.findOneBadge(badgeId, tenantId);
     await this.prisma.auditLog.create({
       data: {
         entityType: 'badge_assignment',
@@ -115,19 +115,19 @@ export class GamificationService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOneMission(id: string) {
-    const mission = await this.prisma.mission.findUnique({ where: { id } });
+  async findOneMission(id: string, tenantId?: string) {
+    const mission = await this.prisma.mission.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!mission) throw new NotFoundException('Mission not found');
     return mission;
   }
 
-  async updateMission(id: string, data: { name?: string; description?: string; pointsReward?: number; criteria?: any }) {
-    await this.findOneMission(id);
+  async updateMission(id: string, data: { name?: string; description?: string; pointsReward?: number; criteria?: any }, tenantId?: string) {
+    await this.findOneMission(id, tenantId);
     return this.prisma.mission.update({ where: { id }, data });
   }
 
-  async removeMission(id: string) {
-    await this.findOneMission(id);
+  async removeMission(id: string, tenantId?: string) {
+    await this.findOneMission(id, tenantId);
     return this.prisma.mission.delete({ where: { id } });
   }
 

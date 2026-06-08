@@ -34,8 +34,8 @@ export class VoucherService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const voucher = await this.prisma.voucher.findUnique({ where: { id } });
+  async findOne(id: string, tenantId?: string) {
+    const voucher = await this.prisma.voucher.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!voucher) throw new NotFoundException('Voucher not found');
     return voucher;
   }
@@ -48,8 +48,8 @@ export class VoucherService {
     return { valid: true, voucher };
   }
 
-  async redeem(id: string) {
-    const voucher = await this.findOne(id);
+  async redeem(id: string, tenantId?: string) {
+    const voucher = await this.findOne(id, tenantId);
     if (voucher.expiresAt && voucher.expiresAt < new Date()) throw new BadRequestException('Voucher expired');
     if (voucher.maxUsage && voucher.usedCount >= voucher.maxUsage) throw new BadRequestException('Voucher usage limit reached');
     return this.prisma.voucher.update({
@@ -58,13 +58,13 @@ export class VoucherService {
     });
   }
 
-  async update(id: string, data: { value?: number; maxUsage?: number; expiresAt?: string }) {
-    await this.findOne(id);
+  async update(id: string, data: { value?: number; maxUsage?: number; expiresAt?: string }, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.voucher.update({ where: { id }, data });
   }
 
-  async duplicate(id: string) {
-    const voucher = await this.findOne(id);
+  async duplicate(id: string, tenantId?: string) {
+    const voucher = await this.findOne(id, tenantId);
     const { id: _, createdAt, updatedAt, usedCount, ...data } = voucher;
     const suffix = randomBytes(3).toString('hex').toUpperCase();
     return this.prisma.voucher.create({
@@ -77,8 +77,8 @@ export class VoucherService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.voucher.delete({ where: { id } });
   }
 

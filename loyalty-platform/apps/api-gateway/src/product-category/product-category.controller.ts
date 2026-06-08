@@ -16,32 +16,34 @@ export class ProductCategoryController {
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a product category' })
   create(@Req() req: any, @Body() body: CreateProductCategoryDto) {
-    return this.categoryService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.categoryService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List product categories' })
   findAll(@Req() req: any, @Query() query: ProductCategoryQueryDto) {
-    return this.categoryService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort);
+    return this.categoryService.findAll(req.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get category by ID' })
-  findOne(@Param('id') id: string) {
-    return this.categoryService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.categoryService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update category' })
-  update(@Param('id') id: string, @Body() body: UpdateProductCategoryDto) {
-    return this.categoryService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateProductCategoryDto) {
+    return this.categoryService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete category' })
-  remove(@Param('id') id: string) {
-    return this.categoryService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.categoryService.remove(id, req.tenantId);
   }
 }

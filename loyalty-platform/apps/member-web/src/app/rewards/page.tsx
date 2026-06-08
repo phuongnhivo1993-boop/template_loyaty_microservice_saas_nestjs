@@ -7,6 +7,7 @@ import MemberLayout from '../member-layout';
 import { getRewards, redeemReward } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
 import EmptyState from '@/components/EmptyState';
+import { showToast } from '@/components/Toast';
 
 const typeOptions = ['All', 'product', 'discount', 'shipping', 'gift'];
 
@@ -72,9 +73,9 @@ export default function RewardsPage() {
       />
 
       <div className="tab-bar" style={{ overflowX: 'auto', flexWrap: 'wrap', marginBottom: '12px' }}>
-        {typeOptions.map(t => (
-          <button key={t} className={`tab ${typeFilter === t ? 'active' : ''}`} onClick={() => setTypeFilter(t)}>
-            {t === 'All' ? t('common.all') : t.charAt(0).toUpperCase() + t.slice(1)}
+        {typeOptions.map(opt => (
+          <button key={opt} className={`tab ${typeFilter === opt ? 'active' : ''}`} onClick={() => setTypeFilter(opt)}>
+            {opt === 'All' ? t('common.all') : opt.charAt(0).toUpperCase() + opt.slice(1)}
           </button>
         ))}
       </div>
@@ -103,8 +104,8 @@ export default function RewardsPage() {
                   className="btn btn-primary btn-sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!confirm(`${t('rewards.redeem')} ${r.name} ${t('common.for')} ${r.pointsRequired?.toLocaleString()} ${t('common.points')}?`)) return;
-                    redeemReward(r.id).then(() => { alert(t('rewards.redeem') + '!'); loadData(); }).catch((err: any) => alert(err.message));
+                    if (typeof window !== 'undefined' && !window.confirm(`${t('rewards.redeem')} ${r.name} ${t('common.for')} ${r.pointsRequired?.toLocaleString()} ${t('common.points')}?`)) return;
+                    redeemReward(r.id).then(() => { showToast(t('rewards.redeem') + '!', 'success'); loadData(); }).catch((err: any) => showToast(err.message, 'error'));
                   }}
                 >
                   {t('rewards.redeem')}

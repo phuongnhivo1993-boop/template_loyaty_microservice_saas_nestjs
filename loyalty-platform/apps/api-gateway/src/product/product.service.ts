@@ -59,21 +59,21 @@ export class ProductService {
     return result;
   }
 
-  async findOne(id: string) {
-    const product = await this.prisma.product.findUnique({ where: { id, deletedAt: null }, include: { category: true } });
+  async findOne(id: string, tenantId?: string) {
+    const product = await this.prisma.product.findFirst({ where: { id, deletedAt: null, ...(tenantId ? { tenantId } : {}) }, include: { category: true } });
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
 
-  async update(id: string, data: any) {
-    const product = await this.findOne(id);
+  async update(id: string, data: any, tenantId?: string) {
+    const product = await this.findOne(id, tenantId);
     const updated = await this.prisma.product.update({ where: { id }, data });
     await this.cacheService.delPattern('products:*', product.tenantId);
     return updated;
   }
 
-  async restore(id: string) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
+  async restore(id: string, tenantId?: string) {
+    const product = await this.prisma.product.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!product) throw new NotFoundException('Product not found');
     if (!product.deletedAt) throw new BadRequestException('Product is not deleted');
     return this.prisma.product.update({
@@ -82,8 +82,8 @@ export class ProductService {
     });
   }
 
-  async softRemove(id: string) {
-    const product = await this.findOne(id);
+  async softRemove(id: string, tenantId?: string) {
+    const product = await this.findOne(id, tenantId);
     const updated = await this.prisma.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } });
     await this.cacheService.delPattern('products:*', product.tenantId);
     return updated;
@@ -96,17 +96,21 @@ export class ProductService {
     return deleted;
   }
 
-  async bulkDelete(ids: string[]) {
+  async bulkDelete(ids: string[], tenantId?: string) {
+    const where: any = { id: { in: ids }, deletedAt: null };
+    if (tenantId) where.tenantId = tenantId;
     const result = await this.prisma.product.updateMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where,
       data: { deletedAt: new Date(), status: 'INACTIVE' },
     });
     return { deleted: result.count };
   }
 
-  async bulkStatus(ids: string[], status: string) {
+  async bulkStatus(ids: string[], status: string, tenantId?: string) {
+    const where: any = { id: { in: ids }, deletedAt: null };
+    if (tenantId) where.tenantId = tenantId;
     const result = await this.prisma.product.updateMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where,
       data: { status },
     });
     return { updated: result.count };

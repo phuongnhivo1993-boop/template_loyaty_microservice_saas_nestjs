@@ -17,6 +17,7 @@ export class PointController {
   ) {}
 
   @Get('wallet/:memberId')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get member point wallet' })
   getWallet(@Param('memberId') memberId: string) {
     return this.pointService.getWallet(memberId);
@@ -37,15 +38,17 @@ export class PointController {
   }
 
   @Get('transactions/:id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get point transaction by ID' })
   getTransaction(@Param('id') id: string) {
     return this.pointService.getTransaction(id);
   }
 
   @Get('transactions')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List point transactions (paginated)' })
   getTransactions(@Req() req: any, @Query() query: PointTransactionQueryDto) {
-    return this.pointService.getTransactions(query.memberId, query.page, query.limit, query.type, req.tenantId ?? query.tenantId, query.search, query.sort);
+    return this.pointService.getTransactions(query.memberId, query.page, query.limit, query.type, req.tenantId, query.search, query.sort);
   }
 
   @Post('adjust')
@@ -59,13 +62,6 @@ export class PointController {
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Manually trigger point expiry process' })
   expire() {
-    return this.pointExpiryService.processExpirations();
-  }
-
-  @Post('trigger-expiry')
-  @Roles('HOST', 'ADMIN')
-  @ApiOperation({ summary: 'Manually trigger point expiry process (alias)' })
-  triggerExpiry() {
     return this.pointExpiryService.processExpirations();
   }
 }

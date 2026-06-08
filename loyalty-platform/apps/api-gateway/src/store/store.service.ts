@@ -44,41 +44,47 @@ export class StoreService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const store = await this.prisma.store.findUnique({ where: { id }, include: { storeStaff: true } });
+  async findOne(id: string, tenantId?: string) {
+    const store = await this.prisma.store.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) }, include: { storeStaff: true } });
     if (!store) throw new NotFoundException('Store not found');
     return store;
   }
 
-  async update(id: string, data: { name?: string; address?: string; phone?: string; email?: string; latitude?: number; longitude?: number; openingHours?: any; status?: string }) {
-    await this.findOne(id);
+  async update(id: string, data: { name?: string; address?: string; phone?: string; email?: string; latitude?: number; longitude?: number; openingHours?: any; status?: string }, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.store.update({ where: { id }, data: data as any });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     await this.prisma.storeStaff.deleteMany({ where: { storeId: id } });
     return this.prisma.store.delete({ where: { id } });
   }
 
-  async addStaff(storeId: string, data: { name: string; phone: string; pinCode?: string }) {
-    await this.findOne(storeId);
+  async addStaff(storeId: string, data: { name: string; phone: string; pinCode?: string }, tenantId?: string) {
+    await this.findOne(storeId, tenantId);
     return this.prisma.storeStaff.create({ data: { ...data, storeId } });
   }
 
-  async listStaff(storeId: string) {
-    await this.findOne(storeId);
+  async listStaff(storeId: string, tenantId?: string) {
+    await this.findOne(storeId, tenantId);
     return this.prisma.storeStaff.findMany({ where: { storeId } });
   }
 
-  async updateStaff(staffId: string, data: { name?: string; phone?: string; pinCode?: string; active?: boolean }) {
-    const staff = await this.prisma.storeStaff.findUnique({ where: { id: staffId } });
+  async updateStaff(staffId: string, data: { name?: string; phone?: string; pinCode?: string; active?: boolean }, tenantId?: string) {
+    const staff = await this.prisma.storeStaff.findFirst({
+      where: { id: staffId, store: { ...(tenantId ? { tenantId } : {}) } },
+      include: { store: { select: { tenantId: true } } },
+    });
     if (!staff) throw new NotFoundException('Staff not found');
     return this.prisma.storeStaff.update({ where: { id: staffId }, data });
   }
 
-  async removeStaff(staffId: string) {
-    const staff = await this.prisma.storeStaff.findUnique({ where: { id: staffId } });
+  async removeStaff(staffId: string, tenantId?: string) {
+    const staff = await this.prisma.storeStaff.findFirst({
+      where: { id: staffId, store: { ...(tenantId ? { tenantId } : {}) } },
+      include: { store: { select: { tenantId: true } } },
+    });
     if (!staff) throw new NotFoundException('Staff not found');
     return this.prisma.storeStaff.delete({ where: { id: staffId } });
   }

@@ -64,11 +64,15 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture.
 
 ## Default Accounts
 
-| Role   | Email                          | Password       |
-|--------|--------------------------------|----------------|
-| Host   | host@loyalty.vn               | Host@123456    |
-| Admin  | admin@sunshine.vn             | Admin@123456   |
-| Member | nguyen.van.a@sunshine.vn      | Member@123456  |
+> ⚠️ **Security Notice**: Default credentials are for local development only.  
+> Change ALL passwords before deploying to production.  
+> Credentials are defined in `prisma/seed.ts` and should be configured via environment variables.
+
+| Role   | Email                          | Password (dev only) |
+|--------|--------------------------------|---------------------|
+| Host   | host@loyalty.vn               | _see seed.ts_       |
+| Admin  | admin@sunshine.vn             | _see seed.ts_       |
+| Member | nguyen.van.a@sunshine.vn      | _see seed.ts_       |
 
 See [docs/SEED_DATA.md](docs/SEED_DATA.md) for full seed data details.
 

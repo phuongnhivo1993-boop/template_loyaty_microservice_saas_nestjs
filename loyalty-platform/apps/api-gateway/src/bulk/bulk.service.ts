@@ -53,15 +53,29 @@ export class BulkService {
     const model = (this.prisma as any)[modelName];
     if (!model) throw new BadRequestException(`Model not found: ${modelName}`);
 
-    const where: any = { id: { in: ids }, deletedAt: { not: null } };
+    const where: any = { id: { in: ids } };
     if (tenantId) where.tenantId = tenantId;
 
+    if (SOFT_DELETE_ENTITIES.has(modelName)) {
+      if (modelName === 'tenant') {
+        where.status = 'DISABLED';
+      } else {
+        where.status = 'INACTIVE';
+      }
+      const result = await model.updateMany({
+        where,
+        data: { status: 'ACTIVE' },
+      });
+      return { restored: result.count, total: ids.length, soft: true };
+    }
+
+    where.deletedAt = { not: null };
     const result = await model.updateMany({
       where,
       data: { deletedAt: null, status: 'ACTIVE' },
     });
 
-    return { restored: result.count, total: ids.length };
+    return { restored: result.count, total: ids.length, soft: true };
   }
 
   async bulkUpdateStatus(entity: string, ids: string[], status: string, tenantId?: string) {

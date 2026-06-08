@@ -20,18 +20,21 @@ export class EarningRuleController {
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List earning rules (paginated)' })
   findAll(@Query() query: EarningRuleQueryDto) {
     return this.earningRuleService.findAll(query.tenantId, query.page, query.limit, query.search, query.category);
   }
 
   @Get('calculate')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Calculate points for a purchase amount' })
   calculate(@Query('tenantId') tenantId: string, @Query('amount') amount: number, @Query('category') category?: string) {
     return this.earningRuleService.calculateEarning(tenantId, Number(amount), category);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get earning rule by ID' })
   findOne(@Param('id') id: string) {
     return this.earningRuleService.findOne(id);

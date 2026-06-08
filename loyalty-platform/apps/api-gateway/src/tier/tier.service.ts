@@ -52,19 +52,19 @@ export class TierService {
     return result;
   }
 
-  async findOne(id: string) {
-    const tier = await this.prisma.tier.findUnique({ where: { id } });
+  async findOne(id: string, tenantId?: string) {
+    const tier = await this.prisma.tier.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!tier) throw new NotFoundException('Tier not found');
     return tier;
   }
 
-  async update(id: string, data: { name?: string; minPoints?: number; maxPoints?: number; benefits?: string }) {
-    await this.findOne(id);
+  async update(id: string, data: { name?: string; minPoints?: number; maxPoints?: number; benefits?: string }, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.tier.update({ where: { id }, data });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.tier.delete({ where: { id } });
   }
 
@@ -130,24 +130,48 @@ export class TierService {
     });
 
     let updated = 0;
+    const BATCH_SIZE = 1000;
     for (const tenant of tenants) {
       if (tenant.tiers.length === 0) continue;
 
-      const members = await this.prisma.member.findMany({
-        where: { tenantId: tenant.id, status: 'ACTIVE' },
-      });
+      let skip = 0;
+      while (true) {
+        const members = await this.prisma.member.findMany({
+          where: { tenantId: tenant.id, status: 'ACTIVE' },
+          select: { id: true, totalPoints: true, tierId: true },
+          skip,
+          take: BATCH_SIZE,
+        });
+        if (members.length === 0) break;
 
-      for (const member of members) {
-        const matchingTier = tenant.tiers.find(
-          t => member.totalPoints >= t.minPoints && member.totalPoints <= t.maxPoints,
-        );
-        if (matchingTier && member.tierId !== matchingTier.id) {
-          await this.prisma.member.update({
-            where: { id: member.id },
-            data: { tierId: matchingTier.id },
-          });
-          updated++;
+        const bulkUpdates: { id: string; tierId: string }[] = [];
+        for (const member of members) {
+          const matchingTier = tenant.tiers.find(
+            t => member.totalPoints >= t.minPoints && member.totalPoints <= t.maxPoints,
+          );
+          if (matchingTier && member.tierId !== matchingTier.id) {
+            bulkUpdates.push({ id: member.id, tierId: matchingTier.id });
+          }
         }
+
+        if (bulkUpdates.length > 0) {
+          const grouped = new Map<string, string[]>();
+          for (const u of bulkUpdates) {
+            const ids = grouped.get(u.tierId) || [];
+            ids.push(u.id);
+            grouped.set(u.tierId, ids);
+          }
+          await Promise.all(
+            Array.from(grouped.entries()).map(([tierId, ids]) =>
+              this.prisma.member.updateMany({
+                where: { id: { in: ids } },
+                data: { tierId },
+              })
+            )
+          );
+          updated += bulkUpdates.length;
+        }
+        skip += BATCH_SIZE;
       }
     }
     this.logger.log(`Auto tier assignment complete. ${updated} members updated.`);

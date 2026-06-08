@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import MemberLayout from '@/app/member-layout';
 import { getReward, redeemReward } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import { showToast } from '@/components/Toast';
 
 export default function RewardDetailPage() {
   const { id } = useParams();
@@ -33,10 +34,10 @@ export default function RewardDetailPage() {
     setRedeeming(true);
     try {
       await redeemReward(reward.id, quantity);
-      alert('Reward redeemed successfully!');
+      showToast('Reward redeemed successfully!', 'success');
       loadData();
     } catch (e: any) {
-      alert(e?.message || 'Failed to redeem reward');
+      showToast(e?.message || 'Failed to redeem reward', 'error');
     } finally {
       setRedeeming(false);
     }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { StoreService } from './store.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -19,11 +19,12 @@ export class StoreController {
   @ApiResponse({ status: 201, description: 'Store created' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  create(@Body() body: CreateStoreDto) {
-    return this.storeService.create(body);
+  create(@Req() req: any, @Body() body: CreateStoreDto) {
+    return this.storeService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List stores' })
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -32,17 +33,18 @@ export class StoreController {
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'sort', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of stores' })
-  findAll(@Query() query: any) {
-    return this.storeService.findAll(query.tenantId, query.page, query.limit, query.search, query.status, query.sort);
+  findAll(@Req() req: any, @Query() query: any) {
+    return this.storeService.findAll(req.tenantId, query.page, query.limit, query.search, query.status, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Store ID' })
   @ApiOperation({ summary: 'Get store by ID' })
   @ApiResponse({ status: 200, description: 'Store found' })
   @ApiResponse({ status: 404, description: 'Store not found' })
-  findOne(@Param('id') id: string) {
-    return this.storeService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.storeService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
@@ -53,8 +55,8 @@ export class StoreController {
   @ApiResponse({ status: 200, description: 'Store updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Store not found' })
-  update(@Param('id') id: string, @Body() body: UpdateStoreDto) {
-    return this.storeService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateStoreDto) {
+    return this.storeService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
@@ -64,8 +66,8 @@ export class StoreController {
   @ApiResponse({ status: 200, description: 'Store deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Store not found' })
-  remove(@Param('id') id: string) {
-    return this.storeService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.storeService.remove(id, req.tenantId);
   }
 
   @Post(':id/staff')
@@ -76,16 +78,17 @@ export class StoreController {
   @ApiResponse({ status: 201, description: 'Staff added' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Store not found' })
-  addStaff(@Param('id') id: string, @Body() body: AddStaffDto) {
-    return this.storeService.addStaff(id, body);
+  addStaff(@Req() req: any, @Param('id') id: string, @Body() body: AddStaffDto) {
+    return this.storeService.addStaff(id, body, req.tenantId);
   }
 
   @Get(':id/staff')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Store ID' })
   @ApiOperation({ summary: 'List store staff' })
   @ApiResponse({ status: 200, description: 'List of staff' })
-  listStaff(@Param('id') id: string) {
-    return this.storeService.listStaff(id);
+  listStaff(@Req() req: any, @Param('id') id: string) {
+    return this.storeService.listStaff(id, req.tenantId);
   }
 
   @Put('staff/:staffId')
@@ -96,8 +99,8 @@ export class StoreController {
   @ApiResponse({ status: 200, description: 'Staff updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Staff not found' })
-  updateStaff(@Param('staffId') staffId: string, @Body() body: UpdateStaffDto) {
-    return this.storeService.updateStaff(staffId, body);
+  updateStaff(@Req() req: any, @Param('staffId') staffId: string, @Body() body: UpdateStaffDto) {
+    return this.storeService.updateStaff(staffId, body, req.tenantId);
   }
 
   @Delete('staff/:staffId')
@@ -107,7 +110,7 @@ export class StoreController {
   @ApiResponse({ status: 200, description: 'Staff removed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Staff not found' })
-  removeStaff(@Param('staffId') staffId: string) {
-    return this.storeService.removeStaff(staffId);
+  removeStaff(@Req() req: any, @Param('staffId') staffId: string) {
+    return this.storeService.removeStaff(staffId, req.tenantId);
   }
 }

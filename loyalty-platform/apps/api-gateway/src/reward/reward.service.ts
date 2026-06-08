@@ -29,15 +29,15 @@ export class RewardService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const reward = await this.prisma.reward.findUnique({ where: { id } });
+  async findOne(id: string, tenantId?: string) {
+    const reward = await this.prisma.reward.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!reward) throw new NotFoundException('Reward not found');
     return reward;
   }
 
-  async redeem(rewardId: string, memberId: string, quantity = 1) {
+  async redeem(rewardId: string, memberId: string, quantity = 1, tenantId?: string) {
     const [reward, member] = await Promise.all([
-      this.prisma.reward.findUnique({ where: { id: rewardId } }),
+      this.prisma.reward.findFirst({ where: { id: rewardId, ...(tenantId ? { tenantId } : {}) } }),
       this.prisma.member.findUnique({ where: { id: memberId } }),
     ]);
     if (!reward) throw new NotFoundException('Reward not found');
@@ -79,13 +79,13 @@ export class RewardService {
     return { transaction, voucherCode, rewardName: reward.name, pointsUsed: totalPoints };
   }
 
-  async update(id: string, data: { name?: string; description?: string; pointsRequired?: number; quantity?: number }) {
-    await this.findOne(id);
+  async update(id: string, data: { name?: string; description?: string; pointsRequired?: number; quantity?: number }, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.reward.update({ where: { id }, data });
   }
 
-  async duplicate(id: string) {
-    const reward = await this.findOne(id);
+  async duplicate(id: string, tenantId?: string) {
+    const reward = await this.findOne(id, tenantId);
     const { id: _, createdAt, updatedAt, ...data } = reward;
     return this.prisma.reward.create({
       data: {
@@ -95,13 +95,13 @@ export class RewardService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.reward.delete({ where: { id } });
   }
 
-  async getRedemptionStats(id: string) {
-    const reward = await this.findOne(id);
+  async getRedemptionStats(id: string, tenantId?: string) {
+    const reward = await this.findOne(id, tenantId);
     const [transactions, memberVouchers] = await Promise.all([
       this.prisma.pointTransaction.findMany({
         where: { reason: { contains: `Redeemed reward: ${reward.name}` } },

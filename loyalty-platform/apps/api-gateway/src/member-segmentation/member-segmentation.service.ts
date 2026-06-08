@@ -87,10 +87,59 @@ export class MemberSegmentationService {
   private async computeAllForTenant(tenantId: string) {
     const members = await this.prisma.member.findMany({
       where: { tenantId },
-      select: { id: true },
+      select: { id: true, fullName: true, email: true, availablePoints: true },
     });
-    await Promise.all(members.map(m => this.computeRFM(m.id)));
-    return { tenantId, recomputed: members.length };
+
+    const memberIds = members.map(m => m.id);
+    const memberMap = new Map(members.map(m => [m.id, m]));
+
+    const orders = await this.prisma.order.groupBy({
+      by: ['memberId'],
+      where: { memberId: { in: memberIds }, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
+      _count: { id: true },
+      _sum: { total: true },
+    });
+
+    const lastOrders = await this.prisma.order.findMany({
+      where: { memberId: { in: memberIds } },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['memberId'],
+      select: { memberId: true, createdAt: true },
+    });
+
+    const lastOrderMap = new Map(lastOrders.map(o => [o.memberId, o.createdAt]));
+    const orderAggMap = new Map(orders.map(o => [o.memberId, { count: o._count.id, total: o._sum.total || 0 }]));
+    const now = new Date();
+    const thresholds = await this.getThresholds(tenantId);
+
+    const results = memberIds.map((id) => {
+      const member = memberMap.get(id)!;
+      const lastOrderDate = lastOrderMap.get(id);
+      const agg = orderAggMap.get(id) || { count: 0, total: 0 };
+      const daysSinceLastOrder = lastOrderDate
+        ? Math.floor((now.getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 999;
+      const r = scoreRecency(daysSinceLastOrder);
+      const f = scoreFrequency(agg.count);
+      const m = scoreMonetary(agg.total);
+      const rfmScore = r + f + m;
+      const segment = assignSegment(rfmScore);
+      return {
+        memberId: id,
+        fullName: member.fullName,
+        email: member.email,
+        rfm: { recency: r, frequency: f, monetary: m, totalScore: rfmScore },
+        daysSinceLastOrder,
+        orderCount: agg.count,
+        totalSpend: agg.total,
+        segment: segment.label,
+        segmentDescription: segment.description,
+        segmentColor: segment.color,
+        thresholds,
+      };
+    });
+
+    return { tenantId, recomputed: results.length };
   }
 
   async computeRFM(memberId: string) {
@@ -164,7 +213,7 @@ export class MemberSegmentationService {
     tenantId?: string; page?: number; limit?: number; segment?: string;
     sort?: string; search?: string; period?: string;
   }) {
-    const { tenantId, page = 1, limit = 20, segment, sort, search, period } = params;
+    const { tenantId, page = 1, limit = 20, segment, sort, search } = params;
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (search) {
@@ -174,20 +223,16 @@ export class MemberSegmentationService {
       ];
     }
 
-    const total = await this.prisma.member.count({ where });
-
-    const members = await this.prisma.member.findMany({
+    const allMembers = await this.prisma.member.findMany({
       where,
       include: { tier: true },
-      skip: (page - 1) * limit,
-      take: limit,
     });
 
-    if (members.length === 0) {
+    if (allMembers.length === 0) {
       return { data: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
     }
 
-    const memberIds = members.map(m => m.id);
+    const memberIds = allMembers.map(m => m.id);
     const orderAggs = await this.prisma.order.groupBy({
       by: ['memberId'],
       where: { memberId: { in: memberIds }, status: { notIn: ['CANCELLED', 'REFUNDED'] } },
@@ -199,7 +244,7 @@ export class MemberSegmentationService {
     const orderMap = new Map(orderAggs.map(o => [o.memberId, o]));
     const now = new Date();
 
-    let results = members.map(member => {
+    let results = allMembers.map(member => {
       const agg = orderMap.get(member.id);
       const lastOrderDate = agg?._max?.createdAt;
       const daysSinceLastOrder = lastOrderDate
@@ -251,8 +296,12 @@ export class MemberSegmentationService {
       return orderDirection === 'desc' ? -cmp : cmp;
     });
 
+    const total = results.length;
+    const startIdx = (page - 1) * limit;
+    const pagedData = results.slice(startIdx, startIdx + limit);
+
     return {
-      data: results,
+      data: pagedData,
       pagination: { page, limit, totalItems: total, totalPages: Math.ceil(total / limit) },
     };
   }

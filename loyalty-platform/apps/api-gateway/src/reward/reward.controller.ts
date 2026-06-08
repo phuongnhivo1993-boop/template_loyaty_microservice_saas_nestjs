@@ -20,10 +20,11 @@ export class RewardController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreateRewardDto) {
-    return this.rewardService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.rewardService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List rewards (with pagination & sort & type filter)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -33,16 +34,17 @@ export class RewardController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of rewards' })
   findAll(@Req() req: any, @Query() query: RewardQueryDto) {
-    return this.rewardService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort, query.type);
+    return this.rewardService.findAll(req.tenantId, query.page, query.limit, query.search, query.sort, query.type);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Reward ID' })
   @ApiOperation({ summary: 'Get reward by ID' })
   @ApiResponse({ status: 200, description: 'Reward found' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  findOne(@Param('id') id: string) {
-    return this.rewardService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.rewardService.findOne(id, req.tenantId);
   }
 
   @Post(':id/redeem')
@@ -53,8 +55,8 @@ export class RewardController {
   @ApiResponse({ status: 201, description: 'Reward redeemed' })
   @ApiResponse({ status: 400, description: 'Insufficient points' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  redeem(@Param('id') id: string, @Body() body: RedeemRewardDto) {
-    return this.rewardService.redeem(id, body.memberId, body.quantity);
+  redeem(@Req() req: any, @Param('id') id: string, @Body() body: RedeemRewardDto) {
+    return this.rewardService.redeem(id, body.memberId, body.quantity, req.tenantId);
   }
 
   @Post(':id/duplicate')
@@ -63,8 +65,8 @@ export class RewardController {
   @ApiOperation({ summary: 'Duplicate a reward' })
   @ApiResponse({ status: 201, description: 'Reward duplicated' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  duplicate(@Param('id') id: string) {
-    return this.rewardService.duplicate(id);
+  duplicate(@Req() req: any, @Param('id') id: string) {
+    return this.rewardService.duplicate(id, req.tenantId);
   }
 
   @Put(':id')
@@ -75,8 +77,8 @@ export class RewardController {
   @ApiResponse({ status: 200, description: 'Reward updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  update(@Param('id') id: string, @Body() body: UpdateRewardDto) {
-    return this.rewardService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateRewardDto) {
+    return this.rewardService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
@@ -86,8 +88,8 @@ export class RewardController {
   @ApiResponse({ status: 200, description: 'Reward deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  remove(@Param('id') id: string) {
-    return this.rewardService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.rewardService.remove(id, req.tenantId);
   }
 
   @Get(':id/redemptions')
@@ -96,7 +98,7 @@ export class RewardController {
   @ApiOperation({ summary: 'Get reward redemption history' })
   @ApiResponse({ status: 200, description: 'Redemption history' })
   @ApiResponse({ status: 404, description: 'Reward not found' })
-  getRedemptionStats(@Param('id') id: string) {
-    return this.rewardService.getRedemptionStats(id);
+  getRedemptionStats(@Req() req: any, @Param('id') id: string) {
+    return this.rewardService.getRedemptionStats(id, req.tenantId);
   }
 }

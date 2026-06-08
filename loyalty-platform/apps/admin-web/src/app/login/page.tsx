@@ -113,6 +113,11 @@ export default function LoginPage() {
             {loading && <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />}
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <a href="/forgot-password" style={{ color: 'var(--primary, #2563eb)', textDecoration: 'none', fontSize: '14px' }}>
+              Forgot password?
+            </a>
+          </div>
         </form>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

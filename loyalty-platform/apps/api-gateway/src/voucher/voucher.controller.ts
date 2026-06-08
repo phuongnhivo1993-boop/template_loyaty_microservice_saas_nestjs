@@ -20,10 +20,11 @@ export class VoucherController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreateVoucherDto) {
-    return this.voucherService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.voucherService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List vouchers (with pagination & sort)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -32,16 +33,17 @@ export class VoucherController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of vouchers' })
   findAll(@Req() req: any, @Query() query: VoucherQueryDto) {
-    return this.voucherService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort);
+    return this.voucherService.findAll(req.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Voucher ID' })
   @ApiOperation({ summary: 'Get voucher by ID' })
   @ApiResponse({ status: 200, description: 'Voucher found' })
   @ApiResponse({ status: 404, description: 'Voucher not found' })
-  findOne(@Param('id') id: string) {
-    return this.voucherService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.voucherService.findOne(id, req.tenantId);
   }
 
   @Post('validate')
@@ -60,8 +62,8 @@ export class VoucherController {
   @ApiResponse({ status: 201, description: 'Voucher redeemed' })
   @ApiResponse({ status: 400, description: 'Voucher expired or already used' })
   @ApiResponse({ status: 404, description: 'Voucher not found' })
-  redeem(@Param('id') id: string) {
-    return this.voucherService.redeem(id);
+  redeem(@Req() req: any, @Param('id') id: string) {
+    return this.voucherService.redeem(id, req.tenantId);
   }
 
   @Post(':id/duplicate')
@@ -70,8 +72,8 @@ export class VoucherController {
   @ApiOperation({ summary: 'Duplicate a voucher' })
   @ApiResponse({ status: 201, description: 'Voucher duplicated' })
   @ApiResponse({ status: 404, description: 'Voucher not found' })
-  duplicate(@Param('id') id: string) {
-    return this.voucherService.duplicate(id);
+  duplicate(@Req() req: any, @Param('id') id: string) {
+    return this.voucherService.duplicate(id, req.tenantId);
   }
 
   @Put(':id')
@@ -82,8 +84,8 @@ export class VoucherController {
   @ApiResponse({ status: 200, description: 'Voucher updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Voucher not found' })
-  update(@Param('id') id: string, @Body() body: UpdateVoucherDto) {
-    return this.voucherService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateVoucherDto) {
+    return this.voucherService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
@@ -93,8 +95,8 @@ export class VoucherController {
   @ApiResponse({ status: 200, description: 'Voucher deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Voucher not found' })
-  remove(@Param('id') id: string) {
-    return this.voucherService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.voucherService.remove(id, req.tenantId);
   }
 
   @Post('batch-generate')
@@ -104,8 +106,8 @@ export class VoucherController {
   @ApiResponse({ status: 201, description: 'Vouchers generated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  batchGenerate(@Body() body: BatchGenerateVoucherDto) {
-    return this.voucherService.batchGenerate(body);
+  batchGenerate(@Req() req: any, @Body() body: BatchGenerateVoucherDto) {
+    return this.voucherService.batchGenerate({ ...body, tenantId: req.tenantId });
   }
 
   @Get('stats/expired')
@@ -113,7 +115,7 @@ export class VoucherController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiOperation({ summary: 'Get expired voucher stats' })
   @ApiResponse({ status: 200, description: 'Expired voucher stats' })
-  getExpiredStats(@Query('tenantId') tenantId?: string) {
-    return this.voucherService.getExpiredStats(tenantId);
+  getExpiredStats(@Req() req: any, @Query('tenantId') tenantId?: string) {
+    return this.voucherService.getExpiredStats(req.tenantId);
   }
 }

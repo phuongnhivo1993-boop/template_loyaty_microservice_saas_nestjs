@@ -37,16 +37,16 @@ export class RewardServiceService {
     if (!reward) throw new NotFoundException('Reward not found');
     if (reward.quantity < 1) throw new BadRequestException('Reward is out of stock');
 
-    const member = await this.prisma.member.findUnique({ where: { id: dto.memberId } });
-    if (!member) throw new NotFoundException('Member not found');
-    if (member.availablePoints < reward.pointsRequired) {
-      throw new BadRequestException('Insufficient points');
-    }
-
     const voucherCode = this.generateVoucherCode();
     const qrCode = crypto.randomUUID();
 
     const result = await this.prisma.$transaction(async (tx) => {
+      const member = await tx.member.findUnique({ where: { id: dto.memberId } });
+      if (!member) throw new NotFoundException('Member not found');
+      if (member.availablePoints < reward.pointsRequired) {
+        throw new BadRequestException('Insufficient points');
+      }
+
       await tx.reward.update({
         where: { id: rewardId },
         data: { quantity: { decrement: 1 } },
@@ -56,26 +56,30 @@ export class RewardServiceService {
         where: { id: dto.memberId },
         data: {
           availablePoints: { decrement: reward.pointsRequired },
-          totalPoints: { decrement: reward.pointsRequired },
         },
       });
+
+      const updatedMember = await tx.member.findUnique({ where: { id: dto.memberId } });
+      if (!updatedMember) throw new NotFoundException('Member not found after update');
 
       await tx.pointTransaction.create({
         data: {
           memberId: dto.memberId,
           type: 'BURN',
           amount: -reward.pointsRequired,
-          balance: member.availablePoints - reward.pointsRequired,
+          balance: updatedMember.availablePoints,
           reason: `Redeemed reward: ${reward.name}`,
           reference: rewardId,
         },
       });
 
+      const voucherValue = reward.type === 'cashback' ? reward.pointsRequired : Math.round(reward.pointsRequired / 100);
+
       const voucher = await tx.voucher.create({
         data: {
           code: voucherCode,
-          type: reward.type === 'voucher' ? 'discount' : reward.type,
-          value: 0,
+          type: reward.type === 'voucher' ? 'discount' : reward.type === 'gift' ? 'gift' : 'discount',
+          value: voucherValue,
           tenantId: reward.tenantId,
         },
       });

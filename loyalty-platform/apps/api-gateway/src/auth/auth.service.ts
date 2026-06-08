@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { ErrorCodes, ServiceException } from '../common/errors/error-codes';
 import { NotificationService } from '../notification/notification.service';
+import { CacheService } from '../common/services/cache.service';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
@@ -27,6 +28,7 @@ export class AuthService {
     private jwtService: JwtService,
     private tokenBlacklist: TokenBlacklistService,
     private notificationService: NotificationService,
+    private cacheService: CacheService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -129,9 +131,6 @@ export class AuthService {
   }
 
   async registerHost(email: string, password: string, name: string) {
-    if (password.length < 8) {
-      throw new ServiceException('Password must be at least 8 characters', ErrorCodes.AUTH_WEAK_PASSWORD, 422);
-    }
     const existing = await this.prisma.host.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Email already registered');
     const host = await this.prisma.host.create({
@@ -250,14 +249,41 @@ export class AuthService {
     const member = await this.prisma.member.findUnique({ where: { email } });
     const user = await this.prisma.user.findUnique({ where: { email } });
     const host = await this.prisma.host.findUnique({ where: { email } });
-    if (!member && !user && !host) {
+    const account = member || user || host;
+    if (!account) {
       return { message: 'If the email exists, a reset link has been sent' };
     }
-    const resetToken = this.jwtService.sign({ email, type: 'reset' }, { expiresIn: '15m' });
-    this.notificationService.send({
-      templateId: '', recipient: email, channel: 'email',
-      variables: { resetToken, email },
-    }).catch((err) => this.logger.warn(`Password reset notification failed: ${err.message}`));
+    const tenantId = (account as any).tenantId || null;
+
+    const jti = crypto.randomUUID();
+    const resetToken = this.jwtService.sign({ email, type: 'reset', jti }, { expiresIn: '15m' });
+
+    await this.cacheService.set(`password_reset:${email}:${jti}`, true, 900);
+
+    let templateId = '';
+    if (tenantId) {
+      const template = await this.prisma.notificationTemplate.findFirst({
+        where: { tenantId, name: { contains: 'password_reset', mode: 'insensitive' } },
+      });
+      if (template) templateId = template.id;
+    }
+
+    try {
+      if (templateId) {
+        await this.notificationService.send({
+          templateId, recipient: email, channel: 'email',
+          variables: { resetToken, email, resetLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}` },
+        });
+      } else {
+        await this.notificationService.sendDirect({
+          recipient: email, subject: 'Password Reset Request',
+          content: `<p>Click <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}">here</a> to reset your password.</p><p>This link expires in 15 minutes.</p>`,
+        });
+      }
+    } catch (err) {
+      this.logger.error(`Password reset notification failed for ${email}: ${(err as Error).message}`);
+      throw new ServiceException('Failed to send password reset email. Please try again later.', ErrorCodes.INTERNAL_ERROR, 500);
+    }
     this.logger.log(`Password reset requested for: ${email}`);
     return { message: 'If the email exists, a reset link has been sent' };
   }
@@ -268,10 +294,14 @@ export class AuthService {
       if (payload.type !== 'reset') {
         throw new BadRequestException('Invalid reset token');
       }
-      if (newPassword.length < 8) {
-        throw new ServiceException('Password must be at least 8 characters', ErrorCodes.AUTH_WEAK_PASSWORD, 422);
+      const { email, jti } = payload;
+
+      const cached = await this.cacheService.get<any>(`password_reset:${email}:${jti}`);
+      if (!cached) {
+        throw new BadRequestException('Reset token has already been used or expired');
       }
-      const email = payload.email;
+      await this.cacheService.del(`password_reset:${email}:${jti}`);
+
       const hashed = await this.hashPassword(newPassword);
       const member = await this.prisma.member.findUnique({ where: { email } });
       if (member && member.password) {
@@ -292,9 +322,6 @@ export class AuthService {
   }
 
   async changePassword(user: any, oldPassword: string, newPassword: string) {
-    if (newPassword.length < 8) {
-      throw new ServiceException('Password must be at least 8 characters', ErrorCodes.AUTH_WEAK_PASSWORD, 422);
-    }
     const { sub, role } = user;
     if (role === 'HOST') {
       const host = await this.prisma.host.findUnique({ where: { id: sub } });

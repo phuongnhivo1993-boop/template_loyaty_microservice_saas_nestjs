@@ -39,6 +39,7 @@ export class TenantController {
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Tenant ID' })
   @ApiOperation({ summary: 'Get tenant by ID' })
   @ApiResponse({ status: 200, description: 'Tenant found' })

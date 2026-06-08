@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import MemberLayout from '@/app/member-layout';
 import { getVoucher, redeemVoucher } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
+import { showToast } from '@/components/Toast';
 
 export default function VoucherDetailPage() {
   const params = useParams();
@@ -114,13 +115,13 @@ export default function VoucherDetailPage() {
             className="btn btn-primary"
             style={{ width: '100%' }}
             onClick={async () => {
-              if (!confirm('Use this voucher now?')) return;
+              if (typeof window !== 'undefined' && !window.confirm('Use this voucher now?')) return;
               try {
                 await redeemVoucher(voucher.id);
-                alert('Voucher redeemed successfully!');
+                showToast('Voucher redeemed successfully!', 'success');
                 loadData();
               } catch (e: any) {
-                alert(e?.message || 'Failed to redeem voucher');
+                showToast(e?.message || 'Failed to redeem voucher', 'error');
               }
             }}
           >

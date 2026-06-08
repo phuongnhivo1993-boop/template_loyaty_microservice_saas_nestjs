@@ -12,6 +12,7 @@ export class SettingsController {
   constructor(private settingsService: SettingsService) {}
 
   @Get('tenant/:tenantId')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get tenant settings' })
   getTenantSettings(@Param('tenantId') tenantId: string) {
     return this.settingsService.getTenantSettings(tenantId);
@@ -28,6 +29,7 @@ export class SettingsController {
   }
 
   @Get('platform')
+  @Roles('HOST')
   @ApiOperation({ summary: 'Get platform-wide settings' })
   getPlatformSettings() {
     return this.settingsService.getPlatformSettings();

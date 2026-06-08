@@ -20,7 +20,7 @@ export class CouponController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreateCouponDto) {
-    return this.couponService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.couponService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
@@ -36,7 +36,7 @@ export class CouponController {
   @ApiResponse({ status: 200, description: 'List of coupons' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Req() req: any, @Query() query: CouponQueryDto) {
-    return this.couponService.findAll({ ...query, tenantId: req.tenantId ?? query.tenantId });
+    return this.couponService.findAll({ ...query, tenantId: req.tenantId });
   }
 
   @Get(':id')
@@ -47,8 +47,8 @@ export class CouponController {
   @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @ApiResponse({ status: 200, description: 'Coupon found' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  findOne(@Param('id') id: string) {
-    return this.couponService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.couponService.findOne(id, req.tenantId);
   }
 
   @Post(':id/duplicate')
@@ -59,8 +59,8 @@ export class CouponController {
   @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @ApiResponse({ status: 201, description: 'Coupon duplicated' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  duplicate(@Param('id') id: string) {
-    return this.couponService.duplicate(id);
+  duplicate(@Req() req: any, @Param('id') id: string) {
+    return this.couponService.duplicate(id, req.tenantId);
   }
 
   @Put(':id')
@@ -72,8 +72,8 @@ export class CouponController {
   @ApiBody({ type: UpdateCouponDto })
   @ApiResponse({ status: 200, description: 'Coupon updated' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  update(@Param('id') id: string, @Body() body: UpdateCouponDto) {
-    return this.couponService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateCouponDto) {
+    return this.couponService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
@@ -84,8 +84,8 @@ export class CouponController {
   @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @ApiResponse({ status: 200, description: 'Coupon deleted' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  remove(@Param('id') id: string) {
-    return this.couponService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.couponService.remove(id, req.tenantId);
   }
 
   @Post('bulk-generate')
@@ -97,7 +97,7 @@ export class CouponController {
   @ApiResponse({ status: 201, description: 'Coupons generated' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   bulkGenerate(@Req() req: any, @Body() body: BulkGenerateCouponDto) {
-    return this.couponService.bulkGenerate({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.couponService.bulkGenerate({ ...body, tenantId: req.tenantId });
   }
 
   @Post('validate')
@@ -108,8 +108,8 @@ export class CouponController {
   @ApiBody({ type: ValidateCouponDto })
   @ApiResponse({ status: 200, description: 'Validation result' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  validate(@Body() body: ValidateCouponDto) {
-    return this.couponService.validate(body.code, body.memberId, body.orderTotal, body.tenantId);
+  validate(@Req() req: any, @Body() body: ValidateCouponDto) {
+    return this.couponService.validate(body.code, body.memberId, body.orderTotal, req.tenantId);
   }
 
   @Post('apply')
@@ -119,8 +119,8 @@ export class CouponController {
   @ApiOperation({ summary: 'Calculate coupon discount (usage recorded during order creation)' })
   @ApiBody({ type: ApplyCouponDto })
   @ApiResponse({ status: 200, description: 'Discount calculated' })
-  async apply(@Body() body: ApplyCouponDto) {
-    const result = await this.couponService.validate(body.code, body.memberId, body.orderTotal, body.tenantId);
+  async apply(@Req() req: any, @Body() body: ApplyCouponDto) {
+    const result = await this.couponService.validate(body.code, body.memberId, body.orderTotal, req.tenantId);
     return { valid: result.valid, discount: result.discount, couponCode: result.coupon?.code, errors: result.errors };
   }
 
@@ -132,7 +132,7 @@ export class CouponController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Performance stats' })
   getPerformanceStats(@Req() req: any, @Query('tenantId') tenantId?: string) {
-    return this.couponService.getPerformanceStats(req.tenantId ?? tenantId);
+    return this.couponService.getPerformanceStats(req.tenantId);
   }
 
   @Get(':id/usages')
@@ -143,7 +143,7 @@ export class CouponController {
   @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @ApiResponse({ status: 200, description: 'Usage report' })
   @ApiResponse({ status: 404, description: 'Coupon not found' })
-  getUsageReport(@Param('id') id: string) {
-    return this.couponService.getUsageReport(id);
+  getUsageReport(@Req() req: any, @Param('id') id: string) {
+    return this.couponService.getUsageReport(id, req.tenantId);
   }
 }

@@ -7,6 +7,7 @@ import MemberLayout from '../member-layout';
 import { getMyVouchers, redeemVoucher } from '@/lib/api';
 import { CardSkeleton } from '@/components/LoadingSkeleton';
 import EmptyState from '@/components/EmptyState';
+import { showToast } from '@/components/Toast';
 
 export default function VouchersPage() {
   const { t } = useTranslation();
@@ -104,13 +105,13 @@ export default function VouchersPage() {
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: 12, width: '100%' }}
                 onClick={async () => {
-                  if (!confirm('Use this voucher now?')) return;
+                  if (typeof window !== 'undefined' && !window.confirm('Use this voucher now?')) return;
                   try {
                     await redeemVoucher(v.id);
-                    alert('Voucher redeemed successfully!');
+                    showToast('Voucher redeemed successfully!', 'success');
                     loadData();
                   } catch (e: any) {
-                    alert(e?.message || 'Failed to redeem voucher');
+                    showToast(e?.message || 'Failed to redeem voucher', 'error');
                   }
                 }}
               >

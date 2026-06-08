@@ -27,6 +27,7 @@ export class FeedbackController {
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get feedback by ID' })
   findOne(@Param('id') id: string) {
     return this.feedbackService.findOne(id);
@@ -47,6 +48,7 @@ export class FeedbackController {
   }
 
   @Get('public/:entityType/:entityId')
+  @Roles('HOST', 'ADMIN', 'STAFF', 'MEMBER')
   @ApiOperation({ summary: 'Get public feedback for entity' })
   getPublic(@Param('entityType') entityType: string, @Param('entityId') entityId: string) {
     return this.feedbackService.getPublic(entityType, entityId);

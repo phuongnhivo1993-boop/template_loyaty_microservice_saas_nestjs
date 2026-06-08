@@ -166,17 +166,17 @@ export class OrderService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId?: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, ...(tenantId ? { tenantId } : {}) },
       include: { items: { include: { product: true } }, member: { select: { id: true, fullName: true, email: true, phone: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
 
-  async updateStatus(id: string, status: string, cancelReason?: string) {
-    const order = await this.findOne(id);
+  async updateStatus(id: string, status: string, cancelReason?: string, tenantId?: string) {
+    const order = await this.findOne(id, tenantId);
     const validTransitions: Record<string, string[]> = {
       PENDING: ['CONFIRMED', 'CANCELLED'],
       CONFIRMED: ['PROCESSING', 'CANCELLED'],
@@ -250,8 +250,8 @@ export class OrderService {
     return updated;
   }
 
-  async getTimeline(id: string) {
-    const order = await this.findOne(id);
+  async getTimeline(id: string, tenantId?: string) {
+    const order = await this.findOne(id, tenantId);
     return {
       orderCode: order.orderCode,
       status: order.status,

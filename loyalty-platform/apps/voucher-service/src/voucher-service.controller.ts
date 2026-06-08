@@ -22,6 +22,25 @@ export class VoucherServiceController {
     return this.voucherServiceService.findAll(tenantId);
   }
 
+  @Post('validate')
+  @ApiOperation({ summary: 'Validate a voucher code' })
+  validate(@Body() dto: ValidateVoucherDto) {
+    return this.voucherServiceService.validate(dto);
+  }
+
+  @Post('batch-generate')
+  @ApiOperation({ summary: 'Batch generate vouchers' })
+  batchGenerate(@Body() dto: BatchGenerateDto) {
+    return this.voucherServiceService.batchGenerate(dto);
+  }
+
+  @Get('stats/expired')
+  @ApiOperation({ summary: 'Get expired voucher statistics' })
+  @ApiQuery({ name: 'tenantId', required: false })
+  getExpiredStats(@Query('tenantId') tenantId?: string) {
+    return this.voucherServiceService.getExpiredStats(tenantId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get voucher by ID' })
   findOne(@Param('id') id: string) {
@@ -40,28 +59,9 @@ export class VoucherServiceController {
     return this.voucherServiceService.remove(id);
   }
 
-  @Post('validate')
-  @ApiOperation({ summary: 'Validate a voucher code' })
-  validate(@Body() dto: ValidateVoucherDto) {
-    return this.voucherServiceService.validate(dto);
-  }
-
   @Post(':id/redeem')
   @ApiOperation({ summary: 'Redeem a voucher (increment usage count)' })
   redeem(@Param('id') id: string) {
     return this.voucherServiceService.redeem(id);
-  }
-
-  @Post('batch-generate')
-  @ApiOperation({ summary: 'Batch generate vouchers' })
-  batchGenerate(@Body() dto: BatchGenerateDto) {
-    return this.voucherServiceService.batchGenerate(dto);
-  }
-
-  @Get('stats/expired')
-  @ApiOperation({ summary: 'Get expired voucher statistics' })
-  @ApiQuery({ name: 'tenantId', required: false })
-  getExpiredStats(@Query('tenantId') tenantId?: string) {
-    return this.voucherServiceService.getExpiredStats(tenantId);
   }
 }

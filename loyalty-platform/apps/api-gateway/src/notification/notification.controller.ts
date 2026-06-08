@@ -21,12 +21,14 @@ export class NotificationController {
   }
 
   @Get('templates')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List notification templates' })
   listTemplates(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string, @Query('sort') sort?: string) {
     return this.notificationService.listTemplates(tenantId, page, limit, search, sort);
   }
 
   @Get('templates/:id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get notification template by ID' })
   findTemplateOne(@Param('id') id: string) {
     return this.notificationService.findTemplateOne(id);
@@ -61,12 +63,14 @@ export class NotificationController {
   }
 
   @Get('logs')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List notification logs' })
   listLogs(@Query('tenantId') tenantId?: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('search') search?: string, @Query('sort') sort?: string) {
     return this.notificationService.listLogs(tenantId, page, limit, search, sort);
   }
 
   @Get('logs/:id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get notification log by ID' })
   findLogOne(@Param('id') id: string) {
     return this.notificationService.findLogOne(id);

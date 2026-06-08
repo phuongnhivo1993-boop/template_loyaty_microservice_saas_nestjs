@@ -20,10 +20,11 @@ export class PromotionController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreatePromotionDto) {
-    return this.promotionService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.promotionService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List promotion rules (with pagination & sort)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -33,16 +34,17 @@ export class PromotionController {
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of promotions' })
   findAll(@Req() req: any, @Query() query: PromotionQueryDto) {
-    return this.promotionService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort, query.status);
+    return this.promotionService.findAll(req.tenantId, query.page, query.limit, query.search, query.sort, query.status);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Promotion ID' })
   @ApiOperation({ summary: 'Get promotion rule' })
   @ApiResponse({ status: 200, description: 'Promotion found' })
   @ApiResponse({ status: 404, description: 'Promotion not found' })
-  findOne(@Param('id') id: string) {
-    return this.promotionService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.promotionService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
@@ -53,8 +55,8 @@ export class PromotionController {
   @ApiResponse({ status: 200, description: 'Promotion updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Promotion not found' })
-  update(@Param('id') id: string, @Body() body: UpdatePromotionDto) {
-    return this.promotionService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdatePromotionDto) {
+    return this.promotionService.update(id, body, req.tenantId);
   }
 
   @Delete(':id')
@@ -64,7 +66,7 @@ export class PromotionController {
   @ApiResponse({ status: 200, description: 'Promotion deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Promotion not found' })
-  remove(@Param('id') id: string) {
-    return this.promotionService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.promotionService.remove(id, req.tenantId);
   }
 }

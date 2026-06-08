@@ -1,4 +1,4 @@
-I. Tao nhieu subagent phan tich cung luc cac task duoi day, AI Product Owner Verification Checklist
+AI Product Owner Verification Checklist
 1. Giao diện (UI)
 * Giao diện đã hoàn thiện 100% chưa?
 * Có màn hình nào còn placeholder không?
@@ -124,8 +124,4 @@ AI phải tự trả lời:
 9. Nếu là tôi làm Product Owner, tôi sẽ bổ sung tính năng gì?
 10. Sản phẩm hiện tại đã đạt mức Production Ready (%) là bao nhiêu?
 
-II. QUAN TRONG NHAT LA SAU DO PHAT TRIEN CAC TINH NANG NAY MA KHONG CAN HOI LAI
-
-III. PHAN TICH VA TIM RA CACH GIẢI QUYẾT VÀ PHÁT TRIỂN LUÔN
-IV. Build va run backend va web dam bao chung khong co loi trong qua trinh fix
-V.Commit toan bo source len github
+Sau khi review, audit new chua co cai nao dat chan thi phat trien lai va khong can duyet

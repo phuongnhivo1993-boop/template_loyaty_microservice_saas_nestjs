@@ -36,12 +36,13 @@ export class MemberController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   create(@Req() req: any, @Body() body: CreateMemberDto) {
-    return this.memberService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.memberService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List members (with pagination & filtering)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -53,18 +54,19 @@ export class MemberController {
   @ApiResponse({ status: 200, description: 'List of members' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Req() req: any, @Query() query: MemberQueryDto) {
-    return this.memberService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
+    return this.memberService.findAll(req.tenantId, query.page, query.limit, query.search, query.tierId, query.status, query.sort, query.tags);
   }
 
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Member ID' })
   @ApiOperation({ summary: 'Get member by ID' })
   @ApiResponse({ status: 200, description: 'Member found' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  findOne(@Param('id') id: string) {
-    return this.memberService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
@@ -77,8 +79,8 @@ export class MemberController {
   @ApiResponse({ status: 200, description: 'Member updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  update(@Param('id') id: string, @Body() body: UpdateMemberDto) {
-    return this.memberService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateMemberDto) {
+    return this.memberService.update(id, body, req.tenantId);
   }
 
   @Post(':id/kyc')
@@ -89,8 +91,8 @@ export class MemberController {
   @ApiOperation({ summary: 'Verify KYC for member' })
   @ApiResponse({ status: 201, description: 'KYC verified' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  kycVerify(@Param('id') id: string) {
-    return this.memberService.kycVerify(id);
+  kycVerify(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.kycVerify(id, req.tenantId);
   }
 
   @Delete(':id')
@@ -102,8 +104,8 @@ export class MemberController {
   @ApiResponse({ status: 200, description: 'Member deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  remove(@Param('id') id: string) {
-    return this.memberService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.remove(id, req.tenantId);
   }
 
   @Post(':id/restore')
@@ -114,8 +116,8 @@ export class MemberController {
   @ApiOperation({ summary: 'Restore inactive member' })
   @ApiResponse({ status: 201, description: 'Member restored' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  restore(@Param('id') id: string) {
-    return this.memberService.restore(id);
+  restore(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.restore(id, req.tenantId);
   }
 
   @Post(':id/toggle-status')
@@ -126,8 +128,8 @@ export class MemberController {
   @ApiOperation({ summary: 'Lock/Unlock member' })
   @ApiResponse({ status: 201, description: 'Status toggled' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  toggleStatus(@Param('id') id: string) {
-    return this.memberService.toggleStatus(id);
+  toggleStatus(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.toggleStatus(id, req.tenantId);
   }
 
   @Post(':id/tags')
@@ -139,28 +141,30 @@ export class MemberController {
   @ApiOperation({ summary: 'Update member tags' })
   @ApiResponse({ status: 201, description: 'Tags updated' })
   @ApiResponse({ status: 404, description: 'Member not found' })
-  updateTags(@Param('id') id: string, @Body() body: { tags: string[] }) {
-    return this.memberService.update(id, { tags: body.tags });
+  updateTags(@Req() req: any, @Param('id') id: string, @Body() body: { tags: string[] }) {
+    return this.memberService.update(id, { tags: body.tags }, req.tenantId);
   }
 
   @Get(':id/tier-suggestion')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Member ID' })
   @ApiOperation({ summary: 'Get tier upgrade suggestion' })
   @ApiResponse({ status: 200, description: 'Tier suggestion' })
-  tierSuggestion(@Param('id') id: string) {
-    return this.memberService.getTierSuggestion(id);
+  tierSuggestion(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.getTierSuggestion(id, req.tenantId);
   }
 
   @Get(':id/activity')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Member ID' })
   @ApiOperation({ summary: 'Get member activity timeline' })
   @ApiResponse({ status: 200, description: 'Activity timeline' })
-  getActivity(@Param('id') id: string) {
-    return this.memberService.getActivity(id);
+  getActivity(@Req() req: any, @Param('id') id: string) {
+    return this.memberService.getActivity(id, req.tenantId);
   }
 
   @Post(':id/points')
@@ -171,8 +175,8 @@ export class MemberController {
   @ApiBody({ schema: { type: 'object', properties: { amount: { type: 'number' }, reason: { type: 'string' } } } })
   @ApiOperation({ summary: 'Manual point adjustment (admin)' })
   @ApiResponse({ status: 201, description: 'Points adjusted' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  adjustPoints(@Param('id') id: string, @Body() body: { amount: number; reason: string }) {
-    return this.memberService.adjustPoints(id, body.amount, body.reason);
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  adjustPoints(@Req() req: any, @Param('id') id: string, @Body() body: { amount: number; reason: string }) {
+    return this.memberService.adjustPoints(id, body.amount, body.reason, req.tenantId);
   }
 }

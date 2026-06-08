@@ -1,15 +1,19 @@
 import { Type } from 'class-transformer';
-import { IsEmail, IsString, MinLength, IsOptional, IsNumber } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsNumber, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+const PASSWORD_RULES = 'Password must be at least 8 characters, contain an uppercase letter, a lowercase letter, a number, and a special character';
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={}[\]|:;"'<>,.?/~`]).{8,}$/;
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@example.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'Password123!' })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(PASSWORD_REGEX, { message: PASSWORD_RULES })
   password: string;
 }
 
@@ -20,12 +24,49 @@ export class RegisterHostDto {
 
   @ApiProperty({ example: 'Host@123456' })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(PASSWORD_REGEX, { message: PASSWORD_RULES })
   password: string;
 
   @ApiProperty({ example: 'Platform Host' })
   @IsString()
   name: string;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'Reset token from email' })
+  @IsString()
+  token: string;
+
+  @ApiProperty({ example: 'NewPass@123' })
+  @IsString()
+  @MinLength(8)
+  @Matches(PASSWORD_REGEX, { message: PASSWORD_RULES })
+  newPassword: string;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty()
+  @IsString()
+  oldPassword: string;
+
+  @ApiProperty({ example: 'NewPass@123' })
+  @IsString()
+  @MinLength(8)
+  @Matches(PASSWORD_REGEX, { message: PASSWORD_RULES })
+  newPassword: string;
+}
+
+export class RefreshTokenDto {
+  @ApiProperty()
+  @IsString()
+  refreshToken: string;
 }
 
 export class CreateTenantDto {

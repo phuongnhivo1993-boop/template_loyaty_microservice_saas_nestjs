@@ -37,24 +37,24 @@ export class ProductCategoryService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const category = await this.prisma.productCategory.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId?: string) {
+    const category = await this.prisma.productCategory.findFirst({
+      where: { id, ...(tenantId ? { tenantId } : {}) },
       include: { _count: { select: { products: true } } },
     });
     if (!category) throw new NotFoundException('Category not found');
     return category;
   }
 
-  async update(id: string, data: any) {
-    await this.findOne(id);
+  async update(id: string, data: any, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.productCategory.update({ where: { id }, data });
   }
 
-  async remove(id: string) {
+  async remove(id: string, tenantId?: string) {
     const productCount = await this.prisma.product.count({ where: { categoryId: id } });
     if (productCount > 0) throw new BadRequestException('Cannot delete category with existing products');
-    await this.findOne(id);
+    await this.findOne(id, tenantId);
     return this.prisma.productCategory.delete({ where: { id } });
   }
 }

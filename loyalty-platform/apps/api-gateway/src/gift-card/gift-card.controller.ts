@@ -48,6 +48,7 @@ export class GiftCardController {
   }
 
   @Get('member/:memberId')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get member gift cards' })
   getMemberGiftCards(@Param('memberId') memberId: string) {
     return this.giftCardService.getMemberGiftCards(memberId);

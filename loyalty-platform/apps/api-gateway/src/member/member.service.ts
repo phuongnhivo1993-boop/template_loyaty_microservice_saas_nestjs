@@ -62,17 +62,23 @@ export class MemberService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const member = await this.prisma.member.findUnique({
-      where: { id },
+  private async findOwned(id: string, tenantId?: string) {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    const member = await this.prisma.member.findFirst({
+      where,
       include: { tier: true, pointTransactions: { take: 20, orderBy: { createdAt: 'desc' } } },
     });
     if (!member) throw new NotFoundException('Member not found');
     return member;
   }
 
-  async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tags?: string[]; tierId?: string; status?: string }) {
-    const existing = await this.findOne(id);
+  async findOne(id: string, tenantId?: string) {
+    return this.findOwned(id, tenantId);
+  }
+
+  async update(id: string, data: { fullName?: string; phone?: string; birthday?: string; tags?: string[]; tierId?: string; status?: string }, tenantId?: string) {
+    const existing = await this.findOwned(id, tenantId);
     const { birthday, tags, ...rest } = data;
     const updated = await this.prisma.member.update({
       where: { id },
@@ -83,7 +89,6 @@ export class MemberService {
       } as any,
     });
     if (data.tierId && existing.tierId && data.tierId !== existing.tierId) {
-      const oldTier = existing.tier ? this.prisma.tier.findUnique({ where: { id: existing.tierId } }) : null;
       const newTier = await this.prisma.tier.findUnique({ where: { id: data.tierId } });
       if (newTier) {
         const oldTierName = existing.tier?.name || 'Unknown';
@@ -93,39 +98,38 @@ export class MemberService {
     return updated;
   }
 
-  async kycVerify(id: string) {
-    await this.findOne(id);
+  async kycVerify(id: string, tenantId?: string) {
+    await this.findOwned(id, tenantId);
     return this.prisma.member.update({
       where: { id },
       data: { kycVerified: true, status: 'ACTIVE' as any },
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOwned(id, tenantId);
     return this.prisma.member.update({
       where: { id },
       data: { status: 'INACTIVE' as any },
     });
   }
 
-  async restore(id: string) {
-    const member = await this.prisma.member.findUnique({ where: { id } });
-    if (!member) throw new NotFoundException('Member not found');
+  async restore(id: string, tenantId?: string) {
+    const member = await this.findOwned(id, tenantId);
     return this.prisma.member.update({
       where: { id },
       data: { status: 'ACTIVE' as any },
     });
   }
 
-  async toggleStatus(id: string) {
-    const member = await this.findOne(id);
+  async toggleStatus(id: string, tenantId?: string) {
+    const member = await this.findOwned(id, tenantId);
     const newStatus = member.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
     return this.prisma.member.update({ where: { id }, data: { status: newStatus as any } });
   }
 
-  async getActivity(memberId: string) {
-    await this.findOne(memberId);
+  async getActivity(memberId: string, tenantId?: string) {
+    await this.findOwned(memberId, tenantId);
     const [transactions, vouchers, referrals] = await Promise.all([
       this.prisma.pointTransaction.findMany({
         where: { memberId },
@@ -148,33 +152,35 @@ export class MemberService {
     return { transactions, vouchers, referrals };
   }
 
-  async getTierSuggestion(id: string) {
-    const member = await this.prisma.member.findUnique({
+  async getTierSuggestion(id: string, tenantId?: string) {
+    const member = await this.findOwned(id, tenantId);
+    const fullMember = await this.prisma.member.findUnique({
       where: { id },
-      include: { tier: true, tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
+      include: { tenant: { include: { tiers: { orderBy: { minPoints: 'asc' } } } } },
     });
-    if (!member) throw new NotFoundException('Member not found');
+    if (!fullMember) throw new NotFoundException('Member not found');
 
-    const tiers = member.tenant.tiers;
-    const currentTierIndex = tiers.findIndex(t => t.id === member.tierId);
+    const tiers = fullMember.tenant.tiers;
+    const currentTierIndex = tiers.findIndex(t => t.id === fullMember.tierId);
+    const currentTierName = currentTierIndex >= 0 ? tiers[currentTierIndex].name : 'N/A';
     const nextTier = tiers[currentTierIndex + 1];
 
     if (!nextTier) return { suggestion: null, message: 'Already at highest tier' };
 
-    const pointsNeeded = nextTier.minPoints - member.totalPoints;
+    const pointsNeeded = nextTier.minPoints - fullMember.totalPoints;
     return {
-      currentTier: member.tier?.name || 'N/A',
+      currentTier: currentTierName,
       nextTier: nextTier.name,
       pointsNeeded: Math.max(0, pointsNeeded),
       pointsMultiplier: nextTier.pointsMultiplier,
       message: pointsNeeded <= 0
-        ? `${member.fullName} đủ điều kiện lên hạng ${nextTier.name}!`
-        : `${member.fullName} cần ${pointsNeeded.toLocaleString()} điểm nữa để lên ${nextTier.name} (x${nextTier.pointsMultiplier} điểm)`,
+        ? `${fullMember.fullName} đủ điều kiện lên hạng ${nextTier.name}!`
+        : `${fullMember.fullName} cần ${pointsNeeded.toLocaleString()} điểm nữa để lên ${nextTier.name} (x${nextTier.pointsMultiplier} điểm)`,
     };
   }
 
-  async adjustPoints(id: string, amount: number, reason: string) {
-    const member = await this.findOne(id);
+  async adjustPoints(id: string, amount: number, reason: string, tenantId?: string) {
+    const member = await this.findOwned(id, tenantId);
     if (amount < 0 && member.availablePoints < Math.abs(amount)) {
       throw new BadRequestException(`Insufficient points. Available: ${member.availablePoints}, requested: ${Math.abs(amount)}`);
     }

@@ -20,7 +20,7 @@ export class OrderController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Req() req: any, @Body() body: CreateOrderDto) {
-    return this.orderService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.orderService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
@@ -38,16 +38,17 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'List of orders' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Req() req: any, @Query() query: OrderQueryDto) {
-    return this.orderService.findAll({ ...query, tenantId: req.tenantId ?? query.tenantId });
+    return this.orderService.findAll({ ...query, tenantId: req.tenantId });
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get order by ID' })
   @ApiParam({ name: 'id', type: String, description: 'Order ID' })
   @ApiResponse({ status: 200, description: 'Order found' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  findOne(@Param('id') id: string) {
-    return this.orderService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.orderService.findOne(id, req.tenantId);
   }
 
   @Put(':id/status')
@@ -58,8 +59,8 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Status updated' })
   @ApiResponse({ status: 400, description: 'Invalid status transition' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  updateStatus(@Param('id') id: string, @Body() body: UpdateOrderStatusDto) {
-    return this.orderService.updateStatus(id, body.status, body.cancelReason);
+  updateStatus(@Req() req: any, @Param('id') id: string, @Body() body: UpdateOrderStatusDto) {
+    return this.orderService.updateStatus(id, body.status, body.cancelReason, req.tenantId);
   }
 
   @Get('member/:memberId')
@@ -84,16 +85,17 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Order cancelled' })
   @ApiResponse({ status: 400, description: 'Cannot cancel order' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  cancel(@Param('id') id: string, @Body('cancelReason') cancelReason?: string) {
-    return this.orderService.updateStatus(id, 'CANCELLED', cancelReason);
+  cancel(@Req() req: any, @Param('id') id: string, @Body('cancelReason') cancelReason?: string) {
+    return this.orderService.updateStatus(id, 'CANCELLED', cancelReason, req.tenantId);
   }
 
   @Get(':id/timeline')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get order status change timeline' })
   @ApiParam({ name: 'id', type: String, description: 'Order ID' })
   @ApiResponse({ status: 200, description: 'Order timeline' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  getTimeline(@Param('id') id: string) {
-    return this.orderService.getTimeline(id);
+  getTimeline(@Req() req: any, @Param('id') id: string) {
+    return this.orderService.getTimeline(id, req.tenantId);
   }
 }

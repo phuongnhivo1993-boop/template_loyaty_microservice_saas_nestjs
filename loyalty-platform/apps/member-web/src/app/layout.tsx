@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import I18nProvider from '@/components/I18nProvider';
 import OnboardingModal from '@/components/OnboardingModal';
+import Toast from '@/components/Toast';
 
 export const metadata: Metadata = {
   title: 'Loyalty Member',
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <I18nProvider>
           {children}
           <OnboardingModal />
+          <Toast />
         </I18nProvider>
       </body>
     </html>

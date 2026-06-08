@@ -49,8 +49,6 @@ export class CouponService {
     if (data.count < 1 || data.count > 1000) throw new BadRequestException('Count must be between 1 and 1000');
 
     const codes: string[] = [];
-    const coupons: any[] = [];
-    const now = Date.now();
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
     for (let i = 0; i < data.count; i++) {
@@ -67,28 +65,34 @@ export class CouponService {
     });
     const existingSet = new Set(existing.map(e => e.code));
 
-    for (const code of codes) {
-      if (existingSet.has(code.toUpperCase())) continue;
-      const coupon = await this.prisma.coupon.create({
-        data: {
-          code: code.toUpperCase(),
-          type: data.type,
-          value: data.value,
-          minAmount: data.minAmount,
-          maxDiscount: data.maxDiscount,
-          maxUsage: data.maxUsage,
-          maxUsagePerMember: data.maxUsagePerMember ?? 1,
-          description: data.description,
-          startDate: data.startDate ? new Date(data.startDate) : null,
-          endDate: data.endDate ? new Date(data.endDate) : null,
-          status: data.status ?? 'ACTIVE',
-          tenantId: data.tenantId,
-        },
+    const newCodes = codes
+      .map(code => code.toUpperCase())
+      .filter(code => !existingSet.has(code));
+
+    if (newCodes.length > 0) {
+      const couponData = newCodes.map(code => ({
+        code,
+        type: data.type,
+        value: data.value,
+        minAmount: data.minAmount,
+        maxDiscount: data.maxDiscount,
+        maxUsage: data.maxUsage,
+        maxUsagePerMember: data.maxUsagePerMember ?? 1,
+        description: data.description,
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
+        status: data.status ?? 'ACTIVE',
+        tenantId: data.tenantId,
+      }));
+      await this.prisma.coupon.createMany({ data: couponData, skipDuplicates: true });
+      const created = await this.prisma.coupon.findMany({
+        where: { code: { in: newCodes }, tenantId: data.tenantId },
+        select: { code: true },
       });
-      coupons.push(coupon);
+      return { created: created.length, codes: created.map(c => c.code) };
     }
 
-    return { created: coupons.length, codes: coupons.map(c => c.code) };
+    return { created: 0, codes: [] };
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_6AM)
@@ -142,17 +146,17 @@ export class CouponService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
-    const coupon = await this.prisma.coupon.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId?: string) {
+    const coupon = await this.prisma.coupon.findFirst({
+      where: { id, ...(tenantId ? { tenantId } : {}) },
       include: { _count: { select: { usages: true } } },
     });
     if (!coupon) throw new NotFoundException('Coupon not found');
     return coupon;
   }
 
-  async update(id: string, data: any) {
-    await this.findOne(id);
+  async update(id: string, data: any, tenantId?: string) {
+    await this.findOne(id, tenantId);
     const updateData: any = { ...data };
     if (data.startDate) updateData.startDate = new Date(data.startDate);
     if (data.endDate) updateData.endDate = new Date(data.endDate);
@@ -160,8 +164,8 @@ export class CouponService {
     return this.prisma.coupon.update({ where: { id }, data: updateData });
   }
 
-  async duplicate(id: string) {
-    const coupon = await this.findOne(id);
+  async duplicate(id: string, tenantId?: string) {
+    const coupon = await this.findOne(id, tenantId);
     const { id: _, createdAt, updatedAt, usedCount, ...data } = coupon;
     const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
     return this.prisma.coupon.create({
@@ -175,8 +179,8 @@ export class CouponService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.coupon.delete({ where: { id } });
   }
 
@@ -224,25 +228,54 @@ export class CouponService {
   }
 
   async apply(couponCode: string, memberId: string, orderId: string, orderTotal: number, tenantId?: string) {
-    const validation = await this.validate(couponCode, memberId, orderTotal, tenantId);
-    if (!validation.valid) throw new BadRequestException(validation.errors.join('; '));
+    const result = await this.prisma.$transaction(async (tx) => {
+      const where = tenantId
+        ? { code_tenantId: { code: couponCode, tenantId } }
+        : { code: couponCode } as any;
+      const coupon = await tx.coupon.findUnique({ where });
+      if (!coupon) throw new NotFoundException('Coupon not found');
 
-    await this.prisma.$transaction([
-      this.prisma.coupon.update({
-        where: { id: validation.coupon.id },
+      if (coupon.status !== 'ACTIVE') throw new BadRequestException('Coupon is not active');
+      if (coupon.endDate && new Date() > new Date(coupon.endDate)) throw new BadRequestException('Coupon has expired');
+
+      if (coupon.maxUsagePerMember) {
+        const memberUsageCount = await tx.couponUsage.count({
+          where: { couponId: coupon.id, memberId },
+        });
+        if (memberUsageCount >= coupon.maxUsagePerMember) {
+          throw new BadRequestException('Coupon usage limit reached for this member');
+        }
+      }
+
+      let discount = coupon.value;
+      if (coupon.type === 'percentage') {
+        discount = Math.round(orderTotal * (coupon.value / 100));
+        if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+      }
+      if (coupon.minAmount && orderTotal < coupon.minAmount) {
+        throw new BadRequestException(`Minimum order amount of ${coupon.minAmount} not met`);
+      }
+
+      const updateWhere: any = { id: coupon.id };
+      if (coupon.maxUsage) {
+        updateWhere.usedCount = { lt: coupon.maxUsage };
+      }
+      const updatedCount = await tx.coupon.updateMany({
+        where: updateWhere,
         data: { usedCount: { increment: 1 } },
-      }),
-      this.prisma.couponUsage.create({
-        data: {
-          couponId: validation.coupon.id,
-          memberId,
-          orderId,
-          discountAmount: validation.discount,
-        },
-      }),
-    ]);
+      });
+      if (updatedCount.count === 0) {
+        throw new BadRequestException('Coupon usage limit reached');
+      }
 
-    return { discount: validation.discount, couponCode: validation.coupon.code };
+      await tx.couponUsage.create({
+        data: { couponId: coupon.id, memberId, orderId, discountAmount: discount },
+      });
+
+      return { discount, couponCode: coupon.code };
+    });
+
+    return result;
   }
 
   async getPerformanceStats(tenantId?: string) {
@@ -266,8 +299,8 @@ export class CouponService {
     };
   }
 
-  async getUsageReport(couponId: string) {
-    await this.findOne(couponId);
+  async getUsageReport(couponId: string, tenantId?: string) {
+    await this.findOne(couponId, tenantId);
     const usages = await this.prisma.couponUsage.findMany({
       where: { couponId },
       include: { member: { select: { fullName: true, email: true } } },

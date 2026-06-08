@@ -23,6 +23,7 @@ export class ReferralController {
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List referrals (with pagination & sort)' })
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -43,6 +44,7 @@ export class ReferralController {
   }
 
   @Get('stats')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiQuery({ name: 'tenantId', required: false, type: String })
   @ApiOperation({ summary: 'Get referral stats' })
   @ApiResponse({ status: 200, description: 'Referral statistics' })
@@ -51,6 +53,7 @@ export class ReferralController {
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiParam({ name: 'id', type: String, description: 'Referral ID' })
   @ApiOperation({ summary: 'Get referral by ID' })
   @ApiResponse({ status: 200, description: 'Referral found' })

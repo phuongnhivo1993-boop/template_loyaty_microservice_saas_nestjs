@@ -43,19 +43,19 @@ export class CampaignService {
     return result;
   }
 
-  async findOne(id: string) {
-    const campaign = await this.prisma.campaign.findUnique({ where: { id } });
+  async findOne(id: string, tenantId?: string) {
+    const campaign = await this.prisma.campaign.findFirst({ where: { id, ...(tenantId ? { tenantId } : {}) } });
     if (!campaign) throw new NotFoundException('Campaign not found');
     return campaign;
   }
 
-  async update(id: string, data: { name?: string; description?: string; status?: string; budget?: number }) {
-    await this.findOne(id);
+  async update(id: string, data: { name?: string; description?: string; status?: string; budget?: number }, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.campaign.update({ where: { id }, data });
   }
 
-  async duplicate(id: string) {
-    const campaign = await this.findOne(id);
+  async duplicate(id: string, tenantId?: string) {
+    const campaign = await this.findOne(id, tenantId);
     const { id: _, createdAt, updatedAt, ...data } = campaign;
     return this.prisma.campaign.create({
       data: {
@@ -66,12 +66,12 @@ export class CampaignService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId?: string) {
+    await this.findOne(id, tenantId);
     return this.prisma.campaign.delete({ where: { id } });
   }
 
-  async getPerformance(id: string) {
+  async getPerformance(id: string, tenantId?: string) {
     const campaign = await this.findOne(id);
     const [earnedInRange, membersEnrolled, vouchersRedeemed] = await Promise.all([
       this.prisma.pointTransaction.count({

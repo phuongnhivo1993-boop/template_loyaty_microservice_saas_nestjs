@@ -8,9 +8,11 @@ import { RolesGuard } from './roles.guard';
 import { TenantGuard } from './tenant.guard';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { NotificationModule } from '../notification/notification.module';
+import { CommonModule } from '../common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     NotificationModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

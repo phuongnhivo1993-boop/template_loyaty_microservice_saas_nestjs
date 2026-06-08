@@ -18,29 +18,31 @@ export class TierController {
   create(@Req() req: any, @Body() body: CreateTierDto) {
     return this.tierService.create({
       ...body,
-      tenantId: req.tenantId ?? body.tenantId,
+      tenantId: req.tenantId,
       minPoints: body.minPoints ?? 0,
       maxPoints: body.maxPoints ?? 999999,
     });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List tiers (with pagination & sort)' })
   findAll(@Req() req: any, @Query() query: TierQueryDto) {
-    return this.tierService.findAll(req.tenantId ?? query.tenantId, query.page, query.limit, query.search, query.sort);
+    return this.tierService.findAll(req.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get tier by ID' })
-  findOne(@Param('id') id: string) {
-    return this.tierService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.tierService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update tier' })
-  update(@Param('id') id: string, @Body() body: UpdateTierDto) {
-    return this.tierService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateTierDto) {
+    return this.tierService.update(id, body, req.tenantId);
   }
 
   @Get('stats')
@@ -53,7 +55,7 @@ export class TierController {
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Delete tier' })
-  remove(@Param('id') id: string) {
-    return this.tierService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.tierService.remove(id, req.tenantId);
   }
 }

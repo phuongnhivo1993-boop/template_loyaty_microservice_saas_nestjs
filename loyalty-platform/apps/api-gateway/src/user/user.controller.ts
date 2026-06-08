@@ -20,12 +20,14 @@ export class UserController {
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List all users (with pagination & sort)' })
   findAll(@Query() query: UserQueryDto) {
     return this.userService.findAll(query.tenantId, query.page, query.limit, query.search, query.sort);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get user by ID' })
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);

@@ -16,14 +16,15 @@ export class ProductController {
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Create a product' })
   create(@Req() req: any, @Body() body: CreateProductDto) {
-    return this.productService.create({ ...body, tenantId: req.tenantId ?? body.tenantId });
+    return this.productService.create({ ...body, tenantId: req.tenantId });
   }
 
   @Get()
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'List products (with pagination & filter)' })
   findAll(@Req() req: any, @Query() query: ProductQueryDto) {
     return this.productService.findAll(
-      req.tenantId ?? query.tenantId,
+      req.tenantId,
       query.page, query.limit, query.search,
       query.categoryId, query.status, query.sort,
       query.priceMin, query.priceMax, query.stockStatus,
@@ -31,6 +32,7 @@ export class ProductController {
   }
 
   @Get('low-stock')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get products with low stock (≤ threshold)' })
   lowStock(@Req() req: any, @Query('threshold') threshold?: number) {
     return this.productService.lowStock(req.tenantId, threshold || 10);
@@ -39,41 +41,42 @@ export class ProductController {
   @Post('bulk/delete')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Bulk soft delete products' })
-  bulkDelete(@Body() body: BulkIdsDto) {
-    return this.productService.bulkDelete(body.ids);
+  bulkDelete(@Req() req: any, @Body() body: BulkIdsDto) {
+    return this.productService.bulkDelete(body.ids, req.tenantId);
   }
 
   @Post('bulk/status')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Bulk update product status' })
-  bulkStatus(@Body() body: BulkStatusDto) {
-    return this.productService.bulkStatus(body.ids, body.status);
+  bulkStatus(@Req() req: any, @Body() body: BulkStatusDto) {
+    return this.productService.bulkStatus(body.ids, body.status, req.tenantId);
   }
 
   @Get(':id')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get product by ID' })
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.productService.findOne(id, req.tenantId);
   }
 
   @Put(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Update product' })
-  update(@Param('id') id: string, @Body() body: UpdateProductDto) {
-    return this.productService.update(id, body);
+  update(@Req() req: any, @Param('id') id: string, @Body() body: UpdateProductDto) {
+    return this.productService.update(id, body, req.tenantId);
   }
 
   @Patch(':id/restore')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Restore a soft-deleted product' })
-  restore(@Param('id') id: string) {
-    return this.productService.restore(id);
+  restore(@Req() req: any, @Param('id') id: string) {
+    return this.productService.restore(id, req.tenantId);
   }
 
   @Delete(':id')
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Soft delete product' })
-  remove(@Param('id') id: string) {
-    return this.productService.softRemove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.productService.softRemove(id, req.tenantId);
   }
 }

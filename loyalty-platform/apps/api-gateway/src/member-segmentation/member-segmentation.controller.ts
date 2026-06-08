@@ -22,7 +22,7 @@ export class MemberSegmentationController {
   @ApiOperation({ summary: 'List all members with RFM scores and segments' })
   findAll(@Req() req: any, @Query() query: SegmentationQueryDto) {
     return this.service.findAll({
-      tenantId: req.tenantId ?? query.tenantId,
+      tenantId: req.tenantId,
       page: query.page,
       limit: query.limit,
       segment: query.segment,
@@ -56,7 +56,7 @@ export class MemberSegmentationController {
   @Roles('HOST', 'ADMIN')
   @ApiOperation({ summary: 'Export RFM segmentation data as CSV' })
   async exportCsv(@Req() req: any, @Query() query: SegmentationQueryDto, @Res() res: Response) {
-    const { data } = await this.service.findAll({ ...query, tenantId: req.tenantId ?? query.tenantId });
+    const { data } = await this.service.findAll({ ...query, tenantId: req.tenantId });
     const columns = [
       { key: 'fullName', label: 'Full Name' },
       { key: 'email', label: 'Email' },

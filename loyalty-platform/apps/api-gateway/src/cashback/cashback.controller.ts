@@ -67,12 +67,14 @@ export class CashbackController {
   }
 
   @Get('balance/:memberId')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get member cashback balance' })
   getBalance(@Param('memberId') memberId: string) {
     return this.cashbackService.getBalance(memberId);
   }
 
   @Get('transactions/:memberId')
+  @Roles('HOST', 'ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get member cashback transactions' })
   getTransactions(@Param('memberId') memberId: string, @Query() query: any) {
     return this.cashbackService.getTransactions(memberId, query.page, query.limit, query.type);
